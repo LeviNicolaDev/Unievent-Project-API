@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/Application/">
+    <Project Path="Unievent.Application/Unievent.Application.csproj" Id="942ebe47-6452-4c97-96e5-254cad93d4db" />
+  </Folder>
+  <Folder Name="/Domain/">
+    <Project Path="Unievent.Domain/Unievent.Domain.csproj" Id="26bbd5b8-76e4-4dc5-a334-43ceedeea013" />
+  </Folder>
+  <Folder Name="/Infra/">
+    <Project Path="Unievent.Infra/Unievent.Infra.csproj" Id="23ef91ff-0322-4d3b-86ab-f03bcd229f48" />
+  </Folder>
+  <Folder Name="/Web/">
+    <Project Path="Unievent.Api/Unievent.Api.csproj" Id="6f4a3841-46d9-434c-81ae-06ccdf10b8be" />
+  </Folder>
+</Solution>
