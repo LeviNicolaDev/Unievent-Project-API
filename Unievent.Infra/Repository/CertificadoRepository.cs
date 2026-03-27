@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Domain.Entities;
+using Unievent.Infra.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository
 {
-    public class CertificadoRepository
+    public class CertificadoRepository : ICertificadoRepository
     {
         private readonly AppDbContext _context;
         public CertificadoRepository(AppDbContext context)

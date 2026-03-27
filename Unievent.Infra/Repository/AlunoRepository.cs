@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Domain.Entities;
+using Unievent.Infra.Data;
 
 namespace Unievent.Infra.Repository
 {
-    public class AlunoRepository
+    public class AlunoRepository : IAlunoRepository
     {
         private readonly AppDbContext _context;
         public AlunoRepository(AppDbContext context)
@@ -44,6 +44,5 @@ namespace Unievent.Infra.Repository
         {
             return _context.SaveChangesAsync();
         }
-
     }
 }

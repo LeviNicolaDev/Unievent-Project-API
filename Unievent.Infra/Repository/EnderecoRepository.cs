@@ -1,6 +1,11 @@
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Domain.Entities;
+using Unievent.Infra.Data;
+using Microsoft.EntityFrameworkCore;
+
 namespace Unievent.Infra.Repository;
 
-public class EnderecoRepository
+public class EnderecoRepository : IEnderecoRepository
 {
     private AppDbContext _context;
     public EnderecoRepository(AppDbContext context)

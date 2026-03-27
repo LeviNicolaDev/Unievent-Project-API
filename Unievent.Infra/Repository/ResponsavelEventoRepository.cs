@@ -1,6 +1,11 @@
-﻿namespace Unievent.Infra.Repository
+﻿using Unievent.Application.Interfaces.Repository;
+using Unievent.Domain.Entities;
+using Unievent.Infra.Data;
+using Microsoft.EntityFrameworkCore;
+
+namespace Unievent.Infra.Repository
 {
-    public class ResponsavelEventoRepository
+    public class ResponsavelEventoRepository : IResponsavelEventoRepository
     {
         private readonly AppDbContext _context;
         public ResponsavelEventoRepository(AppDbContext context)
