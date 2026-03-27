@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.Aluno;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IAlunoService

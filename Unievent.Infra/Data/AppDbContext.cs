@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using Unievent.Domain.Entities;
+
 namespace Unievent.Infra.Data;
 
 public class AppDbContext : DbContext
@@ -18,9 +21,10 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<UsuarioSecretaria>()
-            .Property(s => s.TentativasLogin)
-            .HasDefaultValue(0);
+        // 'HasDefaultValue' aparentemente não funciona mais com o EF CORE, então a inicialização de 'TentativasLogin' deve ser feita no construtor da entidade 'Usuario
+        //modelBuilder.Entity<UsuarioSecretaria>()
+        //    .Property(s => s.TentativasLogin)
+        //    .HasDefaultValue(0);
 
         modelBuilder.Entity<UsuarioSecretaria>()
             .HasIndex(s => s.Chave)
@@ -50,8 +54,5 @@ public class AppDbContext : DbContext
             .HasQueryFilter(s => s.IsAtivo);
         modelBuilder.Entity<Aluno>()
        .HasQueryFilter(s => s.IsAtivo);
-
-
-
     }
 }

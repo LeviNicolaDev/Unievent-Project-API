@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.ResponsavelEvento;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IResponsavelEventoService

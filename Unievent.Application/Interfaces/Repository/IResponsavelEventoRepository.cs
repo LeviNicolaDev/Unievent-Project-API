@@ -1,3 +1,5 @@
+using Unievent.Domain.Entities;
+
 namespace Unievent.Application.Interfaces.Repository;
 
 public interface IResponsavelEventoRepository

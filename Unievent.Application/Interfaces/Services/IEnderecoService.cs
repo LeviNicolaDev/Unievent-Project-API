@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.Endereco;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IEnderecoService

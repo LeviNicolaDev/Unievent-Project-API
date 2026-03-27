@@ -1,4 +1,10 @@
-﻿namespace Unievent.Application.Services
+﻿using Microsoft.AspNetCore.Http;
+using Unievent.Application.Dtos.Evento;
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Application.Interfaces.Services;
+using Unievent.Domain.Entities;
+
+namespace Unievent.Application.Services
 {
     public class EventoService : IEventoService
     {
@@ -65,15 +71,13 @@
             {
                 Id = id,
                 Capacidade = evento.Capacidade,
-                Categoria = evento.Capacidade,
+                Categoria = evento.Categoria,
                 DataEvento = evento.DataEvento,
                 HoraEvento = evento.HoraEvento,
                 Descricao = evento.Descricao,
                 IdResponsavelEvento = evento.IdResponsavelEvento,
                 Thumbnail = evento.Thumbnail.ToList(),
-                Nome = evento.Nome,
-
-
+                Nome = evento.Nome
             };
         }
 
@@ -91,14 +95,12 @@
             {
                 Capacidade = request.Capacidade,
                 Categoria = request.Categoria,
+                HoraEvento = request.HoraEvento,
                 DataEvento = request.DataEvento,
                 Descricao = request.Descricao,
                 IdResponsavelEvento = request.IdResponsavelEvento,
                 Nome = request.Nome,
-                Thumbnail = imagens,
-
-
-
+                Thumbnail = imagens
             };
             await _repository.CriarEvento(evento);
             await _repository.SaveChangesAsync();
@@ -112,8 +114,7 @@
                 Descricao = evento.Descricao,
                 IdResponsavelEvento = evento.IdResponsavelEvento,
                 Thumbnail = evento.Thumbnail.ToList(),
-                Nome = evento.Nome,
-
+                Nome = evento.Nome
             };
         }
 
@@ -137,7 +138,6 @@
             await _repository.DeletarEvento(evento);
             await _repository.SaveChangesAsync();
             return true;
-
         }
 
         async Task<EventoResponse> IEventoService.ListarEventoById(int id)
@@ -148,18 +148,17 @@
             {
                 Id = evento.Id,
                 Capacidade = evento.Capacidade,
-                Categoria = evento.Capacidade,
+                Categoria = evento.Categoria,
                 DataEvento = evento.DataEvento,
                 HoraEvento = evento.HoraEvento,
                 Descricao = evento.Descricao,
                 IdResponsavelEvento = evento.IdResponsavelEvento,
                 Thumbnail = evento.Thumbnail.ToList(),
-                Nome = evento.Nome,
-
+                Nome = evento.Nome
             };
         }
 
-        async Task<IEnumerable<EventoResponse>> IEventoService.ListarEventos()
+        async Task<IEnumerable<EventoResponse>> ListarEventos()
         {
             var eventos = await _repository.ListarEventos();
             return eventos.Select(e => new EventoResponse
@@ -168,13 +167,11 @@
                 Capacidade = e.Capacidade,
                 Categoria = e.Categoria,
                 DataEvento = e.DataEvento,
-                HoraEvento = evento.HoraEvento,
+                HoraEvento = e.HoraEvento,
                 Descricao = e.Descricao,
                 IdResponsavelEvento = e.IdResponsavelEvento,
                 Nome = e.Nome,
-                Thumbnail = e.Thumbnail.ToList(),
-
-
+                Thumbnail = e.Thumbnail.ToList()
             });
         }
     }

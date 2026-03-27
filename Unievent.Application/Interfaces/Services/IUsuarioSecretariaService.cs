@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.UsuarioSecretaria;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IUsuarioSecretariaService

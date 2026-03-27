@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Unievent.Application.Dtos.ResponsavelEvento;
 
 public class ResponsavelEventoUpdate

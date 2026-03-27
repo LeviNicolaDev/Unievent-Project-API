@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.Evento;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IEventoService

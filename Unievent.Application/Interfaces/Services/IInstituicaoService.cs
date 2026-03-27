@@ -1,3 +1,5 @@
+using Unievent.Application.Dtos.Instituicao;
+
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IInstituicaoService

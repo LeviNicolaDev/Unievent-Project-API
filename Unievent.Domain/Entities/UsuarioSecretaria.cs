@@ -18,7 +18,7 @@
         public required Role RoleUsuario { get; set; }
         public required string EmailUsuario { get; set; }
         public string Chave { get; set; }
-        public int TentativasLogin { get; set; }
+        public int TentativasLogin { get; set; } = default;
         public bool IsAtivo { get; set; }
 
     }
