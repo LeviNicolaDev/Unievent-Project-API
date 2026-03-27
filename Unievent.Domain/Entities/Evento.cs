@@ -3,7 +3,7 @@
     public class Evento : EntidadeBase
     {
         public Evento() { }
-        public Evento(string nome, string descricao, string categoria, string horaEvento, DateTime dataEvento, int capacidade, ICollection<string> thumbnail, int idResponsavelEvento)
+        public Evento(string nome, string descricao, string categoria, string horaEvento, DateTime dataEvento, int capacidade, IList<string> thumbnail, int idResponsavelEvento)
         {
             Nome = nome;
             Descricao = descricao;
@@ -23,6 +23,6 @@
         public int IdResponsavelEvento { get; set; }
         public ResponsavelEvento ResponsavelEvento { get; set; }
         public required int Capacidade { get; set; }
-        public required ICollection<string> Thumbnail { get; set; }
+        public required IList<string> Thumbnail { get; set; }
     }
 }

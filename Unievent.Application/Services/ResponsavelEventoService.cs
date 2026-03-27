@@ -1,4 +1,10 @@
-﻿namespace Unievent.Application.Services
+﻿using Microsoft.AspNetCore.Http;
+using Unievent.Application.Dtos.ResponsavelEvento;
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Application.Interfaces.Services;
+using Unievent.Domain.Entities;
+
+namespace Unievent.Application.Services
 {
     public class ResponsavelEventoService : IResponsavelEventoService
     {
@@ -18,7 +24,7 @@
             {
                 responsavelAntigo.Nome = responsavel.Nome;
             }
-            if (!string.IsNullOrWhiteSpace(responsavel.FotoPerfil))
+            if (responsavel.FotoPerfil != null)
             {
                 var imagem = await SalvarImagem(responsavel.FotoPerfil);
                 responsavelAntigo.FotoPerfil = imagem;
@@ -29,8 +35,6 @@
                 Nome = responsavelAntigo.Nome,
                 FotoPerfil = responsavelAntigo.FotoPerfil
             };
-
-
         }
 
         async Task<ResponsavelEventoResponse> IResponsavelEventoService.CriarResponsavelEvento(ResponsavelEventoRequest responsavel)
@@ -38,7 +42,6 @@
             var imagem = await SalvarImagem(responsavel.FotoPerfil);
             var responsavelNovo = new ResponsavelEvento
             {
-
                 Nome = responsavel.Nome,
                 FotoPerfil = imagem
             };
@@ -103,6 +106,5 @@
 
             return $"/imagens/{nomeArquivo}";
         }
-
     }
 }

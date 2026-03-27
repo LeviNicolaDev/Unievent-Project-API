@@ -1,4 +1,6 @@
-﻿namespace Unievent.Domain.Entities
+﻿using Unievent.Domain.Enuns;
+
+namespace Unievent.Domain.Entities
 {
     public class UsuarioSecretaria : EntidadeBase
     {

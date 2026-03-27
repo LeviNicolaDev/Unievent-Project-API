@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+
 namespace Unievent.Application.Dtos.Evento;
 
 public record EventoUpdate
@@ -9,7 +11,7 @@ public record EventoUpdate
     public string? HoraEvento { get; set; }
     public DateTime? DataEvento { get; set; }
     public int? Capacidade { get; set; }
-    public IList<string>? Thumbnail { get; set; }
+    public IList<IFormFile>? Thumbnail { get; set; }
     public string? ThumbnailOpcional { get; set; }
     public int? IdResponsavelEvento { get; set; }
 }

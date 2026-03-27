@@ -1,4 +1,10 @@
-﻿namespace Unievent.Application.Services
+﻿using Unievent.Application.Dtos.UsuarioSecretaria;
+using Unievent.Application.Interfaces.Repository;
+using Unievent.Application.Interfaces.Services;
+using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
+
+namespace Unievent.Application.Services
 {
     public class UsuarioSecretariaService : IUsuarioSecretariaService
     {
@@ -45,12 +51,10 @@
             };
         }
 
-
-
         async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
         {
-            var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.admin;
-            var status = Enum.TryParse(request.RoleUsuario, out Situacao situacao) ? situacao : Situacao.inativo;
+            var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Admin;
+            var status = Enum.TryParse(request.RoleUsuario, out Situacao situacao) ? situacao : Situacao.Inativo;
             var usuarioExiste = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
 
             var usuarioSecretaria = new UsuarioSecretaria
@@ -72,10 +76,6 @@
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
             };
-
-
-
-
         }
 
         async Task<bool> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
@@ -85,9 +85,6 @@
             await _repository.SaveChangesAsync();
             return true;
         }
-
-
-
 
         async Task<IEnumerable<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
         {
@@ -100,10 +97,7 @@
                 Chave = usuarioSecretaria.Chave,
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
-
-
             });
-
         }
 
         async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
@@ -118,9 +112,7 @@
                 Chave = usuarioSecretaria.Chave,
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
-
             };
-
         }
     }
 }

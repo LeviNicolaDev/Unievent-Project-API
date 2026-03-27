@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System.Collections;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -19,6 +20,8 @@ namespace Unievent.Application.Services
 
         async Task<EventoResponse> IEventoService.AtualizarEvento(int id, EventoUpdate update)
         {
+            IList<string> imagens = new List<string>(); // Lista para armazenar os caminhos das imagens salvas
+
             var evento = await _repository.ListarEventoById(id) ?? throw new Exception("Evento não encontrado");
             if (update.Capacidade.HasValue)
             {
@@ -57,7 +60,11 @@ namespace Unievent.Application.Services
             }
             if (update.Thumbnail != null)
             {
-                var imagens = await SalvarImagem(update.Thumbnail);
+                foreach (var imagem in update.Thumbnail)
+                {
+                    var img = await SalvarImagem(imagem);
+                    imagens.Add(img);
+                }
                 evento.Thumbnail = imagens;
             }
             if (!string.IsNullOrWhiteSpace(update.Nome))
@@ -121,7 +128,7 @@ namespace Unievent.Application.Services
         public async Task<string> SalvarImagem(IFormFile imagem)
         {
             var pasta = Path.Combine("wwwroot", "imagens");
-            Directory.CreateDirectory(pasta);
+            if (!Directory.Exists(pasta)) Directory.CreateDirectory(pasta);
 
             var nomeArquivo = $"{Guid.NewGuid()}{Path.GetExtension(imagem.FileName)}";
             var caminho = Path.Combine(pasta, nomeArquivo);
@@ -142,7 +149,6 @@ namespace Unievent.Application.Services
 
         async Task<EventoResponse> IEventoService.ListarEventoById(int id)
         {
-
             var evento = await _repository.ListarEventoById(id) ?? throw new Exception("Evento não encontrado");
             return new EventoResponse
             {
@@ -158,7 +164,7 @@ namespace Unievent.Application.Services
             };
         }
 
-        async Task<IEnumerable<EventoResponse>> ListarEventos()
+        async Task<IEnumerable<EventoResponse>> IEventoService.ListarEventos()
         {
             var eventos = await _repository.ListarEventos();
             return eventos.Select(e => new EventoResponse
