@@ -4,7 +4,6 @@ namespace Unievent.Application.Dtos.Evento;
 
 public record EventoUpdate
 {
-
     public string? Nome { get; set; }
     public string? Descricao { get; set; }
     public string? Categoria { get; set; }

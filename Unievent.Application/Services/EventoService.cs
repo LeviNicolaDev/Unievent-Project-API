@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System.Collections;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
