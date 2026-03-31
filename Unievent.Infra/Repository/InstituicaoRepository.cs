@@ -1,14 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository;
 
 public class InstituicaoRepository : IInstituicaoRepository
 {
     private AppDbContext _context;
-    public InstituicaoRepository(AppDbContext context)
+    public InstituicaoRepository(AppDbContext context, IConfiguration config)
     {
         _context = context;
     }

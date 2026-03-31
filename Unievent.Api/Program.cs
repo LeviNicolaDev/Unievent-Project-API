@@ -1,4 +1,7 @@
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
+using Unievent.Api.Configurations.DependencyInjection;
+using Unievent.Infra.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -6,8 +9,14 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+builder.Services.AddRepositories();
+builder.Services.AddServices();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 

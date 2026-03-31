@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
@@ -8,7 +9,7 @@ namespace Unievent.Infra.Repository
     public class AlunoRepository : IAlunoRepository
     {
         private readonly AppDbContext _context;
-        public AlunoRepository(AppDbContext context)
+        public AlunoRepository(AppDbContext context, IConfiguration config)
         {
             _context = context;
         }

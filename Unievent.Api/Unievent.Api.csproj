@@ -8,9 +8,15 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.13.13" />
     <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.13.13" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Unievent.Application\Unievent.Application.csproj" />
+    <ProjectReference Include="..\Unievent.Infra\Unievent.Infra.csproj" />
   </ItemGroup>
 
 </Project>
