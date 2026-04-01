@@ -1,32 +1,27 @@
-/*
-CREATE DATABASE bdunievent;
-USE bdunievent;
-*/
-
 CREATE TABLE responsavelevento(
     id INT IDENTITY(1,1) PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
-    fotoPerfil VARCHAR(200)
+    fotoPerfil VARCHAR(200)  -- FotoPerfil
 );
 
 CREATE TABLE endereco(
     id INT IDENTITY(1,1) PRIMARY KEY,
-    rua VARCHAR(100) NOT NULL,
-    cidade VARCHAR(80) NOT NULL,
-    bairro VARCHAR(100) NOT NULL,
-    estado CHAR(2) NOT NULL,
-    cep VARCHAR(13) NOT NULL,
-    numero VARCHAR(5) NOT NULL
+    rua VARCHAR(100) NOT NULL,       -- Rua
+    cidade VARCHAR(80) NOT NULL,     -- Cidade
+    bairro VARCHAR(100) NOT NULL,    -- Bairro
+    estado CHAR(2) NOT NULL,         -- Estado
+    cep VARCHAR(13) NOT NULL,        -- Cep
+    numero VARCHAR(5) NOT NULL       -- Numero
 );
 
 CREATE TABLE instituicao(
     id INT IDENTITY(1,1) PRIMARY KEY,
-    email_login VARCHAR(100) NOT NULL,
-    senha_login VARCHAR(60) NOT NULL,
-    foto_perfil VARCHAR(200) NOT NULL,
-    cnpj VARCHAR(14) NOT NULL,
-    id_endereco_fk INT,
-    CONSTRAINT FK_instituicao_endereco FOREIGN KEY(id_endereco_fk)
+    emailLogin VARCHAR(100) NOT NULL,     -- EmailLogin
+    senhaLogin VARCHAR(60) NOT NULL,      -- SenhaLogin
+    fotoPerfil VARCHAR(200) NOT NULL,     -- FotoPerfil
+    cnpj VARCHAR(14) NOT NULL,            -- Cnpj
+    idEndereco INT,                       -- IdEndereco
+    CONSTRAINT FK_instituicao_endereco FOREIGN KEY(idEndereco)
         REFERENCES endereco(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -34,13 +29,14 @@ CREATE TABLE instituicao(
 
 CREATE TABLE aluno(
     ra BIGINT PRIMARY KEY,
-    nome VARCHAR(100) NOT NULL,
-    senha VARCHAR(12) NOT NULL,
-    email_login VARCHAR(100) NOT NULL,
-    foto_perfil VARCHAR(200),
-    data_nascimento DATE NOT NULL,
-    id_instituicao_fk INT,
-    CONSTRAINT FK_aluno_instituicao FOREIGN KEY(id_instituicao_fk)
+    nome VARCHAR(100) NOT NULL,           -- Nome
+    senha VARCHAR(12) NOT NULL,           -- Senha
+    email VARCHAR(100) NOT NULL,          -- Email  (era email_login)
+    fotoPerfil VARCHAR(200),              -- FotoPerfil
+    isAtivo BIT NOT NULL DEFAULT 0,       -- IsAtivo (campo novo)
+    dataNascimento DATE NOT NULL,         -- DataNascimento
+    idInstituicao INT,                    -- (FK, sem mapeamento direto na entidade)
+    CONSTRAINT FK_aluno_instituicao FOREIGN KEY(idInstituicao)
         REFERENCES instituicao(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -48,22 +44,22 @@ CREATE TABLE aluno(
 
 CREATE TABLE evento(
     id INT IDENTITY(1,1) PRIMARY KEY,
-    nome VARCHAR(80) NOT NULL,
-    descricao VARCHAR(150) NOT NULL,
-    categoria_evento VARCHAR(40) NOT NULL,
-    data_evento DATE NOT NULL,
-    hora_evento TIME NOT NULL,
-    capacidade INT NOT NULL,
-    thumbnail VARCHAR(400) NOT NULL,
-    thumbnail2 VARCHAR(400),
-    thumbnail3 VARCHAR(400),
-    id_responsavel_evento_fk INT,
-    id_endereco_fk INT,
-    CONSTRAINT FK_evento_responsavel FOREIGN KEY(id_responsavel_evento_fk)
+    nome VARCHAR(80) NOT NULL,                -- Nome
+    descricao VARCHAR(150) NOT NULL,          -- Descricao
+    categoria VARCHAR(40) NOT NULL,           -- Categoria (era categoria_evento)
+    dataEvento DATE NOT NULL,                 -- DataEvento
+    horaEvento TIME NOT NULL,                 -- HoraEvento
+    capacidade INT NOT NULL,                  -- Capacidade
+    thumbnail VARCHAR(400) NOT NULL,          -- Thumbnail[0]
+    thumbnail2 VARCHAR(400),                  -- Thumbnail[1]
+    thumbnail3 VARCHAR(400),                  -- Thumbnail[2]
+    idResponsavelEvento INT,                  -- IdResponsavelEvento
+    idEndereco INT,                           -- (sem mapeamento direto na entidade)
+    CONSTRAINT FK_evento_responsavel FOREIGN KEY(idResponsavelEvento)
         REFERENCES responsavelevento(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION,
-    CONSTRAINT FK_evento_endereco FOREIGN KEY(id_endereco_fk)
+    CONSTRAINT FK_evento_endereco FOREIGN KEY(idEndereco)
         REFERENCES endereco(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -71,20 +67,20 @@ CREATE TABLE evento(
 
 CREATE TABLE certificado(
     id INT IDENTITY(1,1) PRIMARY KEY,
-    data_certificado DATE NOT NULL,
-    texto VARCHAR(100) NOT NULL,
-    id_instituicao_fk INT,
-    id_aluno_fk BIGINT,
-    id_evento_fk INT,
-    CONSTRAINT FK_cert_instituicao FOREIGN KEY(id_instituicao_fk)
+    dataCertificado DATE NOT NULL,    -- DataCertificado (era data_certificado, corrige typo "DataCertifcado")
+    texto VARCHAR(100) NOT NULL,      -- Texto
+    idInstituicao INT,                -- (sem mapeamento direto na entidade Certificado)
+    idAluno BIGINT,                   -- IdAluno
+    idEvento INT,                     -- IdEvento
+    CONSTRAINT FK_cert_instituicao FOREIGN KEY(idInstituicao)
         REFERENCES instituicao(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION,
-    CONSTRAINT FK_cert_aluno FOREIGN KEY(id_aluno_fk)
+    CONSTRAINT FK_cert_aluno FOREIGN KEY(idAluno)
         REFERENCES aluno(ra)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION,
-    CONSTRAINT FK_cert_evento FOREIGN KEY(id_evento_fk)
+    CONSTRAINT FK_cert_evento FOREIGN KEY(idEvento)
         REFERENCES evento(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -92,14 +88,14 @@ CREATE TABLE certificado(
 
 CREATE TABLE instituicao_evento (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    id_instituicao_fk INT NOT NULL,
-    id_evento_fk INT NOT NULL,
-    CONSTRAINT UQ_inst_evento UNIQUE (id_instituicao_fk, id_evento_fk),
-    CONSTRAINT FK_ie_instituicao FOREIGN KEY (id_instituicao_fk)
+    idInstituicao INT NOT NULL,    -- IdInstituicao
+    idEvento INT NOT NULL,         -- IdEvento
+    CONSTRAINT UQ_inst_evento UNIQUE (idInstituicao, idEvento),
+    CONSTRAINT FK_ie_instituicao FOREIGN KEY (idInstituicao)
         REFERENCES instituicao(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION,
-    CONSTRAINT FK_ie_evento FOREIGN KEY (id_evento_fk)
+    CONSTRAINT FK_ie_evento FOREIGN KEY (idEvento)
         REFERENCES evento(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -107,14 +103,15 @@ CREATE TABLE instituicao_evento (
 
 CREATE TABLE secretaria(
     id INT IDENTITY(1,1) PRIMARY KEY,
-    nome VARCHAR(80) NOT NULL,
-    email VARCHAR(200) NOT NULL,
-    senha VARCHAR(200) NOT NULL,
-    chave VARCHAR(300) UNIQUE,
-    situacao VARCHAR(50) DEFAULT 'inativo',
-    tentativas_login INT DEFAULT 0,
-    id_instituicao_fk INT,
-    CONSTRAINT FK_secretaria_instituicao FOREIGN KEY (id_instituicao_fk)
+    nomeUsuario VARCHAR(80) NOT NULL,         -- NomeUsuario
+    emailUsuario VARCHAR(200) NOT NULL,       -- EmailUsuario
+    senha VARCHAR(200) NOT NULL,              -- (sem mapeamento direto, mantido para autenticação)
+    roleUsuario VARCHAR(50) NOT NULL,         -- RoleUsuario (era inexistente, adicionado)
+    chave VARCHAR(300) UNIQUE,                -- Chave
+    isAtivo BIT NOT NULL DEFAULT 0,           -- IsAtivo (substituiu situacao VARCHAR)
+    tentativasLogin INT DEFAULT 0,            -- TentativasLogin
+    idInstituicao INT,                        -- (FK, sem mapeamento direto na entidade)
+    CONSTRAINT FK_secretaria_instituicao FOREIGN KEY (idInstituicao)
         REFERENCES instituicao(id)
         ON DELETE NO ACTION
         ON UPDATE NO ACTION
@@ -122,8 +119,8 @@ CREATE TABLE secretaria(
 
 CREATE TABLE log_evento (
     id INT IDENTITY(1,1) PRIMARY KEY,
-    evento_id INT,
-    data_modificacao DATETIME DEFAULT GETDATE(),
+    eventoId INT,                               -- eventoId (era evento_id)
+    dataModificacao DATETIME DEFAULT GETDATE(), -- dataModificacao
     descricao VARCHAR(255),
     operacao VARCHAR(10)
 );
@@ -149,7 +146,7 @@ ON evento
 AFTER UPDATE
 AS
 BEGIN
-    INSERT INTO log_evento (evento_id, descricao, operacao)
+    INSERT INTO log_evento (eventoId, descricao, operacao)
     SELECT 
         i.id,
         'Evento atualizado: ' + d.nome + ' para ' + i.nome,
@@ -159,7 +156,6 @@ BEGIN
 END;
 GO
 
-GO
 CREATE TRIGGER valida_desabilita_evento
 ON evento
 INSTEAD OF DELETE
@@ -168,7 +164,7 @@ BEGIN
     IF EXISTS (
         SELECT 1
         FROM certificado c
-        JOIN deleted d ON c.id_evento_fk = d.id
+        JOIN deleted d ON c.idEvento = d.id
     )
     BEGIN
         THROW 50000, 'Não é possível excluir este evento, pois existem certificados associados a ele.', 1;
