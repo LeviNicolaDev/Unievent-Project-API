@@ -12,7 +12,7 @@
             DataEvento = dataEvento;
             Capacidade = capacidade;
             Thumbnail = thumbnail;
-            IdResponsavelEvento = idResponsavelEvento;
+            ResponsavelEventoId = idResponsavelEvento;
         }
 
         public required string Nome { get; set; }
@@ -20,7 +20,7 @@
         public required string Categoria { get; set; }
         public required string HoraEvento { get; set; }
         public required DateTime DataEvento { get; set; }
-        public int IdResponsavelEvento { get; set; }
+        public required int ResponsavelEventoId { get; set; }
         public ResponsavelEvento ResponsavelEvento { get; set; }
         public required int Capacidade { get; set; }
         public required IList<string> Thumbnail { get; set; }

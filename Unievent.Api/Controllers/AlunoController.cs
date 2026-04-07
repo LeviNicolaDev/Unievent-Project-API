@@ -15,7 +15,8 @@ public class AlunoController : ControllerBase
     }
 
     [HttpPost("CriarAluno")]
-    public async Task<IActionResult> CriarAluno([FromBody][FromForm] AlunoRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> CriarAluno([FromForm] AlunoRequest request)
     {
         try
         {
@@ -30,7 +31,8 @@ public class AlunoController : ControllerBase
     }
 
     [HttpPatch("AtualizarAluno/{id}")]
-    public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromBody][FromForm] AlunoUpdate update)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromForm] AlunoUpdate update)
     {
         try
         {

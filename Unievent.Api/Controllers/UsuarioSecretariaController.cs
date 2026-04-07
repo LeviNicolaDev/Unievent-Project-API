@@ -4,6 +4,8 @@ using Unievent.Application.Interfaces.Services;
 
 namespace Unievent.Api.Controllers
 {
+    [ApiController]
+    [Route("api/[controller]")]
     public class UsuarioSecretariaController(IUsuarioSecretariaService _service) : ControllerBase
     {
         [HttpPost("CriarUsuarioSecretaria")]

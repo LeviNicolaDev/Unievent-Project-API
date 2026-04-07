@@ -9,6 +9,7 @@ namespace Unievent.Api.Controllers
     public class EventoController(IEventoService _service) : ControllerBase
     {
         [HttpPost("CriarEvento")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> CriarEvento([FromForm] EventoRequest request)
         {
             var response = await _service.CriarEvento(request);
@@ -16,6 +17,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpPut("AtualizarEvento/{id}")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> AtualizarEvento(int id, [FromForm] EventoUpdate update)
         {
             var response = await _service.AtualizarEvento(id, update);

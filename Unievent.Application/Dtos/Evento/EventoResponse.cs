@@ -10,6 +10,5 @@ public record EventoResponse
     public DateTime DataEvento { get; set; }
     public int Capacidade { get; set; }
     public IList<string> Thumbnail { get; set; }
-    public string ThumbnailOpcional { get; set; }
     public int IdResponsavelEvento { get; set; }
 }

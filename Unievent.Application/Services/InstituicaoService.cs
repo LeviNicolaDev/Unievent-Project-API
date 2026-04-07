@@ -17,9 +17,9 @@ public class InstituicaoService : IInstituicaoService
     async Task<InstituicaoResponse> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
     {
         var instituicao = await _repository.ListarInstituicaoById(id) ?? throw new Exception("Instituicao não encontrada");
-        if (update.IdEndereco.HasValue)
+        if (update.EnderecoId.HasValue)
         {
-            instituicao.IdEndereco = update.IdEndereco.Value;
+            instituicao.EnderecoId = update.EnderecoId.Value;
         }
 
         if (update.FotoPerfil != null)
@@ -53,7 +53,7 @@ public class InstituicaoService : IInstituicaoService
             Cnpj = instituicao.Cnpj,
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
-            IdEndereco = instituicao.IdEndereco
+            EnderecoId = instituicao.EnderecoId
         };
 
     }
@@ -86,7 +86,7 @@ public class InstituicaoService : IInstituicaoService
         {
             Cnpj = cnpjValido,
             EmailLogin = request.EmailLogin,
-            IdEndereco = request.IdEndereco,
+            EnderecoId = request.EnderecoId,
             FotoPerfil = imagem,
             SenhaLogin = senha
         };
@@ -99,7 +99,7 @@ public class InstituicaoService : IInstituicaoService
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
 
-            IdEndereco = instituicao.IdEndereco
+            EnderecoId = instituicao.EnderecoId
         };
     }
     async Task<bool> IInstituicaoService.DeletarInstituicao(int id)
@@ -120,7 +120,7 @@ public class InstituicaoService : IInstituicaoService
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
 
-            IdEndereco = instituicao.IdEndereco
+            EnderecoId = instituicao.EnderecoId
         };
     }
 
@@ -133,7 +133,7 @@ public class InstituicaoService : IInstituicaoService
             Cnpj = instituicao.Cnpj,
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
-            IdEndereco = instituicao.IdEndereco
+            EnderecoId = instituicao.EnderecoId
         }).ToList();
     }
 }

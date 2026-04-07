@@ -40,7 +40,7 @@ public class AppDbContext : DbContext
             .HasMaxLength(300);
         modelBuilder.Entity<Instituicao>()
             .Property(i => i.Cnpj)
-            .HasMaxLength(14);
+            .HasMaxLength(18);
         modelBuilder.Entity<Endereco>()
             .Property(e => e.Cep)
             .HasMaxLength(8);

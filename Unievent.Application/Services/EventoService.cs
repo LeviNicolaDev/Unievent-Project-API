@@ -48,14 +48,14 @@ namespace Unievent.Application.Services
             {
                 evento.Descricao = update.Descricao;
             }
-            if (update.IdResponsavelEvento != null)
+            if (update.ResponsavelEventoId != null)
             {
-                var responsavel = await _repositoryResponsavel.ListarResponsavelEventoById((int)update.IdResponsavelEvento);
+                var responsavel = await _repositoryResponsavel.ListarResponsavelEventoById((int)update.ResponsavelEventoId);
                 if (responsavel is null)
                 {
                     throw new Exception("Responsavel do evento não encontrado para ser atualizado");
                 }
-                evento.IdResponsavelEvento = (int)update.IdResponsavelEvento;
+                evento.ResponsavelEventoId = (int)update.ResponsavelEventoId;
             }
             if (update.Thumbnail != null)
             {
@@ -81,7 +81,7 @@ namespace Unievent.Application.Services
                 DataEvento = evento.DataEvento,
                 HoraEvento = evento.HoraEvento,
                 Descricao = evento.Descricao,
-                IdResponsavelEvento = evento.IdResponsavelEvento,
+                IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
             };
@@ -90,13 +90,13 @@ namespace Unievent.Application.Services
         async Task<EventoResponse> IEventoService.CriarEvento(EventoRequest request)
         {
             var imagens = new List<string>();
-            // QUANDO CATEGORIA ERA UM ENUM
-            // var categoria = Enum.TryParse(request.Categoria, out CategoriaEvento categoriaEvento) ? categoriaEvento : CategoriaEvento.palestra;
+
             foreach (var imagem in request.Thumbnail)
             {
                 var img = await SalvarImagem(imagem);
+                imagens.Add(img);
             }
-            ;
+
             var evento = new Evento
             {
                 Capacidade = request.Capacidade,
@@ -104,7 +104,7 @@ namespace Unievent.Application.Services
                 HoraEvento = request.HoraEvento,
                 DataEvento = request.DataEvento,
                 Descricao = request.Descricao,
-                IdResponsavelEvento = request.IdResponsavelEvento,
+                ResponsavelEventoId = request.ResponsavelEventoId,
                 Nome = request.Nome,
                 Thumbnail = imagens
             };
@@ -118,7 +118,7 @@ namespace Unievent.Application.Services
                 DataEvento = evento.DataEvento,
                 HoraEvento = evento.HoraEvento,
                 Descricao = evento.Descricao,
-                IdResponsavelEvento = evento.IdResponsavelEvento,
+                IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
             };
@@ -157,7 +157,7 @@ namespace Unievent.Application.Services
                 DataEvento = evento.DataEvento,
                 HoraEvento = evento.HoraEvento,
                 Descricao = evento.Descricao,
-                IdResponsavelEvento = evento.IdResponsavelEvento,
+                IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
             };
@@ -174,7 +174,7 @@ namespace Unievent.Application.Services
                 DataEvento = e.DataEvento,
                 HoraEvento = e.HoraEvento,
                 Descricao = e.Descricao,
-                IdResponsavelEvento = e.IdResponsavelEvento,
+                IdResponsavelEvento = e.ResponsavelEventoId,
                 Nome = e.Nome,
                 Thumbnail = e.Thumbnail.ToList()
             });

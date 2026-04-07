@@ -8,5 +8,5 @@ public class InstituicaoUpdate
     public string? SenhaLogin { get; set; }
     public IFormFile? FotoPerfil { get; set; }
     public string? Cnpj { get; set; }
-    public int? IdEndereco { get; set; }
+    public int? EnderecoId { get; set; }
 }

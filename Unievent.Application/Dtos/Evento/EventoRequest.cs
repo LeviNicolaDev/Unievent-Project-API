@@ -12,5 +12,5 @@ public record EventoRequest
     public int Capacidade { get; set; }
     public IList<IFormFile> Thumbnail { get; set; }
 
-    public int IdResponsavelEvento { get; set; }
+    public int ResponsavelEventoId { get; set; }
 }

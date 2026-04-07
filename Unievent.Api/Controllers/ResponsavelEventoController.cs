@@ -9,7 +9,8 @@ namespace Unievent.Api.Controllers
     public class ResponsavelEventoController(IResponsavelEventoService _service) : ControllerBase
     {
         [HttpPost("CriarResponsavelEvento")]
-        public async Task<IActionResult> CriarResponsavelEvento([FromBody] ResponsavelEventoRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> CriarResponsavelEvento([FromForm] ResponsavelEventoRequest request)
         {
             var response = await _service.CriarResponsavelEvento(request);
             return Ok(response);

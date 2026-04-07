@@ -96,7 +96,11 @@ namespace Unievent.Application.Services
         public async Task<string> SalvarImagem(IFormFile imagem)
         {
             var pasta = Path.Combine("wwwroot", "imagens");
-            Directory.CreateDirectory(pasta);
+            if (!Directory.Exists(pasta))
+            {
+                Directory.CreateDirectory(pasta);
+            }
+
 
             var nomeArquivo = $"{Guid.NewGuid()}{Path.GetExtension(imagem.FileName)}";
             var caminho = Path.Combine(pasta, nomeArquivo);

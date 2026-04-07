@@ -14,22 +14,24 @@ public class InstituicaoController : ControllerBase
         _service = service;
     }
     [HttpPost("CriarInstituicao")]
-    public async Task<IActionResult> CriarInstituicao([FromBody][FromForm] InstituicaoRequest request)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> CriarInstituicao([FromForm] InstituicaoRequest request)
     {
         try
         {
             var instituicao = await _service.CriarInstituicao(request);
             return Ok(instituicao);
         }
-        catch (System.Exception)
+        catch (System.Exception ex)
         {
 
-            throw new Exception("Erro ao criar instituicao");
+            throw new Exception("Erro ao criar instituicao", ex);
         }
     }
 
     [HttpPatch("AtualizarInstituicao/{id}")]
-    public async Task<IActionResult> AtualizarInstituicao([FromRoute] int id, [FromBody][FromForm] InstituicaoUpdate update)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> AtualizarInstituicao([FromRoute] int id, [FromForm] InstituicaoUpdate update)
     {
         try
         {
