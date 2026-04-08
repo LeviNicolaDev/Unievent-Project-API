@@ -1,6 +1,9 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Unievent.Api.Configurations.DependencyInjection;
+using Unievent.Application.Validators.Aluno;
 using Unievent.Infra.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,6 +20,9 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<AlunoRequestValidator>();
 
 var app = builder.Build();
 
