@@ -10,11 +10,11 @@ namespace Unievent.Application.Services
     {
 
         private readonly IEventoRepository _repository;
-        private readonly IResponsavelEventoRepository _repositoryResponsavel;
-        public EventoService(IEventoRepository repository, IResponsavelEventoRepository responsavelEventoRepository)
+
+        public EventoService(IEventoRepository repository)
         {
             _repository = repository;
-            _repositoryResponsavel = responsavelEventoRepository;
+
         }
 
         async Task<EventoResponse> IEventoService.AtualizarEvento(int id, EventoUpdate update)
@@ -50,10 +50,14 @@ namespace Unievent.Application.Services
             }
             if (update.ResponsavelEventoId != null)
             {
-                var responsavel = await _repositoryResponsavel.ListarResponsavelEventoById((int)update.ResponsavelEventoId);
-                if (responsavel is null)
+                var responsavel = await _repository.ListarEventoByResponsavel((int)update.ResponsavelEventoId);
+                if (responsavel != null && responsavel.DataEvento == evento.DataEvento)
                 {
-                    throw new Exception("Responsavel do evento não encontrado para ser atualizado");
+                    throw new Exception("O responsável já possui um evento cadastrado para esta data.");
+                }
+                else if (responsavel == null)
+                {
+                    throw new Exception("Responsável não encontrado.");
                 }
                 evento.ResponsavelEventoId = (int)update.ResponsavelEventoId;
             }
@@ -96,6 +100,13 @@ namespace Unievent.Application.Services
                 var img = await SalvarImagem(imagem);
                 imagens.Add(img);
             }
+            var responsavel = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
+            if (responsavel != null && responsavel.DataEvento == request.DataEvento)
+            {
+                throw new Exception("O responsável já possui um evento cadastrado para esta data.");
+            }
+
+
 
             var evento = new Evento
             {
@@ -178,6 +189,41 @@ namespace Unievent.Application.Services
                 Nome = e.Nome,
                 Thumbnail = e.Thumbnail.ToList()
             });
+        }
+
+        async Task<IEnumerable<EventoResponse>> IEventoService.ListarEventosByCategoria(string categoria)
+        {
+            var eventos = await _repository.ListarEventoByCategoria(categoria);
+
+            return eventos.Select(e => new EventoResponse
+            {
+                Id = e.Id,
+                Capacidade = e.Capacidade,
+                Categoria = e.Categoria,
+                DataEvento = e.DataEvento,
+                HoraEvento = e.HoraEvento,
+                Descricao = e.Descricao,
+                IdResponsavelEvento = e.ResponsavelEventoId,
+                Nome = e.Nome,
+                Thumbnail = e.Thumbnail.ToList()
+            });
+        }
+
+        async Task<EventoResponse> IEventoService.ListarEventosByResponsavel(int responsavelId)
+        {
+            var evento = await _repository.ListarEventoByResponsavel(responsavelId);
+            return new EventoResponse
+            {
+                Id = evento.Id,
+                Capacidade = evento.Capacidade,
+                Categoria = evento.Categoria,
+                DataEvento = evento.DataEvento,
+                HoraEvento = evento.HoraEvento,
+                Descricao = evento.Descricao,
+                IdResponsavelEvento = evento.ResponsavelEventoId,
+                Nome = evento.Nome,
+                Thumbnail = evento.Thumbnail.ToList()
+            };
         }
     }
 }

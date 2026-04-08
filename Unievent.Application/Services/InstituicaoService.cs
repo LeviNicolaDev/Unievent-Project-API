@@ -10,16 +10,19 @@ namespace Unievent.Application.Services;
 public class InstituicaoService : IInstituicaoService
 {
     private readonly IInstituicaoRepository _repository;
-    public InstituicaoService(IInstituicaoRepository repository)
+    private readonly IEnderecoRepository _repositoryEndereco;
+    public InstituicaoService(IInstituicaoRepository repository, IEnderecoRepository repositoryEndereco)
     {
         _repository = repository;
+        _repositoryEndereco = repositoryEndereco;
     }
     async Task<InstituicaoResponse> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
     {
         var instituicao = await _repository.ListarInstituicaoById(id) ?? throw new Exception("Instituicao não encontrada");
         if (update.EnderecoId.HasValue)
         {
-            instituicao.EnderecoId = update.EnderecoId.Value;
+            var endereco = await _repositoryEndereco.ListarEnderecoById(update.EnderecoId.Value) ?? throw new Exception("Endereço não encontrado para ser atualizado");
+            instituicao.EnderecoId = endereco.Id;
         }
 
         if (update.FotoPerfil != null)
@@ -79,6 +82,7 @@ public class InstituicaoService : IInstituicaoService
         {
             throw new Exception("Digte um CNPJ valido");
         }
+        var endereco = await _repositoryEndereco.ListarEnderecoById(request.EnderecoId) ?? throw new Exception("Endereço não encontrado para ser associado à instituição");
         var cnpjValido = cnpj.ToString();
         var imagem = await SalvarImagem(request.FotoPerfil);
         var senha = BCrypt.Net.BCrypt.HashPassword(request.SenhaLogin);
@@ -86,7 +90,7 @@ public class InstituicaoService : IInstituicaoService
         {
             Cnpj = cnpjValido,
             EmailLogin = request.EmailLogin,
-            EnderecoId = request.EnderecoId,
+            EnderecoId = endereco.Id,
             FotoPerfil = imagem,
             SenhaLogin = senha
         };

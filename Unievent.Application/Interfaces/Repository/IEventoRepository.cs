@@ -9,5 +9,7 @@ public interface IEventoRepository
     public Task<IEnumerable<Evento>> ListarEventos();
     public Task<Evento> ListarEventoById(int id);
     public Task<bool> DeletarEvento(Evento evento);
+    public Task<IEnumerable<Evento>> ListarEventoByCategoria(string categoria);
+    public Task<Evento> ListarEventoByResponsavel(int responsavelId);
     public Task SaveChangesAsync();
 }

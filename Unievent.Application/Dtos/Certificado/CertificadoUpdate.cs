@@ -4,6 +4,6 @@ public record CertificadoUpdate
 {
     public DateTime? DataCertifcado { get; set; }
     public string? Texto { get; set; }
-    public int? IdAluno { get; set; }
-    public int? IdEvento { get; set; }
+    public int? AlunoId { get; set; }
+    public int? EventoId { get; set; }
 }

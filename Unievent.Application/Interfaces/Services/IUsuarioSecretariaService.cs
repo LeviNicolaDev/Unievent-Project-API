@@ -9,4 +9,5 @@ public interface IUsuarioSecretariaService
     public Task<bool> DeletarUsuarioSecretaria(int id);
     public Task<IEnumerable<UsuarioSecretariaResponse>> ListarUsuarioSecretaria();
     public Task<UsuarioSecretariaResponse> ListarUsuarioSecretariaById(int id);
+    public Task<UsuarioSecretariaLoginResponse> Login(UsuarioSecretariaLoginRequest request);
 }

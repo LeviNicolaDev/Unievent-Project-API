@@ -44,5 +44,12 @@ namespace Unievent.Api.Controllers
             var response = await _service.DeletarEvento(id);
             return Ok(response);
         }
+
+        [HttpGet("ListarEventosByCategoria/{categoria}")]
+        public async Task<IActionResult> ListarEventosByCategoria([FromRoute] string categoria)
+        {
+            var response = await _service.ListarEventosByCategoria(categoria);
+            return Ok(response);
+        }
     }
 }

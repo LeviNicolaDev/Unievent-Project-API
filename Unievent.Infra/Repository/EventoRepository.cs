@@ -32,9 +32,20 @@ namespace Unievent.Infra.Repository
             return Task.FromResult(true);
         }
 
+        async Task<IEnumerable<Evento>> IEventoRepository.ListarEventoByCategoria(string categoria)
+        {
+            var eventos = await _context.Evento.Where(e => e.Categoria == categoria).ToListAsync();
+            return eventos;
+        }
+
         async Task<Evento> IEventoRepository.ListarEventoById(int id)
         {
             return await _context.Evento.Where(e => e.Id == id).FirstOrDefaultAsync();
+        }
+
+        async Task<Evento> IEventoRepository.ListarEventoByResponsavel(int responsavelId)
+        {
+            return await _context.Evento.Where(r => r.ResponsavelEventoId == responsavelId).FirstOrDefaultAsync();
         }
 
         async Task<IEnumerable<Evento>> IEventoRepository.ListarEventos()

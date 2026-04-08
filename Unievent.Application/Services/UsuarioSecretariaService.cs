@@ -30,6 +30,11 @@ namespace Unievent.Application.Services
 
                 usuarioSecretaria.NomeUsuario = update.NomeUsuario;
             }
+            if (!string.IsNullOrWhiteSpace(update.Senha))
+            {
+                var senhaHash = BCrypt.Net.BCrypt.HashPassword(update.Senha);
+                usuarioSecretaria.Senha = senhaHash;
+            }
 
             /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
              {
@@ -45,6 +50,7 @@ namespace Unievent.Application.Services
                 Id = usuarioSecretaria.Id,
                 EmailUsuario = usuarioSecretaria.EmailUsuario,
                 RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+
                 Chave = usuarioSecretaria.Chave,
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
@@ -54,13 +60,14 @@ namespace Unievent.Application.Services
         async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
         {
             var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Admin;
-            var status = Enum.TryParse(request.RoleUsuario, out Situacao situacao) ? situacao : Situacao.Inativo;
-            var usuarioExiste = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
+            var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
+
 
             var usuarioSecretaria = new UsuarioSecretaria
             {
                 NomeUsuario = request.NomeUsuario,
                 Chave = request.Chave,
+                Senha = senhaHash,
                 EmailUsuario = request.EmailUsuario,
                 RoleUsuario = role,
                 IsAtivo = true
@@ -113,6 +120,20 @@ namespace Unievent.Application.Services
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
             };
+        }
+
+        Task<UsuarioSecretariaLoginResponse> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
+        {
+            var usuarioSecretaria = _repository.ListarUsuarioSecretariaByEmail(request.Email).Result ?? throw new Exception(" UsuarioSecretaria não encontrado");
+            if (!BCrypt.Net.BCrypt.Verify(request.Senha, usuarioSecretaria.Senha))
+            {
+                throw new Exception("Senha incorreta");
+            }
+            return Task.FromResult(new UsuarioSecretariaLoginResponse
+            {
+                Token = "sjikjd"
+
+            });
         }
     }
 }

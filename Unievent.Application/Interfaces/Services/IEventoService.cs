@@ -8,5 +8,7 @@ public interface IEventoService
     public Task<EventoResponse> AtualizarEvento(int id, EventoUpdate update);
     public Task<bool> DeletarEvento(int id);
     public Task<IEnumerable<EventoResponse>> ListarEventos();
+    public Task<IEnumerable<EventoResponse>> ListarEventosByCategoria(string categoria);
+    public Task<EventoResponse> ListarEventosByResponsavel(int responsavelId);
     public Task<EventoResponse> ListarEventoById(int id);
 }

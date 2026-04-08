@@ -23,13 +23,13 @@ public class CertificadoService : ICertificadoService
         {
             certificado.DataCertifcado = update.DataCertifcado.Value;
         }
-        if (update.IdAluno.HasValue)
+        if (update.AlunoId.HasValue)
         {
-            certificado.IdAluno = update.IdAluno.Value;
+            certificado.AlunoId = update.AlunoId.Value;
         }
-        if (update.IdEvento.HasValue)
+        if (update.EventoId.HasValue)
         {
-            certificado.IdEvento = update.IdEvento.Value;
+            certificado.EventoId = update.EventoId.Value;
         }
         await _repository.AtualizarCertificado(certificado);
         await _repository.SaveChangesAsync();
@@ -37,8 +37,8 @@ public class CertificadoService : ICertificadoService
         {
             Id = id,
             DataCertifcado = certificado.DataCertifcado,
-            IdAluno = certificado.IdAluno,
-            IdEvento = certificado.IdEvento,
+            AlunoId = certificado.AlunoId,
+            EventoId = certificado.EventoId,
             Texto = certificado.Texto
         };
     }
@@ -49,8 +49,8 @@ public class CertificadoService : ICertificadoService
         var certificado = new Certificado
         {
             DataCertifcado = request.DataCertifcado,
-            IdAluno = request.IdAluno,
-            IdEvento = request.IdEvento,
+            AlunoId = request.AlunoId,
+            EventoId = request.EventoId,
             Texto = request.Texto
         };
         await _repository.CriarCertificado(certificado);
@@ -59,8 +59,8 @@ public class CertificadoService : ICertificadoService
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
-            IdAluno = certificado.IdAluno,
-            IdEvento = certificado.IdEvento,
+            AlunoId = certificado.AlunoId,
+            EventoId = certificado.EventoId,
             Texto = certificado.Texto
         };
     }
@@ -80,8 +80,8 @@ public class CertificadoService : ICertificadoService
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
-            IdAluno = certificado.IdAluno,
-            IdEvento = certificado.IdEvento,
+            AlunoId = certificado.AlunoId,
+            EventoId = certificado.EventoId,
             Texto = certificado.Texto
         };
     }
@@ -93,8 +93,8 @@ public class CertificadoService : ICertificadoService
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
-            IdAluno = certificado.IdAluno,
-            IdEvento = certificado.IdEvento,
+            AlunoId = certificado.AlunoId,
+            EventoId = certificado.EventoId,
             Texto = certificado.Texto
         }).ToList();
     }

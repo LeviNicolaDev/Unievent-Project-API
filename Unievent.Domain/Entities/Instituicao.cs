@@ -20,6 +20,6 @@ public class Instituicao : EntidadeBase
     public required string SenhaLogin { get; set; }
     public required string FotoPerfil { get; set; }
     public required string Cnpj { get; set; }
-    public int EnderecoId { get; set; }
+    public required int EnderecoId { get; set; }
     public Endereco Endereco { get; set; }
 }
