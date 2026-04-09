@@ -1,12 +1,13 @@
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.ResponsavelEvento;
 
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IResponsavelEventoService
 {
-    public Task<ResponsavelEventoResponse> CriarResponsavelEvento(ResponsavelEventoRequest responsavel);
-    public Task<ResponsavelEventoResponse> ListarResponsavelEventoById(int id);
-    public Task<IEnumerable<ResponsavelEventoResponse>> ListarResponsaveisEvento();
-    public Task<ResponsavelEventoResponse> AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel);
-    public Task<bool> DeletarResponsavelEvento(int id);
+    public Task<ResultData<ResponsavelEventoResponse>> CriarResponsavelEvento(ResponsavelEventoRequest responsavel);
+    public Task<ResultData<ResponsavelEventoResponse>> ListarResponsavelEventoById(int id);
+    public Task<ResultData<IEnumerable<ResponsavelEventoResponse>>> ListarResponsaveisEvento();
+    public Task<ResultData<ResponsavelEventoResponse>> AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel);
+    public Task<Result> DeletarResponsavelEvento(int id);
 }

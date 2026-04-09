@@ -1,4 +1,6 @@
+using System.Reflection.Metadata.Ecma335;
 using Microsoft.AspNetCore.Http;
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.Aluno;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -14,10 +16,13 @@ public class AlunoService : IAlunoService
     {
         _repository = repository;
     }
-    async Task<AlunoResponse> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
+    async Task<ResultData<AlunoResponse>> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
     {
-
-        var aluno = await _repository.ListarAlunoById(id) ?? throw new Exception("Aluno não encontrado");
+        var aluno = await _repository.ListarAlunoById(id);
+        if (aluno is null)
+        {
+            return ResultData<AlunoResponse>.Failure("Aluno não encontrado");
+        }
         if (!string.IsNullOrWhiteSpace(update.Nome))
         {
             aluno.Nome = update.Nome;
@@ -41,7 +46,7 @@ public class AlunoService : IAlunoService
         }
         await _repository.AtualizarAluno(aluno);
         await _repository.SaveChangesAsync();
-        return new AlunoResponse
+        return new ResultData<AlunoResponse>(new AlunoResponse
         {
             Id = id,
             Nome = aluno.Nome,
@@ -50,7 +55,7 @@ public class AlunoService : IAlunoService
             IsAtivo = aluno.IsAtivo,
 
             DataNascimento = aluno.DataNascimento
-        };
+        });
     }
 
     public async Task<string> SalvarImagem(IFormFile imagem)
@@ -70,10 +75,15 @@ public class AlunoService : IAlunoService
         return $"/imagens/{nomeArquivo}";
     }
 
-    async Task<AlunoResponse> IAlunoService.CriarAluno(AlunoRequest request)
+    async Task<ResultData<AlunoResponse>> IAlunoService.CriarAluno(AlunoRequest request)
     {
         var senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
         var imagem = await SalvarImagem(request.FotoPerfil);
+        var emailExistente = await _repository.ListarAlunoByEmail(request.Email);
+        if (emailExistente != null)
+        {
+            return ResultData<AlunoResponse>.Failure("Email já cadastrado para outro aluno");
+        }
         var aluno = new Aluno
         {
             Nome = request.Nome,
@@ -85,7 +95,7 @@ public class AlunoService : IAlunoService
         };
         await _repository.CriarAluno(aluno);
         await _repository.SaveChangesAsync();
-        return new AlunoResponse
+        return ResultData<AlunoResponse>.Success(new AlunoResponse
         {
             Id = aluno.Id,
             Nome = aluno.Nome,
@@ -94,22 +104,30 @@ public class AlunoService : IAlunoService
             IsAtivo = aluno.IsAtivo,
 
             DataNascimento = aluno.DataNascimento
-        };
+        });
     }
 
-    async Task<bool> IAlunoService.DeletarAluno(int id)
+    async Task<Result> IAlunoService.DeletarAluno(int id)
     {
-        var aluno = await _repository.ListarAlunoById(id) ?? throw new Exception("Aluno não encontrado");
+        var aluno = await _repository.ListarAlunoById(id);
+        if (aluno is null)
+        {
+            return Result.Failure("Aluno não encontrado");
+        }
         aluno.IsAtivo = false;
         await _repository.SaveChangesAsync();
-        return true;
+        return Result.Success("Aluno deletado com sucesso");
     }
 
-    async Task<AlunoResponse> IAlunoService.ListarAlunoById(int id)
+    async Task<ResultData<AlunoResponse>> IAlunoService.ListarAlunoById(int id)
     {
-        var aluno = await _repository.ListarAlunoById(id) ?? throw new Exception("Aluno não encontrado");
+        var aluno = await _repository.ListarAlunoById(id);
+        if (aluno is null)
+        {
+            return ResultData<AlunoResponse>.Failure("Aluno não encontrado");
+        }
 
-        return new AlunoResponse
+        return ResultData<AlunoResponse>.Success(new AlunoResponse
         {
             Id = aluno.Id,
             Nome = aluno.Nome,
@@ -118,13 +136,13 @@ public class AlunoService : IAlunoService
             IsAtivo = aluno.IsAtivo,
             DataNascimento = aluno.DataNascimento
 
-        };
+        });
     }
 
-    async Task<IList<AlunoResponse>> IAlunoService.ListarAlunos()
+    async Task<ResultData<IEnumerable<AlunoResponse>>> IAlunoService.ListarAlunos()
     {
         var alunos = await _repository.ListarAlunos();
-        return alunos.Select(a => new AlunoResponse
+        return ResultData<IEnumerable<AlunoResponse>>.Success(alunos.Select(a => new AlunoResponse
         {
             Id = a.Id,
             Nome = a.Nome,
@@ -133,6 +151,6 @@ public class AlunoService : IAlunoService
             IsAtivo = a.IsAtivo,
             DataNascimento = a.DataNascimento
 
-        }).ToList();
+        }));
     }
 }

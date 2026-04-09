@@ -12,35 +12,57 @@ namespace Unievent.Api.Controllers
         public async Task<IActionResult> CriarUsuarioSecretaria([FromBody] UsuarioSecretariaRequest request)
         {
             var response = await _service.CriarUsuarioSecretaria(request);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return BadRequest(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpPut("AtualizarUsuarioSecretaria/{id}")]
         public async Task<IActionResult> AtualizarUsuarioSecretaria(int id, [FromBody] UsuarioSecretariaUpdate update)
         {
             var response = await _service.AtualizarUsuarioSecretaria(id, update);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
+
         }
 
         [HttpGet("ListarUsuarioSecretaria")]
         public async Task<IActionResult> ListarUsuarioSecretaria()
         {
             var response = await _service.ListarUsuarioSecretaria();
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
+
         }
 
         [HttpGet("ListarUsuarioSecretariaById/{id}")]
         public async Task<IActionResult> ListarUsuarioSecretariaById(int id)
         {
             var response = await _service.ListarUsuarioSecretariaById(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpDelete("DeletarUsuarioSecretaria/{id}")]
         public async Task<IActionResult> DeletarUsuarioSecretaria(int id)
         {
             var response = await _service.DeletarUsuarioSecretaria(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Message);
         }
     }
 }

@@ -13,7 +13,11 @@ namespace Unievent.Api.Controllers
         public async Task<IActionResult> CriarEvento([FromForm] EventoRequest request)
         {
             var response = await _service.CriarEvento(request);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return BadRequest(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpPut("AtualizarEvento/{id}")]
@@ -21,35 +25,55 @@ namespace Unievent.Api.Controllers
         public async Task<IActionResult> AtualizarEvento(int id, [FromForm] EventoUpdate update)
         {
             var response = await _service.AtualizarEvento(id, update);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpGet("ListarEventos")]
         public async Task<IActionResult> ListarEventos()
         {
             var response = await _service.ListarEventos();
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpGet("ListarEventoById/{id}")]
         public async Task<IActionResult> ListarEventoById(int id)
         {
             var response = await _service.ListarEventoById(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpDelete("DeletarEvento/{id}")]
         public async Task<IActionResult> DeletarEvento(int id)
         {
             var response = await _service.DeletarEvento(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Message);
         }
 
         [HttpGet("ListarEventosByCategoria/{categoria}")]
         public async Task<IActionResult> ListarEventosByCategoria([FromRoute] string categoria)
         {
             var response = await _service.ListarEventosByCategoria(categoria);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
     }
 }

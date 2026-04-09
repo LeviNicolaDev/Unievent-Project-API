@@ -31,6 +31,11 @@ namespace Unievent.Infra.Repository
             return Task.FromResult(true);
         }
 
+        async Task<Aluno> IAlunoRepository.ListarAlunoByEmail(string email)
+        {
+            return await _context.Aluno.FirstOrDefaultAsync(a => a.Email == email);
+        }
+
         async Task<Aluno> IAlunoRepository.ListarAlunoById(int id)
         {
             return await _context.Aluno.Where(a => a.Id == id).FirstOrDefaultAsync();

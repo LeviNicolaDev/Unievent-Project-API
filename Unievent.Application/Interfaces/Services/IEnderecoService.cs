@@ -1,12 +1,13 @@
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.Endereco;
 
 namespace Unievent.Application.Interfaces.Services;
 
 public interface IEnderecoService
 {
-    public Task<EnderecoResponse> CriarEndereco(EnderecoRequest request);
-    public Task<EnderecoResponse> AtualizarEndereco(int id, EnderecoUpdate update);
-    public Task<bool> DeletarEndereco(int id);
-    public Task<IList<EnderecoResponse>> ListarEnderecos();
-    public Task<EnderecoResponse> ListarEnderecoById(int id);
+    public Task<ResultData<EnderecoResponse>> CriarEndereco(EnderecoRequest request);
+    public Task<ResultData<EnderecoResponse>> AtualizarEndereco(int id, EnderecoUpdate update);
+    public Task<Result> DeletarEndereco(int id);
+    public Task<ResultData<IEnumerable<EnderecoResponse>>> ListarEnderecos();
+    public Task<ResultData<EnderecoResponse>> ListarEnderecoById(int id);
 }

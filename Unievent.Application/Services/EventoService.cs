@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -17,11 +18,15 @@ namespace Unievent.Application.Services
 
         }
 
-        async Task<EventoResponse> IEventoService.AtualizarEvento(int id, EventoUpdate update)
+        async Task<ResultData<EventoResponse>> IEventoService.AtualizarEvento(int id, EventoUpdate update)
         {
             IList<string> imagens = new List<string>(); // Lista para armazenar os caminhos das imagens salvas
 
-            var evento = await _repository.ListarEventoById(id) ?? throw new Exception("Evento não encontrado");
+            var evento = await _repository.ListarEventoById(id);
+            if (evento is null)
+            {
+                return ResultData<EventoResponse>.Failure("Evento não encontrado");
+            }
             if (update.Capacidade.HasValue)
             {
                 evento.Capacidade = update.Capacidade.Value;
@@ -53,11 +58,11 @@ namespace Unievent.Application.Services
                 var responsavel = await _repository.ListarEventoByResponsavel((int)update.ResponsavelEventoId);
                 if (responsavel != null && responsavel.DataEvento == evento.DataEvento)
                 {
-                    throw new Exception("O responsável já possui um evento cadastrado para esta data.");
+                    return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
                 }
                 else if (responsavel == null)
                 {
-                    throw new Exception("Responsável não encontrado.");
+                    return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
                 }
                 evento.ResponsavelEventoId = (int)update.ResponsavelEventoId;
             }
@@ -77,7 +82,7 @@ namespace Unievent.Application.Services
 
             await _repository.AtualizarEvento(evento);
             await _repository.SaveChangesAsync();
-            return new EventoResponse
+            return ResultData<EventoResponse>.Success(new EventoResponse
             {
                 Id = id,
                 Capacidade = evento.Capacidade,
@@ -88,10 +93,10 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
-            };
+            });
         }
 
-        async Task<EventoResponse> IEventoService.CriarEvento(EventoRequest request)
+        async Task<ResultData<EventoResponse>> IEventoService.CriarEvento(EventoRequest request)
         {
             var imagens = new List<string>();
 
@@ -103,7 +108,7 @@ namespace Unievent.Application.Services
             var responsavel = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
             if (responsavel != null && responsavel.DataEvento == request.DataEvento)
             {
-                throw new Exception("O responsável já possui um evento cadastrado para esta data.");
+                return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
             }
 
 
@@ -121,7 +126,7 @@ namespace Unievent.Application.Services
             };
             await _repository.CriarEvento(evento);
             await _repository.SaveChangesAsync();
-            return new EventoResponse
+            return ResultData<EventoResponse>.Success(new EventoResponse
             {
                 Id = evento.Id,
                 Capacidade = evento.Capacidade,
@@ -132,7 +137,7 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
-            };
+            });
         }
 
         public async Task<string> SalvarImagem(IFormFile imagem)
@@ -149,18 +154,26 @@ namespace Unievent.Application.Services
             return $"/imagens/{nomeArquivo}";
         }
 
-        async Task<bool> IEventoService.DeletarEvento(int id)
+        async Task<Result> IEventoService.DeletarEvento(int id)
         {
-            var evento = await _repository.ListarEventoById(id) ?? throw new Exception("Evento não encontrado");
+            var evento = await _repository.ListarEventoById(id);
+            if (evento is null)
+            {
+                return Result.Failure("Evento não encontrado");
+            }
             await _repository.DeletarEvento(evento);
             await _repository.SaveChangesAsync();
-            return true;
+            return Result.Success("Evento deletado com sucesso");
         }
 
-        async Task<EventoResponse> IEventoService.ListarEventoById(int id)
+        async Task<ResultData<EventoResponse>> IEventoService.ListarEventoById(int id)
         {
-            var evento = await _repository.ListarEventoById(id) ?? throw new Exception("Evento não encontrado");
-            return new EventoResponse
+            var evento = await _repository.ListarEventoById(id);
+            if (evento is null)
+            {
+                return ResultData<EventoResponse>.Failure("Evento não encontrado");
+            }
+            return ResultData<EventoResponse>.Success(new EventoResponse
             {
                 Id = evento.Id,
                 Capacidade = evento.Capacidade,
@@ -171,13 +184,13 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = evento.ResponsavelEventoId,
                 Thumbnail = evento.Thumbnail.ToList(),
                 Nome = evento.Nome
-            };
+            });
         }
 
-        async Task<IEnumerable<EventoResponse>> IEventoService.ListarEventos()
+        async Task<ResultData<IEnumerable<EventoResponse>>> IEventoService.ListarEventos()
         {
             var eventos = await _repository.ListarEventos();
-            return eventos.Select(e => new EventoResponse
+            return ResultData<IEnumerable<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
             {
                 Id = e.Id,
                 Capacidade = e.Capacidade,
@@ -188,14 +201,14 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = e.ResponsavelEventoId,
                 Nome = e.Nome,
                 Thumbnail = e.Thumbnail.ToList()
-            });
+            }));
         }
 
-        async Task<IEnumerable<EventoResponse>> IEventoService.ListarEventosByCategoria(string categoria)
+        async Task<ResultData<IEnumerable<EventoResponse>>> IEventoService.ListarEventosByCategoria(string categoria)
         {
             var eventos = await _repository.ListarEventoByCategoria(categoria);
 
-            return eventos.Select(e => new EventoResponse
+            return ResultData<IEnumerable<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
             {
                 Id = e.Id,
                 Capacidade = e.Capacidade,
@@ -206,13 +219,17 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = e.ResponsavelEventoId,
                 Nome = e.Nome,
                 Thumbnail = e.Thumbnail.ToList()
-            });
+            }));
         }
 
-        async Task<EventoResponse> IEventoService.ListarEventosByResponsavel(int responsavelId)
+        async Task<ResultData<EventoResponse>> IEventoService.ListarEventosByResponsavel(int responsavelId)
         {
             var evento = await _repository.ListarEventoByResponsavel(responsavelId);
-            return new EventoResponse
+            if (evento is null)
+            {
+                return ResultData<EventoResponse>.Failure("Evento não encontrado para o responsável informado");
+            }
+            return ResultData<EventoResponse>.Success(new EventoResponse
             {
                 Id = evento.Id,
                 Capacidade = evento.Capacidade,
@@ -223,7 +240,7 @@ namespace Unievent.Application.Services
                 IdResponsavelEvento = evento.ResponsavelEventoId,
                 Nome = evento.Nome,
                 Thumbnail = evento.Thumbnail.ToList()
-            };
+            });
         }
     }
 }

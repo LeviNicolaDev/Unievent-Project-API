@@ -18,76 +18,71 @@ public class CertificadoController : ControllerBase
     [HttpPost("CriarCertificado")]
     public async Task<IActionResult> CriarCertificado([FromBody] CertificadoRequest request)
     {
-        try
+        var certificado = await _service.CriarCertificado(request);
+        if (certificado.IsFailure)
         {
-            var certificado = await _service.CriarCertificado(request);
-            return Ok(certificado);
+            return BadRequest(certificado.Message);
         }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao criar certificado");
-        }
+        return Ok(certificado.Data);
+
+
     }
 
     [HttpPatch("AtualizarCertificado/{id}")]
     public async Task<IActionResult> AtualizarCertificado([FromRoute] int id, [FromBody] CertificadoUpdate update)
     {
-        try
+        var certificado = await _service.AtualizarCertificado(id, update);
+        if (certificado.IsFailure)
         {
-            var certificado = await _service.AtualizarCertificado(id, update);
-            return Ok(certificado);
+            return NotFound(certificado.Message);
         }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao atualizar certificado");
-        }
+
+        return Ok(certificado.Data);
+
     }
 
     [HttpGet("ListarCertificados")]
     public async Task<IActionResult> ListarCertificados()
     {
-        try
+        var certificados = await _service.ListarCertificados();
+        if (certificados.IsFailure)
         {
-            var certificados = await _service.ListarCertificados();
-            return Ok(certificados);
+            return NotFound(certificados.Message);
         }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao listar certificados");
-        }
+        return Ok(certificados.Data);
+
+
     }
 
     [HttpGet("ListarCertificadoById/{id}")]
     public async Task<IActionResult> ListarCertificadoById([FromRoute] int id)
     {
-        try
+        var certificado = await _service.ListarCertificadoById(id);
+        if (certificado.IsFailure)
         {
-            var certificado = await _service.ListarCertificadoById(id);
-            return Ok(certificado);
+            return NotFound(certificado.Message);
         }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao listar certificado por id");
-        }
+        return Ok(certificado.Data);
+
+
     }
 
     [HttpDelete("DeletarCertificado/{id}")]
     public async Task<IActionResult> DeletarCertificado([FromRoute] int id)
     {
-        try
+        var response = await _service.DeletarCertificado(id);
+        if (response.IsFailure)
         {
-            var response = await _service.DeletarCertificado(id);
-            return Ok(response);
+            return NotFound(response.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(response.Message);
 
-            throw new Exception("Erro ao deletar certificado");
-        }
+
+
     }
 
 

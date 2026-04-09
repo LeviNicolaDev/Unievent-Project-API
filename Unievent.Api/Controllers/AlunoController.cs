@@ -18,75 +18,60 @@ public class AlunoController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> CriarAluno([FromForm] AlunoRequest request)
     {
-        try
+        var aluno = await _service.CriarAluno(request);
+        if (aluno.IsFailure)
         {
-            var aluno = await _service.CriarAluno(request);
-            return Ok(aluno);
+            return BadRequest(aluno.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(aluno.Data);
 
-            throw new Exception("Erro ao criar aluno");
-        }
     }
 
     [HttpPatch("AtualizarAluno/{id}")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromForm] AlunoUpdate update)
     {
-        try
+        var aluno = await _service.AtualizarAluno(id, update);
+        if (aluno.IsFailure)
         {
-            var aluno = await _service.AtualizarAluno(id, update);
-            return Ok(aluno);
+            return BadRequest(aluno.Message);
         }
-        catch (System.Exception)
-        {
-
-            throw new Exception("Erro ao atualizar aluno");
-        }
+        return Ok(aluno.Data);
     }
 
     [HttpGet("ListarAlunos")]
     public async Task<IActionResult> ListarAlunos()
     {
-        try
+        var alunos = await _service.ListarAlunos();
+        if (alunos.IsFailure)
         {
-            var alunos = await _service.ListarAlunos();
-            return Ok(alunos);
+            return NotFound(alunos.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(alunos.Data);
 
-            throw new Exception("Erro ao listar alunos");
-        }
     }
 
     [HttpGet("ListarAlunoById/{id}")]
     public async Task<IActionResult> ListarAlunoById([FromRoute] int id)
     {
-        try
+        var aluno = await _service.ListarAlunoById(id);
+        if (aluno.IsFailure)
         {
-            var aluno = await _service.ListarAlunoById(id);
-            return Ok(aluno);
+            return NotFound(aluno.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(aluno.Data);
 
-            throw new Exception("Erro ao listar aluno por ID");
-        }
     }
     [HttpDelete("DeletarAluno/{id}")]
     public async Task<IActionResult> DeletarAluno([FromRoute] int id)
     {
-        try
-        {
-            await _service.DeletarAluno(id);
-            return Ok();
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao deletar aluno");
+        var aluno = await _service.DeletarAluno(id);
+        if (aluno.IsFailure)
+        {
+            return NotFound(aluno.Message);
         }
+        return Ok(aluno.Message);
+
     }
 }

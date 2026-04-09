@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.ResponsavelEvento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -13,12 +14,12 @@ namespace Unievent.Application.Services
         {
             _repository = repository;
         }
-        async Task<ResponsavelEventoResponse> IResponsavelEventoService.AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel)
+        async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel)
         {
             var responsavelAntigo = await _repository.ListarResponsavelEventoById(id);
             if (responsavelAntigo is null)
             {
-                throw new Exception("Responsavel não encontrado");
+                return ResultData<ResponsavelEventoResponse>.Failure("Responsável não encontrado");
             }
             if (!string.IsNullOrWhiteSpace(responsavel.Nome))
             {
@@ -29,15 +30,15 @@ namespace Unievent.Application.Services
                 var imagem = await SalvarImagem(responsavel.FotoPerfil);
                 responsavelAntigo.FotoPerfil = imagem;
             }
-            return new ResponsavelEventoResponse
+            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
             {
                 Id = id,
                 Nome = responsavelAntigo.Nome,
                 FotoPerfil = responsavelAntigo.FotoPerfil
-            };
+            });
         }
 
-        async Task<ResponsavelEventoResponse> IResponsavelEventoService.CriarResponsavelEvento(ResponsavelEventoRequest responsavel)
+        async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.CriarResponsavelEvento(ResponsavelEventoRequest responsavel)
         {
             var imagem = await SalvarImagem(responsavel.FotoPerfil);
             var responsavelNovo = new ResponsavelEvento
@@ -47,51 +48,51 @@ namespace Unievent.Application.Services
             };
             await _repository.CriarResponsavelEvento(responsavelNovo);
             await _repository.SaveChangesAsync();
-            return new ResponsavelEventoResponse
+            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
             {
                 Id = responsavelNovo.Id,
                 Nome = responsavelNovo.Nome,
                 FotoPerfil = responsavelNovo.FotoPerfil
-            };
+            });
         }
 
-        async Task<bool> IResponsavelEventoService.DeletarResponsavelEvento(int id)
+        async Task<Result> IResponsavelEventoService.DeletarResponsavelEvento(int id)
         {
             var responsavel = await _repository.ListarResponsavelEventoById(id);
             if (responsavel is null)
             {
-                throw new Exception("Responsavel do evento não encontrado");
+                return Result.Failure("Responsável do evento não encontrado");
             }
-            _repository.DeletarResponsavelEvento(responsavel);
+            await _repository.DeletarResponsavelEvento(responsavel);
             await _repository.SaveChangesAsync();
-            return true;
+            return Result.Success("Responsável do evento deletado com sucesso");
         }
 
-        async Task<IEnumerable<ResponsavelEventoResponse>> IResponsavelEventoService.ListarResponsaveisEvento()
+        async Task<ResultData<IEnumerable<ResponsavelEventoResponse>>> IResponsavelEventoService.ListarResponsaveisEvento()
         {
             var responsavels = await _repository.ListarResponsaveisEvento();
-            return responsavels.Select(l => new ResponsavelEventoResponse
+            return ResultData<IEnumerable<ResponsavelEventoResponse>>.Success(responsavels.Select(l => new ResponsavelEventoResponse
             {
                 Id = l.Id,
                 Nome = l.Nome,
                 FotoPerfil = l.FotoPerfil
-            });
+            }));
         }
 
-        async Task<ResponsavelEventoResponse> IResponsavelEventoService.ListarResponsavelEventoById(int id)
+        async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.ListarResponsavelEventoById(int id)
         {
             var responsavel = await _repository.ListarResponsavelEventoById(id);
             if (responsavel == null)
             {
-                throw new Exception("Resposavel do evento não encontrado");
+                return ResultData<ResponsavelEventoResponse>.Failure("Responsável do evento não encontrado");
             }
-            return new ResponsavelEventoResponse
+            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
             {
 
                 Id = responsavel.Id,
                 Nome = responsavel.Nome,
                 FotoPerfil = responsavel.FotoPerfil
-            };
+            });
         }
         public async Task<string> SalvarImagem(IFormFile imagem)
         {

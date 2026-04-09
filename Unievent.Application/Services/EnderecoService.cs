@@ -1,3 +1,4 @@
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.Endereco;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -12,12 +13,12 @@ public class EnderecoService : IEnderecoService
     {
         _repository = repository;
     }
-    async Task<EnderecoResponse> IEnderecoService.AtualizarEndereco(int id, EnderecoUpdate request)
+    async Task<ResultData<EnderecoResponse>> IEnderecoService.AtualizarEndereco(int id, EnderecoUpdate request)
     {
         var enderecoAntigo = await _repository.ListarEnderecoById(id);
         if (enderecoAntigo is null)
         {
-            throw new Exception("Endereco não encontrado");
+            return ResultData<EnderecoResponse>.Failure("Endereco não encontrado");
         }
         if (!string.IsNullOrWhiteSpace(request.Bairro))
         {
@@ -45,7 +46,7 @@ public class EnderecoService : IEnderecoService
         }
         await _repository.AtualizarEndereco(enderecoAntigo);
         await _repository.SaveChangesAsync();
-        return new EnderecoResponse
+        return ResultData<EnderecoResponse>.Success(new EnderecoResponse
         {
             Id = id,
             Bairro = enderecoAntigo.Bairro,
@@ -54,11 +55,11 @@ public class EnderecoService : IEnderecoService
             Estado = enderecoAntigo.Estado,
             Numero = enderecoAntigo.Numero,
             Rua = enderecoAntigo.Rua
-        };
+        });
 
 
     }
-    async Task<EnderecoResponse> IEnderecoService.CriarEndereco(EnderecoRequest request)
+    async Task<ResultData<EnderecoResponse>> IEnderecoService.CriarEndereco(EnderecoRequest request)
     {
         var endereco = new Endereco
         {
@@ -71,7 +72,7 @@ public class EnderecoService : IEnderecoService
         };
         await _repository.CriarEndereco(endereco);
         await _repository.SaveChangesAsync();
-        return new EnderecoResponse
+        return ResultData<EnderecoResponse>.Success(new EnderecoResponse
         {
             Id = endereco.Id,
             Bairro = endereco.Bairro,
@@ -80,34 +81,35 @@ public class EnderecoService : IEnderecoService
             Estado = endereco.Estado,
             Numero = endereco.Numero,
             Rua = endereco.Rua
-        };
+        });
     }
 
 
 
-    async Task<bool> IEnderecoService.DeletarEndereco(int id)
+    async Task<Result> IEnderecoService.DeletarEndereco(int id)
     {
         var endereco = await _repository.ListarEnderecoById(id);
         if (endereco is null)
         {
-            throw new Exception("Endereco não encontrado");
+            return Result.Failure("Endereco não encontrado");
+
 
         }
         await _repository.DeletarEndereco(endereco);
         await _repository.SaveChangesAsync();
-        return true;
+        return Result.Success("Endereco deletado com sucesso");
     }
 
 
-    async Task<EnderecoResponse> IEnderecoService.ListarEnderecoById(int id)
+    async Task<ResultData<EnderecoResponse>> IEnderecoService.ListarEnderecoById(int id)
     {
         var endereco = await _repository.ListarEnderecoById(id);
         if (endereco is null)
         {
-            throw new Exception("Endereco não encontrado");
+            return ResultData<EnderecoResponse>.Failure("Endereco não encontrado");
 
         }
-        return new EnderecoResponse
+        return ResultData<EnderecoResponse>.Success(new EnderecoResponse
         {
             Id = endereco.Id,
             Bairro = endereco.Bairro,
@@ -116,13 +118,13 @@ public class EnderecoService : IEnderecoService
             Estado = endereco.Estado,
             Numero = endereco.Numero,
             Rua = endereco.Rua
-        };
+        });
     }
 
-    async Task<IList<EnderecoResponse>> IEnderecoService.ListarEnderecos()
+    async Task<ResultData<IEnumerable<EnderecoResponse>>> IEnderecoService.ListarEnderecos()
     {
         var enderecos = await _repository.ListarEnderecos();
-        return enderecos.Select(e => new EnderecoResponse
+        return ResultData<IEnumerable<EnderecoResponse>>.Success(enderecos.Select(e => new EnderecoResponse
         {
             Id = e.Id,
             Bairro = e.Bairro,
@@ -131,6 +133,6 @@ public class EnderecoService : IEnderecoService
             Estado = e.Estado,
             Numero = e.Numero,
             Rua = e.Rua
-        }).ToList();
+        }));
     }
 }

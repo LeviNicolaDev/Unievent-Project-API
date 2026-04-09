@@ -13,35 +13,58 @@ namespace Unievent.Api.Controllers
         public async Task<IActionResult> CriarResponsavelEvento([FromForm] ResponsavelEventoRequest request)
         {
             var response = await _service.CriarResponsavelEvento(request);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return BadRequest(response.Message);
+            }
+            return Ok(response.Data);
+
         }
 
         [HttpPut("AtualizarResponsavelEvento/{id}")]
         public async Task<IActionResult> AtualizarResponsavelEvento(int id, [FromBody] ResponsavelEventoUpdate update)
         {
             var response = await _service.AtualizarResponsavelEvento(id, update);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
+
         }
 
         [HttpGet("ListarResponsaveisEvento")]
         public async Task<IActionResult> ListarResponsaveisEvento()
         {
             var response = await _service.ListarResponsaveisEvento();
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
+
         }
 
         [HttpGet("ListarResponsavelEventoById/{id}")]
         public async Task<IActionResult> ListarResponsavelEventoById(int id)
         {
             var response = await _service.ListarResponsavelEventoById(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Data);
         }
 
         [HttpDelete("DeletarResponsavelEvento/{id}")]
         public async Task<IActionResult> DeletarResponsavelEvento(int id)
         {
             var response = await _service.DeletarResponsavelEvento(id);
-            return Ok(response);
+            if (response.IsFailure)
+            {
+                return NotFound(response.Message);
+            }
+            return Ok(response.Message);
         }
     }
 }

@@ -1,3 +1,4 @@
+using Unievent.Application.Common;
 using Unievent.Application.Dtos.Certificado;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
@@ -12,9 +13,13 @@ public class CertificadoService : ICertificadoService
     {
         _repository = repository;
     }
-    async Task<CertificadoResponse> ICertificadoService.AtualizarCertificado(int id, CertificadoUpdate update)
+    async Task<ResultData<CertificadoResponse>> ICertificadoService.AtualizarCertificado(int id, CertificadoUpdate update)
     {
-        var certificado = await _repository.ListarCertificadoById(id) ?? throw new Exception("Certificado não encontrado");
+        var certificado = await _repository.ListarCertificadoById(id);
+        if (certificado is null)
+        {
+            return ResultData<CertificadoResponse>.Failure("Certificado não encontrado");
+        }
         if (!string.IsNullOrWhiteSpace(update.Texto))
         {
             certificado.Texto = update.Texto;
@@ -33,18 +38,18 @@ public class CertificadoService : ICertificadoService
         }
         await _repository.AtualizarCertificado(certificado);
         await _repository.SaveChangesAsync();
-        return new CertificadoResponse
+        return ResultData<CertificadoResponse>.Success(new CertificadoResponse
         {
             Id = id,
             DataCertifcado = certificado.DataCertifcado,
             AlunoId = certificado.AlunoId,
             EventoId = certificado.EventoId,
             Texto = certificado.Texto
-        };
+        });
     }
 
 
-    async Task<CertificadoResponse> ICertificadoService.CriarCertificado(CertificadoRequest request)
+    async Task<ResultData<CertificadoResponse>> ICertificadoService.CriarCertificado(CertificadoRequest request)
     {
         var certificado = new Certificado
         {
@@ -55,47 +60,55 @@ public class CertificadoService : ICertificadoService
         };
         await _repository.CriarCertificado(certificado);
         await _repository.SaveChangesAsync();
-        return new CertificadoResponse
+        return ResultData<CertificadoResponse>.Success(new CertificadoResponse
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
             AlunoId = certificado.AlunoId,
             EventoId = certificado.EventoId,
             Texto = certificado.Texto
-        };
+        });
     }
 
-    async Task<bool> ICertificadoService.DeletarCertificado(int id)
+    async Task<Result> ICertificadoService.DeletarCertificado(int id)
     {
-        var certificado = await _repository.ListarCertificadoById(id) ?? throw new Exception("Certificado não encontrado");
+        var certificado = await _repository.ListarCertificadoById(id);
+        if (certificado is null)
+        {
+            return Result.Failure("Certificado não encontrado");
+        }
         await _repository.DeletarCertificado(certificado);
         await _repository.SaveChangesAsync();
-        return true;
+        return Result.Success("Certificado deletado com sucesso");
     }
 
-    async Task<CertificadoResponse> ICertificadoService.ListarCertificadoById(int id)
+    async Task<ResultData<CertificadoResponse>> ICertificadoService.ListarCertificadoById(int id)
     {
-        var certificado = await _repository.ListarCertificadoById(id) ?? throw new Exception("Certificado não encontrado");
-        return new CertificadoResponse
+        var certificado = await _repository.ListarCertificadoById(id);
+        if (certificado is null)
+        {
+            return ResultData<CertificadoResponse>.Failure("Certificado não encontrado");
+        }
+        return ResultData<CertificadoResponse>.Success(new CertificadoResponse
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
             AlunoId = certificado.AlunoId,
             EventoId = certificado.EventoId,
             Texto = certificado.Texto
-        };
+        });
     }
 
-    async Task<IList<CertificadoResponse>> ICertificadoService.ListarCertificados()
+    async Task<ResultData<IEnumerable<CertificadoResponse>>> ICertificadoService.ListarCertificados()
     {
         var certificados = await _repository.ListarCertificados();
-        return certificados.Select(certificado => new CertificadoResponse
+        return ResultData<IEnumerable<CertificadoResponse>>.Success(certificados.Select(certificado => new CertificadoResponse
         {
             Id = certificado.Id,
             DataCertifcado = certificado.DataCertifcado,
             AlunoId = certificado.AlunoId,
             EventoId = certificado.EventoId,
             Texto = certificado.Texto
-        }).ToList();
+        }));
     }
 }

@@ -1,4 +1,5 @@
-﻿using Unievent.Application.Dtos.UsuarioSecretaria;
+﻿using Unievent.Application.Common;
+using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Entities;
@@ -15,14 +16,22 @@ namespace Unievent.Application.Services
         }
 
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
+        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
         {
-
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
-            if (!string.IsNullOrWhiteSpace(update.EmailUsuario))
+            var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(update.EmailUsuario);
+            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+            if (usuarioSecretaria is null)
+            {
+                return ResultData<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+            }
+            if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente == null)
             {
 
                 usuarioSecretaria.EmailUsuario = update.EmailUsuario;
+            }
+            else if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente != null)
+            {
+                return ResultData<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
             }
 
             if (!string.IsNullOrWhiteSpace(update.NomeUsuario))
@@ -45,7 +54,7 @@ namespace Unievent.Application.Services
 
             await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
             await _repository.SaveChangesAsync();
-            return new UsuarioSecretariaResponse
+            return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
             {
                 Id = usuarioSecretaria.Id,
                 EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -54,15 +63,19 @@ namespace Unievent.Application.Services
                 Chave = usuarioSecretaria.Chave,
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
-            };
+            });
         }
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
+        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
         {
             var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Admin;
             var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
 
-
+            var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
+            if (emailExistente != null)
+            {
+                return ResultData<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
+            }
             var usuarioSecretaria = new UsuarioSecretaria
             {
                 NomeUsuario = request.NomeUsuario,
@@ -74,29 +87,7 @@ namespace Unievent.Application.Services
             };
             await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
             await _repository.SaveChangesAsync();
-            return new UsuarioSecretariaResponse
-            {
-                Id = usuarioSecretaria.Id,
-                EmailUsuario = usuarioSecretaria.EmailUsuario,
-                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
-                Chave = usuarioSecretaria.Chave,
-                NomeUsuario = usuarioSecretaria.NomeUsuario,
-                IsAtivo = usuarioSecretaria.IsAtivo
-            };
-        }
-
-        async Task<bool> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
-        {
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
-            usuarioSecretaria.IsAtivo = false;
-            await _repository.SaveChangesAsync();
-            return true;
-        }
-
-        async Task<IEnumerable<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
-        {
-            var usuarioSecretarias = await _repository.ListarUsuarioSecretarias();
-            return usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
+            return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
             {
                 Id = usuarioSecretaria.Id,
                 EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -107,11 +98,22 @@ namespace Unievent.Application.Services
             });
         }
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
+        async Task<Result> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
         {
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
+            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+            if (usuarioSecretaria is null)
+            {
+                return Result.Failure("UsuarioSecretaria não encontrado");
+            }
+            usuarioSecretaria.IsAtivo = false;
+            await _repository.SaveChangesAsync();
+            return Result.Success("UsuarioSecretaria deletado com sucesso");
+        }
 
-            return new UsuarioSecretariaResponse
+        async Task<ResultData<IEnumerable<UsuarioSecretariaResponse>>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
+        {
+            var usuarioSecretarias = await _repository.ListarUsuarioSecretarias();
+            return ResultData<IEnumerable<UsuarioSecretariaResponse>>.Success(usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
             {
                 Id = usuarioSecretaria.Id,
                 EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -119,21 +121,44 @@ namespace Unievent.Application.Services
                 Chave = usuarioSecretaria.Chave,
                 NomeUsuario = usuarioSecretaria.NomeUsuario,
                 IsAtivo = usuarioSecretaria.IsAtivo
-            };
+            }));
         }
 
-        Task<UsuarioSecretariaLoginResponse> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
+        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
         {
-            var usuarioSecretaria = _repository.ListarUsuarioSecretariaByEmail(request.Email).Result ?? throw new Exception(" UsuarioSecretaria não encontrado");
+            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+            if (usuarioSecretaria is null)
+            {
+                return ResultData<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+            }
+
+            return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+            {
+                Id = usuarioSecretaria.Id,
+                EmailUsuario = usuarioSecretaria.EmailUsuario,
+                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+                Chave = usuarioSecretaria.Chave,
+                NomeUsuario = usuarioSecretaria.NomeUsuario,
+                IsAtivo = usuarioSecretaria.IsAtivo
+            });
+        }
+
+        async Task<ResultData<UsuarioSecretariaLoginResponse>> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
+        {
+            var usuarioSecretaria = _repository.ListarUsuarioSecretariaByEmail(request.Email).Result;
+            if (usuarioSecretaria is null)
+            {
+                return ResultData<UsuarioSecretariaLoginResponse>.Failure("UsuarioSecretaria não encontrado");
+            }
             if (!BCrypt.Net.BCrypt.Verify(request.Senha, usuarioSecretaria.Senha))
             {
-                throw new Exception("Senha incorreta");
+                return ResultData<UsuarioSecretariaLoginResponse>.Failure("Senha incorreta");
             }
-            return Task.FromResult(new UsuarioSecretariaLoginResponse
+            return await Task.FromResult(ResultData<UsuarioSecretariaLoginResponse>.Success(new UsuarioSecretariaLoginResponse
             {
                 Token = "sjikjd"
 
-            });
+            }));
         }
     }
 }

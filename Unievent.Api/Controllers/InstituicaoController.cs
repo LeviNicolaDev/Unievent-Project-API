@@ -17,77 +17,71 @@ public class InstituicaoController : ControllerBase
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> CriarInstituicao([FromForm] InstituicaoRequest request)
     {
-        try
+        var instituicao = await _service.CriarInstituicao(request);
+        if (instituicao.IsFailure)
         {
-            var instituicao = await _service.CriarInstituicao(request);
-            return Ok(instituicao);
+            return BadRequest(instituicao.Message);
         }
-        catch (System.Exception ex)
-        {
+        return Ok(instituicao.Data);
 
-            throw new Exception("Erro ao criar instituicao", ex);
-        }
+
     }
 
     [HttpPatch("AtualizarInstituicao/{id}")]
     [Consumes("multipart/form-data")]
     public async Task<IActionResult> AtualizarInstituicao([FromRoute] int id, [FromForm] InstituicaoUpdate update)
     {
-        try
-        {
-            var instituicao = await _service.AtualizarInstituicao(id, update);
-            return Ok(instituicao);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao atualizar instituicao");
+        var instituicao = await _service.AtualizarInstituicao(id, update);
+        if (instituicao.IsFailure)
+        {
+            return BadRequest(instituicao.Message);
         }
+        return Ok(instituicao.Data);
+
+
+
     }
 
     [HttpGet("ListarInstituicoes")]
     public async Task<IActionResult> ListarInstituicoes()
     {
-        try
-        {
-            var instituicoes = await _service.ListarInstituicoes();
-            return Ok(instituicoes);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao listar instituicoes");
+        var instituicoes = await _service.ListarInstituicoes();
+        if (instituicoes.IsFailure)
+        {
+            return NotFound(instituicoes.Message);
         }
+        return Ok(instituicoes.Data);
+
+
+
     }
 
     [HttpGet("ListarInstituicaoById/{id}")]
     public async Task<IActionResult> ListarInstituicaoById([FromRoute] int id)
     {
-        try
-        {
-            var instituicao = await _service.ListarInstituicaoById(id);
-            return Ok(instituicao);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao listar instituicao");
+        var instituicao = await _service.ListarInstituicaoById(id);
+        if (instituicao.IsFailure)
+        {
+            return NotFound(instituicao.Message);
         }
+        return Ok(instituicao.Data);
+
+
     }
 
     [HttpDelete("DeletarInstituicao/{id}")]
     public async Task<IActionResult> DeletarInstituicao([FromRoute] int id)
     {
-        try
+        var response = await _service.DeletarInstituicao(id);
+        if (response.IsFailure)
         {
-            var response = await _service.DeletarInstituicao(id);
-            return Ok(response);
+            return NotFound(response.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(response.Message);
 
-            throw new Exception("Erro ao deletar instituicao");
-        }
     }
 
 

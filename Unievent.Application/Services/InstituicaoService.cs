@@ -4,6 +4,7 @@ using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
 using Elekto.BrazilianDocuments;
 using Unievent.Domain.Entities;
+using Unievent.Application.Common;
 
 namespace Unievent.Application.Services;
 
@@ -16,12 +17,22 @@ public class InstituicaoService : IInstituicaoService
         _repository = repository;
         _repositoryEndereco = repositoryEndereco;
     }
-    async Task<InstituicaoResponse> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
+    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
     {
-        var instituicao = await _repository.ListarInstituicaoById(id) ?? throw new Exception("Instituicao não encontrada");
+        var emailExistente = await _repository.ListarInstituicaoByEmail(update.EmailLogin);
+        var instituicao = await _repository.ListarInstituicaoById(id);
+        if (instituicao is null)
+        {
+            return ResultData<InstituicaoResponse>.Failure("Instituição não encontrada");
+        }
+
         if (update.EnderecoId.HasValue)
         {
-            var endereco = await _repositoryEndereco.ListarEnderecoById(update.EnderecoId.Value) ?? throw new Exception("Endereço não encontrado para ser atualizado");
+            var endereco = await _repositoryEndereco.ListarEnderecoById(update.EnderecoId.Value);
+            if (endereco is null)
+            {
+                return ResultData<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
+            }
             instituicao.EnderecoId = endereco.Id;
         }
 
@@ -38,9 +49,13 @@ public class InstituicaoService : IInstituicaoService
             instituicao.SenhaLogin = senha;
         }
 
-        if (!string.IsNullOrWhiteSpace(update.EmailLogin))
+        if (!string.IsNullOrWhiteSpace(update.EmailLogin) && emailExistente == null)
         {
             instituicao.EmailLogin = update.EmailLogin;
+        }
+        else if (!string.IsNullOrWhiteSpace(update.EmailLogin) && emailExistente != null)
+        {
+            return ResultData<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
         }
 
         if (!string.IsNullOrWhiteSpace(update.Cnpj) && Cnpj.TryParse(update.Cnpj, out var cnpj))
@@ -50,14 +65,14 @@ public class InstituicaoService : IInstituicaoService
         }
         await _repository.AtualizarInstituicao(instituicao);
         await _repository.SaveChangesAsync();
-        return new InstituicaoResponse
+        return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
         {
             Id = id,
             Cnpj = instituicao.Cnpj,
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
             EnderecoId = instituicao.EnderecoId
-        };
+        });
 
     }
     public async Task<string> SalvarImagem(IFormFile imagem)
@@ -76,13 +91,22 @@ public class InstituicaoService : IInstituicaoService
 
 
 
-    async Task<InstituicaoResponse> IInstituicaoService.CriarInstituicao(InstituicaoRequest request)
+    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.CriarInstituicao(InstituicaoRequest request)
     {
         if (!Cnpj.TryParse(request.Cnpj, out var cnpj))
         {
-            throw new Exception("Digte um CNPJ valido");
+            return ResultData<InstituicaoResponse>.Failure("Digite um CNPJ válido");
         }
-        var endereco = await _repositoryEndereco.ListarEnderecoById(request.EnderecoId) ?? throw new Exception("Endereço não encontrado para ser associado à instituição");
+        var endereco = await _repositoryEndereco.ListarEnderecoById(request.EnderecoId);
+        if (endereco is null)
+        {
+            return ResultData<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
+        }
+        var emailExistente = await _repository.ListarInstituicaoByEmail(request.EmailLogin);
+        if (emailExistente != null)
+        {
+            return ResultData<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
+        }
         var cnpjValido = cnpj.ToString();
         var imagem = await SalvarImagem(request.FotoPerfil);
         var senha = BCrypt.Net.BCrypt.HashPassword(request.SenhaLogin);
@@ -96,7 +120,7 @@ public class InstituicaoService : IInstituicaoService
         };
         await _repository.CriarInstituicao(instituicao);
         await _repository.SaveChangesAsync();
-        return new InstituicaoResponse
+        return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
         {
             Id = instituicao.Id,
             Cnpj = instituicao.Cnpj,
@@ -104,20 +128,24 @@ public class InstituicaoService : IInstituicaoService
             FotoPerfil = instituicao.FotoPerfil,
 
             EnderecoId = instituicao.EnderecoId
-        };
+        });
     }
-    async Task<bool> IInstituicaoService.DeletarInstituicao(int id)
+    async Task<Result> IInstituicaoService.DeletarInstituicao(int id)
     {
         var instituicao = await _repository.ListarInstituicaoById(id) ?? throw new Exception("Instituicao não encontrada");
         await _repository.DeletarInstituicao(instituicao);
         await _repository.SaveChangesAsync();
-        return true;
+        return Result.Success("Instituicao deletada com sucesso");
     }
 
-    async Task<InstituicaoResponse> IInstituicaoService.ListarInstituicaoById(int id)
+    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.ListarInstituicaoById(int id)
     {
-        var instituicao = await _repository.ListarInstituicaoById(id) ?? throw new Exception("Instituicao não encontrada");
-        return new InstituicaoResponse
+        var instituicao = await _repository.ListarInstituicaoById(id);
+        if (instituicao is null)
+        {
+            return ResultData<InstituicaoResponse>.Failure("Instituição não encontrada");
+        }
+        return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
         {
             Id = id,
             Cnpj = instituicao.Cnpj,
@@ -125,19 +153,19 @@ public class InstituicaoService : IInstituicaoService
             FotoPerfil = instituicao.FotoPerfil,
 
             EnderecoId = instituicao.EnderecoId
-        };
+        });
     }
 
-    async Task<IList<InstituicaoResponse>> IInstituicaoService.ListarInstituicoes()
+    async Task<ResultData<IEnumerable<InstituicaoResponse>>> IInstituicaoService.ListarInstituicoes()
     {
         var instituicoes = await _repository.ListarInstituicoes();
-        return instituicoes.Select(instituicao => new InstituicaoResponse
+        return ResultData<IEnumerable<InstituicaoResponse>>.Success(instituicoes.Select(instituicao => new InstituicaoResponse
         {
             Id = instituicao.Id,
             Cnpj = instituicao.Cnpj,
             EmailLogin = instituicao.EmailLogin,
             FotoPerfil = instituicao.FotoPerfil,
             EnderecoId = instituicao.EnderecoId
-        }).ToList();
+        }));
     }
 }

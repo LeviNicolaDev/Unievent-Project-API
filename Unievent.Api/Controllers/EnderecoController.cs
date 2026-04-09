@@ -17,76 +17,68 @@ public class EnderecoController : ControllerBase
     [HttpPost("CriarEndereco")]
     public async Task<IActionResult> CriarEndereco([FromBody] EnderecoRequest request)
     {
-        try
-        {
-            var endereco = await _service.CriarEndereco(request);
-            return Ok(endereco);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao criar endereco");
+        var endereco = await _service.CriarEndereco(request);
+        if (endereco.IsFailure)
+        {
+            return BadRequest(endereco.Message);
         }
+        return Ok(endereco.Data);
+
     }
 
     [HttpPatch("AtualizarEndereco/{id}")]
     public async Task<IActionResult> AtualizarEndereco([FromRoute] int id, [FromBody] EnderecoUpdate update)
     {
-        try
-        {
-            var endereco = await _service.AtualizarEndereco(id, update);
-            return Ok(endereco);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao atualizar endereco");
+        var endereco = await _service.AtualizarEndereco(id, update);
+        if (endereco.IsFailure)
+        {
+            return NotFound(endereco.Message);
         }
+        return Ok(endereco.Data);
+
     }
 
     [HttpGet("ListarEnderecos")]
     public async Task<IActionResult> ListarEnderecos()
     {
-        try
-        {
-            var enderecos = await _service.ListarEnderecos();
-            return Ok(enderecos);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao listar enderecos");
+
+        var enderecos = await _service.ListarEnderecos();
+        if (enderecos.IsFailure)
+        {
+            return NotFound(enderecos.Message);
         }
+        return Ok(enderecos.Data);
+
+
     }
 
     [HttpGet("ListarEnderecoById/{id}")]
     public async Task<IActionResult> ListarEnderecoById([FromRoute] int id)
     {
-        try
+        var endereco = await _service.ListarEnderecoById(id);
+        if (endereco.IsFailure)
         {
-            var endereco = await _service.ListarEnderecoById(id);
-            return Ok(endereco);
+            return NotFound(endereco.Message);
         }
-        catch (System.Exception)
-        {
+        return Ok(endereco.Data);
 
-            throw new Exception("Erro ao listar endereco");
-        }
     }
 
     [HttpDelete("DeletarEndereco/{id}")]
     public async Task<IActionResult> DeletarEndereco([FromRoute] int id)
     {
-        try
-        {
-            var response = await _service.DeletarEndereco(id);
-            return Ok(response);
-        }
-        catch (System.Exception)
-        {
 
-            throw new Exception("Erro ao deletar endereco");
+        var response = await _service.DeletarEndereco(id);
+        if (response.IsFailure)
+        {
+            return NotFound(response.Message);
         }
+        return Ok(response.Message);
+
+
     }
 
 }
