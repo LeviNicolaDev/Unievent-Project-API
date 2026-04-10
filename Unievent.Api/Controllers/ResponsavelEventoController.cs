@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.ResponsavelEvento;
 using Unievent.Application.Interfaces.Services;
 
@@ -10,6 +11,7 @@ namespace Unievent.Api.Controllers
     {
         [HttpPost("CriarResponsavelEvento")]
         [Consumes("multipart/form-data")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> CriarResponsavelEvento([FromForm] ResponsavelEventoRequest request)
         {
             var response = await _service.CriarResponsavelEvento(request);
@@ -22,6 +24,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpPut("AtualizarResponsavelEvento/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> AtualizarResponsavelEvento(int id, [FromBody] ResponsavelEventoUpdate update)
         {
             var response = await _service.AtualizarResponsavelEvento(id, update);
@@ -34,6 +37,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarResponsaveisEvento")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarResponsaveisEvento()
         {
             var response = await _service.ListarResponsaveisEvento();
@@ -46,6 +50,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarResponsavelEventoById/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarResponsavelEventoById(int id)
         {
             var response = await _service.ListarResponsavelEventoById(id);
@@ -57,6 +62,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpDelete("DeletarResponsavelEvento/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> DeletarResponsavelEvento(int id)
         {
             var response = await _service.DeletarResponsavelEvento(id);

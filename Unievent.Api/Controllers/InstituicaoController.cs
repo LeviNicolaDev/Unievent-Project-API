@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Instituicao;
 using Unievent.Application.Interfaces.Services;
@@ -15,6 +16,7 @@ public class InstituicaoController : ControllerBase
     }
     [HttpPost("CriarInstituicao")]
     [Consumes("multipart/form-data")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CriarInstituicao([FromForm] InstituicaoRequest request)
     {
         var instituicao = await _service.CriarInstituicao(request);
@@ -29,6 +31,7 @@ public class InstituicaoController : ControllerBase
 
     [HttpPatch("AtualizarInstituicao/{id}")]
     [Consumes("multipart/form-data")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AtualizarInstituicao([FromRoute] int id, [FromForm] InstituicaoUpdate update)
     {
 
@@ -44,6 +47,7 @@ public class InstituicaoController : ControllerBase
     }
 
     [HttpGet("ListarInstituicoes")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarInstituicoes()
     {
 
@@ -59,6 +63,7 @@ public class InstituicaoController : ControllerBase
     }
 
     [HttpGet("ListarInstituicaoById/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarInstituicaoById([FromRoute] int id)
     {
 
@@ -73,6 +78,7 @@ public class InstituicaoController : ControllerBase
     }
 
     [HttpDelete("DeletarInstituicao/{id}")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> DeletarInstituicao([FromRoute] int id)
     {
         var response = await _service.DeletarInstituicao(id);

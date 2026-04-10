@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Endereco;
 using Unievent.Application.Interfaces.Services;
@@ -14,7 +15,9 @@ public class EnderecoController : ControllerBase
         _service = service;
     }
 
+
     [HttpPost("CriarEndereco")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CriarEndereco([FromBody] EnderecoRequest request)
     {
 
@@ -28,6 +31,7 @@ public class EnderecoController : ControllerBase
     }
 
     [HttpPatch("AtualizarEndereco/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AtualizarEndereco([FromRoute] int id, [FromBody] EnderecoUpdate update)
     {
 
@@ -41,6 +45,7 @@ public class EnderecoController : ControllerBase
     }
 
     [HttpGet("ListarEnderecos")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarEnderecos()
     {
 
@@ -56,6 +61,7 @@ public class EnderecoController : ControllerBase
     }
 
     [HttpGet("ListarEnderecoById/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarEnderecoById([FromRoute] int id)
     {
         var endereco = await _service.ListarEnderecoById(id);
@@ -68,6 +74,7 @@ public class EnderecoController : ControllerBase
     }
 
     [HttpDelete("DeletarEndereco/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarEndereco([FromRoute] int id)
     {
 

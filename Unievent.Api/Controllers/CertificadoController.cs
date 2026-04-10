@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Certificado;
 using Unievent.Application.Interfaces.Services;
@@ -16,6 +17,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpPost("CriarCertificado")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> CriarCertificado([FromBody] CertificadoRequest request)
     {
         var certificado = await _service.CriarCertificado(request);
@@ -30,6 +32,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpPatch("AtualizarCertificado/{id}")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> AtualizarCertificado([FromRoute] int id, [FromBody] CertificadoUpdate update)
     {
         var certificado = await _service.AtualizarCertificado(id, update);
@@ -44,6 +47,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpGet("ListarCertificados")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarCertificados()
     {
         var certificados = await _service.ListarCertificados();
@@ -58,6 +62,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpGet("ListarCertificadoById/{id}")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarCertificadoById([FromRoute] int id)
     {
         var certificado = await _service.ListarCertificadoById(id);
@@ -72,6 +77,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpDelete("DeletarCertificado/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarCertificado([FromRoute] int id)
     {
         var response = await _service.DeletarCertificado(id);

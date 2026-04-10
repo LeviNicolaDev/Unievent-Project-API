@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Services;
 
@@ -9,6 +10,7 @@ namespace Unievent.Api.Controllers
     public class UsuarioSecretariaController(IUsuarioSecretariaService _service) : ControllerBase
     {
         [HttpPost("CriarUsuarioSecretaria")]
+
         public async Task<IActionResult> CriarUsuarioSecretaria([FromBody] UsuarioSecretariaRequest request)
         {
             var response = await _service.CriarUsuarioSecretaria(request);
@@ -20,6 +22,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpPut("AtualizarUsuarioSecretaria/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> AtualizarUsuarioSecretaria(int id, [FromBody] UsuarioSecretariaUpdate update)
         {
             var response = await _service.AtualizarUsuarioSecretaria(id, update);
@@ -32,6 +35,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarUsuarioSecretaria")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarUsuarioSecretaria()
         {
             var response = await _service.ListarUsuarioSecretaria();
@@ -44,6 +48,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarUsuarioSecretariaById/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarUsuarioSecretariaById(int id)
         {
             var response = await _service.ListarUsuarioSecretariaById(id);
@@ -55,6 +60,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpDelete("DeletarUsuarioSecretaria/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> DeletarUsuarioSecretaria(int id)
         {
             var response = await _service.DeletarUsuarioSecretaria(id);

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Services;
 
@@ -10,6 +11,7 @@ namespace Unievent.Api.Controllers
     {
         [HttpPost("CriarEvento")]
         [Consumes("multipart/form-data")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> CriarEvento([FromForm] EventoRequest request)
         {
             var response = await _service.CriarEvento(request);
@@ -22,6 +24,7 @@ namespace Unievent.Api.Controllers
 
         [HttpPut("AtualizarEvento/{id}")]
         [Consumes("multipart/form-data")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> AtualizarEvento(int id, [FromForm] EventoUpdate update)
         {
             var response = await _service.AtualizarEvento(id, update);
@@ -33,6 +36,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarEventos")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarEventos()
         {
             var response = await _service.ListarEventos();
@@ -44,6 +48,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarEventoById/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarEventoById(int id)
         {
             var response = await _service.ListarEventoById(id);
@@ -55,6 +60,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpDelete("DeletarEvento/{id}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> DeletarEvento(int id)
         {
             var response = await _service.DeletarEvento(id);
@@ -66,6 +72,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarEventosByCategoria/{categoria}")]
+        [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarEventosByCategoria([FromRoute] string categoria)
         {
             var response = await _service.ListarEventosByCategoria(categoria);

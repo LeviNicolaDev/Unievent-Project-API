@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.ResponsavelEvento;
 using Unievent.Application.Interfaces.Repository;
@@ -10,50 +11,77 @@ namespace Unievent.Application.Services
     public class ResponsavelEventoService : IResponsavelEventoService
     {
         private readonly IResponsavelEventoRepository _repository;
-        public ResponsavelEventoService(IResponsavelEventoRepository repository)
+        private readonly ILogger<ResponsavelEventoService> _logger;
+        public ResponsavelEventoService(IResponsavelEventoRepository repository, ILogger<ResponsavelEventoService> logger)
         {
             _repository = repository;
+            _logger = logger;
         }
         async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel)
         {
-            var responsavelAntigo = await _repository.ListarResponsavelEventoById(id);
-            if (responsavelAntigo is null)
+            try
             {
-                return ResultData<ResponsavelEventoResponse>.Failure("Responsável não encontrado");
+                _logger.LogInformation("Iniciando atualização do responsável do evento com ID {ResponsavelId}", id);
+                var responsavelAntigo = await _repository.ListarResponsavelEventoById(id);
+                if (responsavelAntigo is null)
+                {
+                    _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado para atualização", id);
+                    return ResultData<ResponsavelEventoResponse>.Failure("Responsável não encontrado");
+                }
+                if (!string.IsNullOrWhiteSpace(responsavel.Nome))
+                {
+                    responsavelAntigo.Nome = responsavel.Nome;
+                }
+                if (responsavel.FotoPerfil != null)
+                {
+                    var imagem = await SalvarImagem(responsavel.FotoPerfil);
+                    responsavelAntigo.FotoPerfil = imagem;
+                }
+                await _repository.AtualizarResponsavelEvento(responsavelAntigo);
+                await _repository.SaveChangesAsync();
+                _logger.LogInformation("Responsável do evento com ID {ResponsavelId} atualizado com sucesso", id);
+                return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
+                {
+                    Id = id,
+                    Nome = responsavelAntigo.Nome,
+                    FotoPerfil = responsavelAntigo.FotoPerfil
+                });
             }
-            if (!string.IsNullOrWhiteSpace(responsavel.Nome))
+            catch (Exception ex)
             {
-                responsavelAntigo.Nome = responsavel.Nome;
+                _logger.LogError(ex, "Erro ao atualizar responsável do evento com ID {ResponsavelId}", id);
+                return ResultData<ResponsavelEventoResponse>.Failure("Erro ao atualizar responsável do evento");
             }
-            if (responsavel.FotoPerfil != null)
-            {
-                var imagem = await SalvarImagem(responsavel.FotoPerfil);
-                responsavelAntigo.FotoPerfil = imagem;
-            }
-            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
-            {
-                Id = id,
-                Nome = responsavelAntigo.Nome,
-                FotoPerfil = responsavelAntigo.FotoPerfil
-            });
+
         }
 
         async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.CriarResponsavelEvento(ResponsavelEventoRequest responsavel)
         {
-            var imagem = await SalvarImagem(responsavel.FotoPerfil);
-            var responsavelNovo = new ResponsavelEvento
+            try
             {
-                Nome = responsavel.Nome,
-                FotoPerfil = imagem
-            };
-            await _repository.CriarResponsavelEvento(responsavelNovo);
-            await _repository.SaveChangesAsync();
-            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
+                _logger.LogInformation("Iniciando criação do responsável do evento com nome {ResponsavelNome}", responsavel.Nome);
+                var imagem = await SalvarImagem(responsavel.FotoPerfil);
+                var responsavelNovo = new ResponsavelEvento
+                {
+                    Nome = responsavel.Nome,
+                    FotoPerfil = imagem
+                };
+                await _repository.CriarResponsavelEvento(responsavelNovo);
+                await _repository.SaveChangesAsync();
+                _logger.LogInformation("Responsável do evento com nome {ResponsavelNome} criado com sucesso", responsavel.Nome);
+                return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
+                {
+                    Id = responsavelNovo.Id,
+                    Nome = responsavelNovo.Nome,
+                    FotoPerfil = responsavelNovo.FotoPerfil
+                });
+            }
+            catch (Exception ex)
             {
-                Id = responsavelNovo.Id,
-                Nome = responsavelNovo.Nome,
-                FotoPerfil = responsavelNovo.FotoPerfil
-            });
+                _logger.LogError(ex, "Erro ao criar responsável do evento com nome {ResponsavelNome}", responsavel.Nome);
+                return ResultData<ResponsavelEventoResponse>.Failure("Erro ao criar responsável do evento");
+            }
+
         }
 
         async Task<Result> IResponsavelEventoService.DeletarResponsavelEvento(int id)
@@ -70,29 +98,52 @@ namespace Unievent.Application.Services
 
         async Task<ResultData<IEnumerable<ResponsavelEventoResponse>>> IResponsavelEventoService.ListarResponsaveisEvento()
         {
-            var responsavels = await _repository.ListarResponsaveisEvento();
-            return ResultData<IEnumerable<ResponsavelEventoResponse>>.Success(responsavels.Select(l => new ResponsavelEventoResponse
+            try
             {
-                Id = l.Id,
-                Nome = l.Nome,
-                FotoPerfil = l.FotoPerfil
-            }));
+                _logger.LogInformation("Iniciando listagem de responsáveis do evento");
+                var responsaveis = await _repository.ListarResponsaveisEvento();
+                _logger.LogInformation("Responsáveis do evento listados com sucesso {ResponsaveisCount}", responsaveis.Count());
+                return ResultData<IEnumerable<ResponsavelEventoResponse>>.Success(responsaveis.Select(l => new ResponsavelEventoResponse
+                {
+                    Id = l.Id,
+                    Nome = l.Nome,
+                    FotoPerfil = l.FotoPerfil
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar responsáveis do evento");
+                return ResultData<IEnumerable<ResponsavelEventoResponse>>.Failure("Erro ao listar responsáveis do evento");
+            }
+
+
         }
 
         async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.ListarResponsavelEventoById(int id)
         {
-            var responsavel = await _repository.ListarResponsavelEventoById(id);
-            if (responsavel == null)
+            try
             {
-                return ResultData<ResponsavelEventoResponse>.Failure("Responsável do evento não encontrado");
-            }
-            return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
-            {
+                _logger.LogInformation("Iniciando busca do responsável do evento com ID {ResponsavelId}", id);
+                var responsavel = await _repository.ListarResponsavelEventoById(id);
+                if (responsavel == null)
+                {
+                    _logger.LogWarning("Responsável do evento com ID {ResponsavelId} não encontrado", id);
+                    return ResultData<ResponsavelEventoResponse>.Failure("Responsável do evento não encontrado");
+                }
+                _logger.LogInformation("Responsável do evento com ID {ResponsavelId} encontrado com sucesso", id);
+                return ResultData<ResponsavelEventoResponse>.Success(new ResponsavelEventoResponse
+                {
 
-                Id = responsavel.Id,
-                Nome = responsavel.Nome,
-                FotoPerfil = responsavel.FotoPerfil
-            });
+                    Id = responsavel.Id,
+                    Nome = responsavel.Nome,
+                    FotoPerfil = responsavel.FotoPerfil
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar responsável do evento com ID {ResponsavelId}", id);
+                return ResultData<ResponsavelEventoResponse>.Failure("Erro ao buscar responsável do evento");
+            }
         }
         public async Task<string> SalvarImagem(IFormFile imagem)
         {

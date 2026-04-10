@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Aluno;
 using Unievent.Application.Interfaces.Services;
@@ -16,6 +17,7 @@ public class AlunoController : ControllerBase
 
     [HttpPost("CriarAluno")]
     [Consumes("multipart/form-data")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> CriarAluno([FromForm] AlunoRequest request)
     {
         var aluno = await _service.CriarAluno(request);
@@ -29,6 +31,7 @@ public class AlunoController : ControllerBase
 
     [HttpPatch("AtualizarAluno/{id}")]
     [Consumes("multipart/form-data")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromForm] AlunoUpdate update)
     {
         var aluno = await _service.AtualizarAluno(id, update);
@@ -40,6 +43,7 @@ public class AlunoController : ControllerBase
     }
 
     [HttpGet("ListarAlunos")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarAlunos()
     {
         var alunos = await _service.ListarAlunos();
@@ -52,6 +56,7 @@ public class AlunoController : ControllerBase
     }
 
     [HttpGet("ListarAlunoById/{id}")]
+    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarAlunoById([FromRoute] int id)
     {
         var aluno = await _service.ListarAlunoById(id);
@@ -63,6 +68,7 @@ public class AlunoController : ControllerBase
 
     }
     [HttpDelete("DeletarAluno/{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarAluno([FromRoute] int id)
     {
 
