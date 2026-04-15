@@ -36,7 +36,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarEventos")]
-        [Authorize(Roles = "Admin,Secretaria")]
+
         public async Task<IActionResult> ListarEventos()
         {
             var response = await _service.ListarEventos();
@@ -72,7 +72,7 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpGet("ListarEventosByCategoria/{categoria}")]
-        [Authorize(Roles = "Admin,Secretaria")]
+
         public async Task<IActionResult> ListarEventosByCategoria([FromRoute] string categoria)
         {
             var response = await _service.ListarEventosByCategoria(categoria);

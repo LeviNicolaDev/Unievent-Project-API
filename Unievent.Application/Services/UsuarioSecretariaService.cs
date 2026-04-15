@@ -50,6 +50,16 @@ namespace Unievent.Application.Services
                     var senhaHash = BCrypt.Net.BCrypt.HashPassword(update.Senha);
                     usuarioSecretaria.Senha = senhaHash;
                 }
+                if (!string.IsNullOrWhiteSpace(update.Role) && update.Role.Equals("Secretaria", StringComparison.CurrentCultureIgnoreCase) || update.Role.Equals("Admin", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var role = Enum.TryParse(update.Role, out Role result) ? result : Role.Secretaria;
+                    usuarioSecretaria.RoleUsuario = role;
+                }
+                else
+                {
+                    _logger.LogWarning("Cargo {Role} inválido para o usuário da secretaria com ID {UsuarioSecretariaId}. Digite 'Secretaria' ou 'Admin'", update.Role, id);
+                    return ResultData<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria");
+                }
 
                 /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
                  {
