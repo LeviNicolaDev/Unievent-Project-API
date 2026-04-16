@@ -11,4 +11,7 @@
   <Folder Name="/4.Infra/">
     <Project Path="Unievent.Infra/Unievent.Infra.csproj" Id="23ef91ff-0322-4d3b-86ab-f03bcd229f48" />
   </Folder>
+  <Folder Name="/5.Tests/">
+    <Project Path="Unievent.Tests/Unievent.Tests.csproj" Id="d984f154-156f-4d42-b7c5-92715d506137" />
+  </Folder>
 </Solution>
