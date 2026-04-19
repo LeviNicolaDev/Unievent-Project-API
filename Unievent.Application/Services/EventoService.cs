@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.Evento;
@@ -11,19 +12,27 @@ namespace Unievent.Application.Services
     public class EventoService : IEventoService
     {
         private readonly ILogger<EventoService> _logger;
+        private readonly IValidator<EventoRequest> _validatorRequest;
+        private readonly IValidator<EventoUpdate> _validatorUpdate;
         private readonly IEventoRepository _repository;
 
-        public EventoService(IEventoRepository repository, ILogger<EventoService> logger)
+        public EventoService(IEventoRepository repository, ILogger<EventoService> logger, IValidator<EventoRequest> validatorRequest, IValidator<EventoUpdate> validatorUpdate)
         {
             _repository = repository;
             _logger = logger;
-
+            _validatorRequest = validatorRequest;
+            _validatorUpdate = validatorUpdate;
         }
 
         async Task<ResultData<EventoResponse>> IEventoService.AtualizarEvento(int id, EventoUpdate update)
         {
             try
             {
+                var validationResult = await _validatorUpdate.ValidateAsync(update);
+                if (!validationResult.IsValid)                {
+                    _logger.LogWarning("Dados inválidos para atualização do evento com ID {EventoId}", id);
+                    return ResultData<EventoResponse>.Failure("Dados inválidos");
+                }
                 _logger.LogInformation("Iniciando atualização do evento com ID {EventoId}", id);
                 IList<string> imagens = new List<string>(); // Lista para armazenar os caminhos das imagens salvas
 
@@ -51,7 +60,7 @@ namespace Unievent.Application.Services
                     evento.Categoria = update.Categoria;
                 }
 
-                if (!string.IsNullOrWhiteSpace(update.DataEvento.ToString()))
+                if (update.DataEvento.HasValue)
                 {
                     evento.DataEvento = update.DataEvento.Value;
                 }
@@ -61,7 +70,7 @@ namespace Unievent.Application.Services
                 }
                 if (update.ResponsavelEventoId != null)
                 {
-                    var responsavel = await _repository.ListarEventoByResponsavel((int)update.ResponsavelEventoId);
+                    var responsavel = await _repository.ListarEventoByResponsavel(update.ResponsavelEventoId.Value);
                     if (responsavel != null && responsavel.DataEvento == evento.DataEvento)
                     {
                         _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", update.ResponsavelEventoId);
@@ -72,7 +81,7 @@ namespace Unievent.Application.Services
                         _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", update.ResponsavelEventoId);
                         return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
                     }
-                    evento.ResponsavelEventoId = (int)update.ResponsavelEventoId;
+                    evento.ResponsavelEventoId = update.ResponsavelEventoId.Value;
                 }
                 if (update.Thumbnail != null)
                 {
@@ -115,6 +124,11 @@ namespace Unievent.Application.Services
         {
             try
             {
+                var validationResult = await _validatorRequest.ValidateAsync(request);
+                if (!validationResult.IsValid)                {
+                    _logger.LogWarning("Dados inválidos para criação do evento com nome {EventoNome}", request.Nome);
+                    return ResultData<EventoResponse>.Failure("Dados inválidos");
+                }
                 _logger.LogInformation("Iniciando criação de evento para responsável ID {ResponsavelId} e data {DataEvento}", request.ResponsavelEventoId, request.DataEvento);
                 var imagens = new List<string>();
 

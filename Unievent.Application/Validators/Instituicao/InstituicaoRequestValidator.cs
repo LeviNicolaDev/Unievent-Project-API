@@ -15,8 +15,7 @@ public class InstituicaoRequestValidator : AbstractValidator<InstituicaoRequest>
             .NotEmpty().WithMessage("O campo 'EmailLogin' é obrigatório.")
             .MaximumLength(100).WithMessage("O campo 'EmailLogin' deve conter no máximo 100 caracteres.")
             .EmailAddress().WithMessage("O campo 'EmailLogin' deve ser um endereço de email válido.")
-            .Matches(@"^[a-zA-Z0-9._%+-]+@fatec\.sp\.gov\.br$")
-            .WithMessage("O email deve ser institucional");
+            .Must(i=> i.EndsWith("@fatec.sp.gov.br")).WithMessage("O email deve ser institucional");
         RuleFor(i => i.SenhaLogin)
             .NotEmpty().WithMessage("O campo 'SenhaLogin' é obrigatório.")
             .MinimumLength(6).WithMessage("O campo 'SenhaLogin' deve conter no mínimo 6 caracteres.");

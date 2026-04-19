@@ -1,4 +1,5 @@
 using System.Reflection.Metadata.Ecma335;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
@@ -14,16 +15,26 @@ public class AlunoService : IAlunoService
 {
     private readonly IAlunoRepository _repository;
     private readonly ILogger<AlunoService> _logger;
-    public AlunoService(IAlunoRepository repository, ILogger<AlunoService> logger)
+    private readonly IValidator<AlunoRequest> _validatorRequest;
+    private readonly IValidator<AlunoUpdate> _validatorUpdate;
+    public AlunoService(IAlunoRepository repository, ILogger<AlunoService> logger, IValidator<AlunoRequest> validatorRequest, IValidator<AlunoUpdate> validatorUpdate)
     {
         _repository = repository;
         _logger = logger;
+        _validatorRequest = validatorRequest;
+        _validatorUpdate = validatorUpdate;
     }
     async Task<ResultData<AlunoResponse>> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
     {
         try
         {
             _logger.LogInformation("Iniciando atualização do aluno com ID {AlunoId}", id);
+            var validationResult = await _validatorUpdate.ValidateAsync(update);
+            if (!validationResult.IsValid)
+            {
+                _logger.LogWarning("Dados inválidos para atualização do aluno com ID {AlunoId}", id);
+                return ResultData<AlunoResponse>.Failure("Dados inválidos");
+            }
             var aluno = await _repository.ListarAlunoById(id);
             if (aluno is null)
             {
@@ -95,6 +106,12 @@ public class AlunoService : IAlunoService
     {
         try
         {
+            var validationResult = await _validatorRequest.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+                _logger.LogWarning("Dados inválidos para criação de aluno com email {Email}", request.Email);
+                return ResultData<AlunoResponse>.Failure("Dados inválidos");
+            }
             _logger.LogInformation("Iniciando criação de novo aluno com email {Email}", request.Email);
             var senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
             var imagem = await SalvarImagem(request.FotoPerfil);

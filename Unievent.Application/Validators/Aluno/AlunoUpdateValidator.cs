@@ -15,7 +15,7 @@ public class AlunoUpdateValidator : AbstractValidator<AlunoUpdate>
         RuleFor(a => a.FotoPerfil)
         .NotEmpty().WithMessage("A foto de perfil deve ser obrigatoria").When(a => a.FotoPerfil != null);
         RuleFor(a => a.Nome)
-        .NotEmpty().WithMessage("O nome dever ser obrigatorio").When(a => !string.IsNullOrWhiteSpace(a.Nome));
+        .NotEmpty().WithMessage("O nome dever ser obrigatorio").When(a => a.Nome != null);
 
     }
 }

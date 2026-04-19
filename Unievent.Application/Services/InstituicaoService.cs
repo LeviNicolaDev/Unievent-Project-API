@@ -6,6 +6,7 @@ using Elekto.BrazilianDocuments;
 using Unievent.Domain.Entities;
 using Unievent.Application.Common;
 using Microsoft.Extensions.Logging;
+using FluentValidation;
 
 namespace Unievent.Application.Services;
 
@@ -13,17 +14,28 @@ public class InstituicaoService : IInstituicaoService
 {
     private readonly IInstituicaoRepository _repository;
     private readonly IEnderecoRepository _repositoryEndereco;
+    private readonly IValidator<InstituicaoRequest> _requestValidator;
+    private readonly IValidator<InstituicaoUpdate> _updateValidator;
     private readonly ILogger<InstituicaoService> _logger;
-    public InstituicaoService(IInstituicaoRepository repository, IEnderecoRepository repositoryEndereco, ILogger<InstituicaoService> logger)
+    public InstituicaoService(IInstituicaoRepository repository, IEnderecoRepository repositoryEndereco, ILogger<InstituicaoService> logger,
+    IValidator<InstituicaoRequest> requestValidator,IValidator<InstituicaoUpdate> updateValidator)
     {
         _repository = repository;
         _repositoryEndereco = repositoryEndereco;
         _logger = logger;
+        _requestValidator = requestValidator;
+        _updateValidator = updateValidator;
     }
     async Task<ResultData<InstituicaoResponse>> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
     {
         try
         {
+            var validationResult = await _updateValidator.ValidateAsync(update);
+            if (!validationResult.IsValid)
+            {
+            _logger.LogInformation("Dados invalidos para atualização da instituição com ID {InstituicaoId}", id);
+            return ResultData<InstituicaoResponse>.Failure("Dados Inválidos");    
+            }
             _logger.LogInformation("Iniciando atualização da instituição com ID {InstituicaoId}", id);
             var emailExistente = await _repository.ListarInstituicaoByEmail(update.EmailLogin);
             var instituicao = await _repository.ListarInstituicaoById(id);
@@ -116,6 +128,12 @@ public class InstituicaoService : IInstituicaoService
     {
         try
         {
+            var validationResult = await _requestValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)
+            {
+            _logger.LogInformation("Dados invalidos para criação da instituição com email {EmailLogin}", request.EmailLogin);
+            return ResultData<InstituicaoResponse>.Failure("Dados Inválidos");    
+            }
             _logger.LogInformation("Iniciando criação de nova instituição com email {EmailLogin}", request.EmailLogin);
             if (!Cnpj.TryParse(request.Cnpj, out var cnpj))
             {

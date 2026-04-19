@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.Endereco;
@@ -10,16 +11,25 @@ namespace Unievent.Application.Services;
 public class EnderecoService : IEnderecoService
 {
     private readonly IEnderecoRepository _repository;
-    private readonly ILogger<EnderecoService> _logger;
-    public EnderecoService(IEnderecoRepository repository, ILogger<EnderecoService> logger)
+    private readonly IValidator<EnderecoRequest> _createValidator;
+    private readonly IValidator<EnderecoUpdate> _updateValidator;
+        private readonly ILogger<EnderecoService> _logger;
+    public EnderecoService(IEnderecoRepository repository, ILogger<EnderecoService> logger , IValidator<EnderecoRequest> createValidator, IValidator<EnderecoUpdate> updateValidator)
     {
         _repository = repository;
         _logger = logger;
+        _createValidator = createValidator;
+        _updateValidator = updateValidator;
     }
     async Task<ResultData<EnderecoResponse>> IEnderecoService.AtualizarEndereco(int id, EnderecoUpdate request)
     {
         try
         {
+            var validationResult = await _updateValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)            {
+                _logger.LogWarning("Validação falhou para atualização do endereço com ID {EnderecoId}", id);
+                return ResultData<EnderecoResponse>.Failure("Dados Invalidos");
+                }
             _logger.LogInformation("Iniciando atualização do endereço com ID {EnderecoId}", id);
             var enderecoAntigo = await _repository.ListarEnderecoById(id);
             if (enderecoAntigo is null)
@@ -77,6 +87,11 @@ public class EnderecoService : IEnderecoService
     {
         try
         {
+            var validationResult = await _createValidator.ValidateAsync(request);
+            if (!validationResult.IsValid)            {
+                _logger.LogWarning("Validação falhou para criação de endereço para rua {Rua}, número {Numero}", request.Rua, request.Numero);
+                return ResultData<EnderecoResponse>.Failure("Dados Invalidos");
+                }
             _logger.LogInformation("Iniciando criação de endereço para rua {Rua}, número {Numero}", request.Rua, request.Numero);
             var endereco = new Endereco
             {

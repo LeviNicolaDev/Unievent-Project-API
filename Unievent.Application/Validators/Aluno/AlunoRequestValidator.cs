@@ -8,17 +8,23 @@ public class AlunoRequestValidator : AbstractValidator<AlunoRequest>
     public AlunoRequestValidator()
     {
         RuleFor(a => a.Email)
-         .EmailAddress().WithMessage("O email deve ser válido").Matches(@"^[a-zA-Z0-9._%+-]+@fatec\.sp\.gov\.br$")
-         .WithMessage("O email deve ser institucional").NotEmpty()
-         .WithMessage("O email deve ser preenchido").NotNull().WithMessage("Email não pode ser nulo");
+     .NotEmpty().WithMessage("O email deve ser preenchido")
+     .EmailAddress().WithMessage("O email deve ser válido")
+     .Must(email => email.EndsWith("@fatec.sp.gov.br", StringComparison.CurrentCultureIgnoreCase))
+     .WithMessage("O email deve ser institucional");
+
         RuleFor(a => a.DataNascimento)
-        .NotEmpty().WithMessage("Data de nascimento é obrigatoria").LessThan(DateTime.Now).WithMessage("A data de nascimento não pode ser futura");
+            .NotEmpty().WithMessage("Data de nascimento é obrigatória")
+            .LessThan(DateTime.Now).WithMessage("A data de nascimento não pode ser futura");
+
         RuleFor(a => a.Senha)
-        .NotEmpty().WithMessage("Senha é obrigatoria").MinimumLength(6).WithMessage("A senha deve ter no minimo 6 caracteres").NotNull()
-        .WithMessage("Senha não pode ser nula");
+            .NotEmpty().WithMessage("Senha é obrigatória")
+            .MinimumLength(6).WithMessage("A senha deve ter no mínimo 6 caracteres");
+
         RuleFor(a => a.FotoPerfil)
-        .NotEmpty().WithMessage("Foto de perfil é obrigatoria").NotNull().WithMessage("Foto de perfil não pode ser nula");
+            .NotEmpty().WithMessage("Foto de perfil é obrigatória");
+
         RuleFor(a => a.Nome)
-       .NotEmpty().WithMessage("O nome é obrigatoria").NotNull().WithMessage("Nome não pode ser nulo");
+            .NotEmpty().WithMessage("O nome é obrigatório");
     }
 }

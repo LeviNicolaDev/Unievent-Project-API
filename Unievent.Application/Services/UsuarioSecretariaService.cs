@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using FluentValidation;
+using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Repository;
@@ -12,10 +13,15 @@ namespace Unievent.Application.Services
     {
         private readonly IUsuarioSecretariaRepository _repository;
         private readonly ILogger<UsuarioSecretariaService> _logger;
-        public UsuarioSecretariaService(IUsuarioSecretariaRepository repository, ILogger<UsuarioSecretariaService> logger)
+        private readonly IValidator<UsuarioSecretariaRequest> _requestValidator;
+        private readonly IValidator<UsuarioSecretariaUpdate> _updateValidator;
+        public UsuarioSecretariaService(IUsuarioSecretariaRepository repository, ILogger<UsuarioSecretariaService> logger,
+        IValidator<UsuarioSecretariaRequest> requestValidator, IValidator<UsuarioSecretariaUpdate> updateValidator)
         {
             _repository = repository;
             _logger = logger;
+            _requestValidator = requestValidator;
+            _updateValidator = updateValidator;
         }
 
 
@@ -24,6 +30,9 @@ namespace Unievent.Application.Services
             try
             {
                 _logger.LogInformation("Iniciando atualização do usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                var validator = await _updateValidator.ValidateAsync(update);
+                if (!validator.IsValid)
+                    return ResultData<UsuarioSecretariaResponse>.Failure(validator.Errors.First().ErrorMessage);
                 var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(update.EmailUsuario);
                 var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
                 if (usuarioSecretaria is null)
@@ -40,7 +49,6 @@ namespace Unievent.Application.Services
                     _logger.LogWarning("Email {Email} já cadastrado para outro usuário da secretaria", update.EmailUsuario);
                     return ResultData<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
                 }
-
                 if (!string.IsNullOrWhiteSpace(update.NomeUsuario))
                 {
                     usuarioSecretaria.NomeUsuario = update.NomeUsuario;
@@ -94,6 +102,10 @@ namespace Unievent.Application.Services
             try
             {
                 _logger.LogInformation("Iniciando criação do usuário da secretaria com email {EmailUsuario}", request.EmailUsuario);
+                var validator = await _requestValidator.ValidateAsync(request);
+                if (!validator.IsValid)
+                    return ResultData<UsuarioSecretariaResponse>.Failure(validator.Errors.First().ErrorMessage);
+
                 var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Secretaria;
                 var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
                 var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);

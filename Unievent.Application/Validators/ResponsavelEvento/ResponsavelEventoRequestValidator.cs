@@ -8,8 +8,7 @@ public class ResponsavelEventoRequestValidator : AbstractValidator<ResponsavelEv
     public ResponsavelEventoRequestValidator()
     {
         RuleFor(r => r.Nome)
-            .NotEmpty().WithMessage("O campo 'Nome' é obrigatório.")
-            .MaximumLength(100).WithMessage("O campo 'Nome' deve conter no máximo 100 caracteres.");
+            .NotEmpty().WithMessage("O campo 'Nome' é obrigatório.");
         RuleFor(r => r.FotoPerfil)
             .NotEmpty().WithMessage("O campo 'Foto de Perfil' é obrigatório.");
     }

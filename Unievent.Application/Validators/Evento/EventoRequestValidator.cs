@@ -23,7 +23,8 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
         RuleFor(e => e.ResponsavelEventoId)
             .NotEmpty().WithMessage("O campo 'Responsável' é obrigatório.");
         RuleFor(e => e.Capacidade)
-            .NotNull().WithMessage("O campo 'Capacidade' é obrigatório.");
+            .NotEmpty().WithMessage("O campo 'Capacidade' é obrigatório.")
+            .GreaterThanOrEqualTo(1).WithMessage("A capacidade do evento deve ser um valor positivo.");
         RuleFor(e => e.Thumbnail)
             .NotEmpty().WithMessage("O campo 'Thumbnail' é obrigatório.");
         RuleFor(e => e.HoraEvento)

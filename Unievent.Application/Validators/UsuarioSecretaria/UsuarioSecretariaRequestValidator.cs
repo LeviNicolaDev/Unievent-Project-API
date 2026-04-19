@@ -8,8 +8,9 @@ public class UsuarioSecretariaRequestValidator : AbstractValidator<UsuarioSecret
     public UsuarioSecretariaRequestValidator()
     {
         RuleFor(s => s.EmailUsuario)
-        .EmailAddress().WithMessage("O email deve ser valido").Matches(@"^[a-zA-Z0-9._%+-]+@fatec\.sp\.gov\.br$").WithMessage("O email deve ser institucional")
-        .NotEmpty().WithMessage("O email deve ser preenchido");
+        .EmailAddress().WithMessage("O email deve ser valido")
+        .NotEmpty().WithMessage("O email deve ser preenchido").Must(email => email.EndsWith("@fatec.sp.gov.br", StringComparison.CurrentCultureIgnoreCase))
+        .WithMessage("O email deve ser institucional");
         RuleFor(s => s.NomeUsuario)
         .NotEmpty().WithMessage("O nome deve ser preenchido");
         RuleFor(s => s.RoleUsuario)

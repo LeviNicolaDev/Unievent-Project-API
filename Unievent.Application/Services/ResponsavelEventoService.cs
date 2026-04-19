@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FluentValidation;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.ResponsavelEvento;
@@ -12,15 +13,25 @@ namespace Unievent.Application.Services
     {
         private readonly IResponsavelEventoRepository _repository;
         private readonly ILogger<ResponsavelEventoService> _logger;
-        public ResponsavelEventoService(IResponsavelEventoRepository repository, ILogger<ResponsavelEventoService> logger)
+        private readonly IValidator<ResponsavelEventoRequest> _validatorRequest;
+        private readonly IValidator<ResponsavelEventoUpdate> _validatorUpdate;
+        public ResponsavelEventoService(IResponsavelEventoRepository repository, ILogger<ResponsavelEventoService> logger, IValidator<ResponsavelEventoRequest> validatorRequest, IValidator<ResponsavelEventoUpdate> validatorUpdate)
         {
             _repository = repository;
             _logger = logger;
+            _validatorRequest = validatorRequest;
+            _validatorUpdate = validatorUpdate;
         }
         async Task<ResultData<ResponsavelEventoResponse>> IResponsavelEventoService.AtualizarResponsavelEvento(int id, ResponsavelEventoUpdate responsavel)
         {
             try
             {
+                var validationResult = await _validatorUpdate.ValidateAsync(responsavel);
+                if (!validationResult.IsValid)
+                {
+                    _logger.LogWarning("Dados inválidos para atualização do responsável do evento com ID {ResponsavelId}", id);
+                    return ResultData<ResponsavelEventoResponse>.Failure("Dados inválidos");
+                }
                 _logger.LogInformation("Iniciando atualização do responsável do evento com ID {ResponsavelId}", id);
                 var responsavelAntigo = await _repository.ListarResponsavelEventoById(id);
                 if (responsavelAntigo is null)
@@ -59,6 +70,12 @@ namespace Unievent.Application.Services
         {
             try
             {
+                var validationResult = await _validatorRequest.ValidateAsync(responsavel);
+                if (!validationResult.IsValid)
+                {
+                    _logger.LogWarning("Dados inválidos para criação do responsável do evento com nome {ResponsavelNome}", responsavel.Nome);
+                    return ResultData<ResponsavelEventoResponse>.Failure("Dados inválidos");
+                }
                 _logger.LogInformation("Iniciando criação do responsável do evento com nome {ResponsavelNome}", responsavel.Nome);
                 var imagem = await SalvarImagem(responsavel.FotoPerfil);
                 var responsavelNovo = new ResponsavelEvento
