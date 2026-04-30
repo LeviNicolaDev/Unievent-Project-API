@@ -170,17 +170,17 @@ public class AlunoServiceTest
                 result.Message.Should().Be("Aluno deletado com sucesso");
             }
 
+            [Fact]
             public async Task Deve_Falhar_Deletar_Aluno_Quando_Id_For_Invalido()
             {
                 // Arrange
-                using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("conteudo fake"));
                 var alunoId = 1;
                 _repositoryMock.Setup(r => r.ListarAlunoById(alunoId)).ReturnsAsync((Unievent.Domain.Entities.Aluno)null);
 
                 // Act
                 var result = await _alunoService.DeletarAluno(alunoId);
                 // Assert
-                result.IsSuccess.Should().BeTrue();
+                result.IsSuccess.Should().BeFalse();
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
                 _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
                 result.Message.Should().Be("Aluno não encontrado");

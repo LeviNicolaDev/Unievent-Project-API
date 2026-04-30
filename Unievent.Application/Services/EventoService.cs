@@ -15,13 +15,15 @@ namespace Unievent.Application.Services
         private readonly IValidator<EventoRequest> _validatorRequest;
         private readonly IValidator<EventoUpdate> _validatorUpdate;
         private readonly IEventoRepository _repository;
+        private readonly IResponsavelEventoRepository _responsavelEventoRepository;
 
-        public EventoService(IEventoRepository repository, ILogger<EventoService> logger, IValidator<EventoRequest> validatorRequest, IValidator<EventoUpdate> validatorUpdate)
+        public EventoService(IEventoRepository repository, ILogger<EventoService> logger, IValidator<EventoRequest> validatorRequest, IValidator<EventoUpdate> validatorUpdate, IResponsavelEventoRepository responsavelEventoRepository)
         {
             _repository = repository;
             _logger = logger;
             _validatorRequest = validatorRequest;
             _validatorUpdate = validatorUpdate;
+            _responsavelEventoRepository = responsavelEventoRepository;
         }
 
         async Task<ResultData<EventoResponse>> IEventoService.AtualizarEvento(int id, EventoUpdate update)
@@ -29,12 +31,13 @@ namespace Unievent.Application.Services
             try
             {
                 var validationResult = await _validatorUpdate.ValidateAsync(update);
-                if (!validationResult.IsValid)                {
+                if (!validationResult.IsValid)
+                {
                     _logger.LogWarning("Dados inválidos para atualização do evento com ID {EventoId}", id);
                     return ResultData<EventoResponse>.Failure("Dados inválidos");
                 }
+
                 _logger.LogInformation("Iniciando atualização do evento com ID {EventoId}", id);
-                IList<string> imagens = new List<string>(); // Lista para armazenar os caminhos das imagens salvas
 
                 var evento = await _repository.ListarEventoById(id);
                 if (evento is null)
@@ -42,49 +45,52 @@ namespace Unievent.Application.Services
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização", id);
                     return ResultData<EventoResponse>.Failure("Evento não encontrado");
                 }
-                if (update.Capacidade.HasValue)
-                {
-                    evento.Capacidade = update.Capacidade.Value;
-                }
-                //QUANDO CATEGORIA ERA UM ENUM
-                /*if (!string.IsNullOrWhiteSpace(update.Categoria))
-                {
-                    if (!Enum.TryParse<CategoriaEvento>(update.Categoria, ignoreCase: true, out var categoriaEnum))
-                        throw new Exception($"Categoria '{update.Categoria}' inválida.");
 
-                    evento.Categoria = categoriaEnum;
-                }*/
-
-                if (!string.IsNullOrWhiteSpace(update.Categoria))
-                {
-                    evento.Categoria = update.Categoria;
-                }
-
-                if (update.DataEvento.HasValue)
-                {
-                    evento.DataEvento = update.DataEvento.Value;
-                }
-                if (!string.IsNullOrWhiteSpace(update.Descricao))
-                {
-                    evento.Descricao = update.Descricao;
-                }
                 if (update.ResponsavelEventoId != null)
                 {
-                    var responsavel = await _repository.ListarEventoByResponsavel(update.ResponsavelEventoId.Value);
-                    if (responsavel != null && responsavel.DataEvento == evento.DataEvento)
-                    {
-                        _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", update.ResponsavelEventoId);
-                        return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
-                    }
-                    else if (responsavel == null)
+                    var responsavel = await _responsavelEventoRepository
+                        .ListarResponsavelEventoById(update.ResponsavelEventoId.Value);
+
+                    if (responsavel == null)
                     {
                         _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", update.ResponsavelEventoId);
                         return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
                     }
+
                     evento.ResponsavelEventoId = update.ResponsavelEventoId.Value;
                 }
+
+                if (update.DataEvento.HasValue)
+                {
+                    var responsavelIdFinal = update.ResponsavelEventoId ?? evento.ResponsavelEventoId;
+                    var responsavelJaTemEvento = await _repository.ListarEventoByResponsavel(responsavelIdFinal);
+
+                    if (responsavelJaTemEvento != null &&
+                        responsavelJaTemEvento.Id != id &&
+                        responsavelJaTemEvento.DataEvento.Date == update.DataEvento.Value.Date)
+                    {
+                        _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", responsavelIdFinal);
+                        return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
+                    }
+
+                    evento.DataEvento = update.DataEvento.Value.Date;
+                }
+
+                if (update.Capacidade.HasValue)
+                    evento.Capacidade = update.Capacidade.Value;
+
+                if (!string.IsNullOrWhiteSpace(update.Categoria))
+                    evento.Categoria = update.Categoria;
+
+                if (!string.IsNullOrWhiteSpace(update.Descricao))
+                    evento.Descricao = update.Descricao;
+
+                if (!string.IsNullOrWhiteSpace(update.Nome))
+                    evento.Nome = update.Nome;
+
                 if (update.Thumbnail != null)
                 {
+                    var imagens = new List<string>();
                     foreach (var imagem in update.Thumbnail)
                     {
                         var img = await SalvarImagem(imagem);
@@ -92,14 +98,12 @@ namespace Unievent.Application.Services
                     }
                     evento.Thumbnail = imagens;
                 }
-                if (!string.IsNullOrWhiteSpace(update.Nome))
-                {
-                    evento.Nome = update.Nome;
-                }
 
                 await _repository.AtualizarEvento(evento);
                 await _repository.SaveChangesAsync();
+
                 _logger.LogInformation("Evento com ID {EventoId} atualizado com sucesso", id);
+
                 return ResultData<EventoResponse>.Success(new EventoResponse
                 {
                     Id = id,
@@ -116,7 +120,7 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar evento com ID {EventoId}", id);
-                return ResultData<EventoResponse>.Failure($"Erro ao atualizar evento");
+                return ResultData<EventoResponse>.Failure("Erro ao atualizar evento");
             }
         }
 
@@ -125,11 +129,30 @@ namespace Unievent.Application.Services
             try
             {
                 var validationResult = await _validatorRequest.ValidateAsync(request);
-                if (!validationResult.IsValid)                {
+                if (!validationResult.IsValid)
+                {
                     _logger.LogWarning("Dados inválidos para criação do evento com nome {EventoNome}", request.Nome);
                     return ResultData<EventoResponse>.Failure("Dados inválidos");
                 }
                 _logger.LogInformation("Iniciando criação de evento para responsável ID {ResponsavelId} e data {DataEvento}", request.ResponsavelEventoId, request.DataEvento);
+
+                var responsavel = await _responsavelEventoRepository.ListarResponsavelEventoById(request.ResponsavelEventoId);
+
+
+                if (responsavel == null)
+                {
+                    _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", request.ResponsavelEventoId);
+                    return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
+                }
+
+                var responsavelJaTemEvento = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
+
+                if (responsavelJaTemEvento != null && responsavelJaTemEvento.DataEvento.Date == request.DataEvento.Date)
+                {
+                    _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", request.ResponsavelEventoId);
+                    return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
+                }
+
                 var imagens = new List<string>();
 
                 foreach (var imagem in request.Thumbnail)
@@ -137,23 +160,12 @@ namespace Unievent.Application.Services
                     var img = await SalvarImagem(imagem);
                     imagens.Add(img);
                 }
-                var responsavel = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
-                if (responsavel != null && responsavel.DataEvento == request.DataEvento)
-                {
-                    _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", request.ResponsavelEventoId);
-                    return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
-                }
-                else if (responsavel == null)
-                {
-                    _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", request.ResponsavelEventoId);
-                    return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
-                }
                 var evento = new Evento
                 {
                     Capacidade = request.Capacidade,
                     Categoria = request.Categoria,
                     HoraEvento = request.HoraEvento,
-                    DataEvento = request.DataEvento,
+                    DataEvento = request.DataEvento.Date,
                     Descricao = request.Descricao,
                     ResponsavelEventoId = request.ResponsavelEventoId,
                     Nome = request.Nome,

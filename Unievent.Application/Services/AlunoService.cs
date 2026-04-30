@@ -114,13 +114,15 @@ public class AlunoService : IAlunoService
             }
             _logger.LogInformation("Iniciando criação de novo aluno com email {Email}", request.Email);
             var senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
-            var imagem = await SalvarImagem(request.FotoPerfil);
+
             var emailExistente = await _repository.ListarAlunoByEmail(request.Email);
             if (emailExistente != null)
             {
                 _logger.LogWarning("Tentativa de criar aluno com email já existente: {Email}", request.Email);
                 return ResultData<AlunoResponse>.Failure("Email já cadastrado para outro aluno");
             }
+            var imagem = await SalvarImagem(request.FotoPerfil);
+
             var aluno = new Aluno
             {
                 Nome = request.Nome,
