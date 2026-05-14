@@ -1,14 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository;
 
 public class InstituicaoRepository : IInstituicaoRepository
 {
     private AppDbContext _context;
-    public InstituicaoRepository(AppDbContext context)
+    public InstituicaoRepository(AppDbContext context, IConfiguration config)
     {
         _context = context;
     }
@@ -28,6 +29,12 @@ public class InstituicaoRepository : IInstituicaoRepository
     {
         _context.Instituicao.Remove(instituicao);
         return Task.FromResult(true);
+    }
+
+    async Task<Instituicao> IInstituicaoRepository.ListarInstituicaoByEmail(string email)
+    {
+        return await _context.Instituicao.FirstOrDefaultAsync(i => i.EmailLogin == email);
+
     }
 
     async Task<Instituicao> IInstituicaoRepository.ListarInstituicaoById(int id)

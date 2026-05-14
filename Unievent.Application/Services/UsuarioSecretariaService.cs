@@ -1,4 +1,7 @@
-﻿using Unievent.Application.Dtos.UsuarioSecretaria;
+﻿using FluentValidation;
+using Microsoft.Extensions.Logging;
+using Unievent.Application.Common;
+using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Entities;
@@ -9,110 +12,242 @@ namespace Unievent.Application.Services
     public class UsuarioSecretariaService : IUsuarioSecretariaService
     {
         private readonly IUsuarioSecretariaRepository _repository;
-        public UsuarioSecretariaService(IUsuarioSecretariaRepository repository)
+        private readonly ILogger<UsuarioSecretariaService> _logger;
+        private readonly IValidator<UsuarioSecretariaRequest> _requestValidator;
+        private readonly IValidator<UsuarioSecretariaUpdate> _updateValidator;
+        public UsuarioSecretariaService(IUsuarioSecretariaRepository repository, ILogger<UsuarioSecretariaService> logger,
+        IValidator<UsuarioSecretariaRequest> requestValidator, IValidator<UsuarioSecretariaUpdate> updateValidator)
         {
             _repository = repository;
+            _logger = logger;
+            _requestValidator = requestValidator;
+            _updateValidator = updateValidator;
         }
 
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
         {
-
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
-            if (!string.IsNullOrWhiteSpace(update.EmailUsuario))
+            try
             {
+                _logger.LogInformation("Iniciando atualização do usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                var validator = await _updateValidator.ValidateAsync(update);
+                if (!validator.IsValid)
+                    return Result<UsuarioSecretariaResponse>.Failure(validator.Errors.Select(e => e.ErrorMessage).ToList());
+                var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(update.EmailUsuario);
+                var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+                if (usuarioSecretaria is null)
+                {
+                    _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado para atualização", id);
+                    return Result<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+                }
+                if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente == null)
+                {
+                    usuarioSecretaria.EmailUsuario = update.EmailUsuario;
+                }
+                else if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente != null)
+                {
+                    _logger.LogWarning("Email {Email} já cadastrado para outro usuário da secretaria", update.EmailUsuario);
+                    return Result<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
+                }
+                if (!string.IsNullOrWhiteSpace(update.NomeUsuario))
+                {
+                    usuarioSecretaria.NomeUsuario = update.NomeUsuario;
+                }
+                if (!string.IsNullOrWhiteSpace(update.Senha))
+                {
+                    var senhaHash = BCrypt.Net.BCrypt.HashPassword(update.Senha);
+                    usuarioSecretaria.Senha = senhaHash;
+                }
+                if (!string.IsNullOrWhiteSpace(update.Role) && update.Role.Equals("Secretaria", StringComparison.CurrentCultureIgnoreCase) || update.Role.Equals("Admin", StringComparison.CurrentCultureIgnoreCase))
+                {
+                    var role = Enum.TryParse(update.Role, out Role result) ? result : Role.Secretaria;
+                    usuarioSecretaria.RoleUsuario = role;
+                }
+                else
+                {
+                    _logger.LogWarning("Cargo {Role} inválido para o usuário da secretaria com ID {UsuarioSecretariaId}. Digite 'Secretaria' ou 'Admin'", update.Role, id);
+                    return Result<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria");
+                }
 
-                usuarioSecretaria.EmailUsuario = update.EmailUsuario;
+                /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
+                 {
+                     usuarioSecretaria.IsAtivo = true;
+                     // var status = Enum.TryParse(update.Status, out Situacao situacao) ? situacao : Situacao.inativo;
+
+                 }*/
+
+                await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
+                await _repository.SaveChangesAsync();
+                _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} atualizado com sucesso", id);
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                {
+                    Id = usuarioSecretaria.Id,
+                    EmailUsuario = usuarioSecretaria.EmailUsuario,
+                    RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+
+                    Chave = usuarioSecretaria.Chave,
+                    NomeUsuario = usuarioSecretaria.NomeUsuario,
+                    IsAtivo = usuarioSecretaria.IsAtivo
+                });
             }
-
-            if (!string.IsNullOrWhiteSpace(update.NomeUsuario))
+            catch (Exception ex)
             {
-
-                usuarioSecretaria.NomeUsuario = update.NomeUsuario;
+                _logger.LogError(ex, "Erro ao atualizar usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                return Result<UsuarioSecretariaResponse>.Failure($"Erro ao atualizar usuário da secretaria");
             }
-
-            /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
-             {
-                 usuarioSecretaria.IsAtivo = true;
-                 // var status = Enum.TryParse(update.Status, out Situacao situacao) ? situacao : Situacao.inativo;
-
-             }*/
-
-            await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
-            await _repository.SaveChangesAsync();
-            return new UsuarioSecretariaResponse
-            {
-                Id = usuarioSecretaria.Id,
-                EmailUsuario = usuarioSecretaria.EmailUsuario,
-                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
-                Chave = usuarioSecretaria.Chave,
-                NomeUsuario = usuarioSecretaria.NomeUsuario,
-                IsAtivo = usuarioSecretaria.IsAtivo
-            };
         }
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
         {
-            var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Admin;
-            var status = Enum.TryParse(request.RoleUsuario, out Situacao situacao) ? situacao : Situacao.Inativo;
-            var usuarioExiste = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
+            try
+            {
+                _logger.LogInformation("Iniciando criação do usuário da secretaria com email {EmailUsuario}", request.EmailUsuario);
+                var validator = await _requestValidator.ValidateAsync(request);
+                if (!validator.IsValid)
+                    return Result<UsuarioSecretariaResponse>.Failure(validator.Errors.Select(e => e.ErrorMessage).ToList());
 
-            var usuarioSecretaria = new UsuarioSecretaria
+                var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Secretaria;
+                var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
+                var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
+                if (emailExistente != null)
+                {
+                    _logger.LogWarning("Email {EmailUsuario} já cadastrado para outro usuário da secretaria", request.EmailUsuario);
+                    return Result<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
+                }
+                var usuarioSecretaria = new UsuarioSecretaria
+                {
+                    NomeUsuario = request.NomeUsuario,
+                    Chave = request.Chave,
+                    Senha = senhaHash,
+                    EmailUsuario = request.EmailUsuario,
+                    RoleUsuario = role,
+                    IsAtivo = true
+                };
+                await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
+                await _repository.SaveChangesAsync();
+                _logger.LogInformation("Usuário da secretaria com email {EmailUsuario} criado com sucesso", request.EmailUsuario);
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                {
+                    Id = usuarioSecretaria.Id,
+                    EmailUsuario = usuarioSecretaria.EmailUsuario,
+                    RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+                    Chave = usuarioSecretaria.Chave,
+                    NomeUsuario = usuarioSecretaria.NomeUsuario,
+                    IsAtivo = usuarioSecretaria.IsAtivo
+                });
+            }
+            catch (Exception ex)
             {
-                NomeUsuario = request.NomeUsuario,
-                Chave = request.Chave,
-                EmailUsuario = request.EmailUsuario,
-                RoleUsuario = role,
-                IsAtivo = true
-            };
-            await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
-            await _repository.SaveChangesAsync();
-            return new UsuarioSecretariaResponse
-            {
-                Id = usuarioSecretaria.Id,
-                EmailUsuario = usuarioSecretaria.EmailUsuario,
-                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
-                Chave = usuarioSecretaria.Chave,
-                NomeUsuario = usuarioSecretaria.NomeUsuario,
-                IsAtivo = usuarioSecretaria.IsAtivo
-            };
+                _logger.LogError(ex, "Erro ao criar usuário da secretaria com email {EmailUsuario}", request.EmailUsuario);
+                return Result<UsuarioSecretariaResponse>.Failure("Erro ao criar usuário da secretaria");
+            }
         }
 
-        async Task<bool> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
+        async Task<Result<bool>> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
         {
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
-            usuarioSecretaria.IsAtivo = false;
-            await _repository.SaveChangesAsync();
-            return true;
+            try
+            {
+                _logger.LogInformation("Iniciando deleção do usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+                if (usuarioSecretaria is null)
+                {
+                    _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado para deleção", id);
+                    return Result<bool>.Failure("UsuarioSecretaria não encontrado");
+                }
+                usuarioSecretaria.IsAtivo = false;
+                await _repository.SaveChangesAsync();
+                _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} deletado com sucesso", id);
+                return Result<bool>.Success(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao deletar usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                return Result<bool>.Failure("Erro ao deletar usuário da secretaria");
+            }
         }
 
-        async Task<IEnumerable<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
+        async Task<Result<IEnumerable<UsuarioSecretariaResponse>>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
         {
-            var usuarioSecretarias = await _repository.ListarUsuarioSecretarias();
-            return usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
+            try
             {
-                Id = usuarioSecretaria.Id,
-                EmailUsuario = usuarioSecretaria.EmailUsuario,
-                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
-                Chave = usuarioSecretaria.Chave,
-                NomeUsuario = usuarioSecretaria.NomeUsuario,
-                IsAtivo = usuarioSecretaria.IsAtivo
-            });
+                _logger.LogInformation("Iniciando listagem de usuários da secretaria");
+                var usuarioSecretarias = await _repository.ListarUsuarioSecretarias();
+                _logger.LogInformation("Usuários da secretaria listados com sucesso {UsuarioSecretariasCount}", usuarioSecretarias.Count());
+                return Result<IEnumerable<UsuarioSecretariaResponse>>.Success(usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
+                {
+                    Id = usuarioSecretaria.Id,
+                    EmailUsuario = usuarioSecretaria.EmailUsuario,
+                    RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+                    Chave = usuarioSecretaria.Chave,
+                    NomeUsuario = usuarioSecretaria.NomeUsuario,
+                    IsAtivo = usuarioSecretaria.IsAtivo
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao listar usuários da secretaria");
+                return Result<IEnumerable<UsuarioSecretariaResponse>>.Failure("Erro ao listar usuários da secretaria");
+            }
         }
 
-        async Task<UsuarioSecretariaResponse> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
         {
-            var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id) ?? throw new Exception(" UsuarioSecretaria não encontrado");
-
-            return new UsuarioSecretariaResponse
+            try
             {
-                Id = usuarioSecretaria.Id,
-                EmailUsuario = usuarioSecretaria.EmailUsuario,
-                RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
-                Chave = usuarioSecretaria.Chave,
-                NomeUsuario = usuarioSecretaria.NomeUsuario,
-                IsAtivo = usuarioSecretaria.IsAtivo
-            };
+                _logger.LogInformation("Iniciando busca do usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
+                if (usuarioSecretaria is null)
+                {
+                    _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado", id);
+                    return Result<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+                }
+                _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} encontrado com sucesso", id);
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                {
+                    Id = usuarioSecretaria.Id,
+                    EmailUsuario = usuarioSecretaria.EmailUsuario,
+                    RoleUsuario = usuarioSecretaria.RoleUsuario.ToString(),
+                    Chave = usuarioSecretaria.Chave,
+                    NomeUsuario = usuarioSecretaria.NomeUsuario,
+                    IsAtivo = usuarioSecretaria.IsAtivo
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao buscar usuário da secretaria com ID {UsuarioSecretariaId}", id);
+                return Result<UsuarioSecretariaResponse>.Failure("Erro ao buscar usuário da secretaria");
+            }
+        }
+
+        async Task<Result<UsuarioSecretariaLoginResponse>> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Iniciando login do usuário da secretaria com email {EmailUsuario}", request.Email);
+                var usuarioSecretaria = _repository.ListarUsuarioSecretariaByEmail(request.Email).Result;
+                if (usuarioSecretaria is null)
+                {
+                    _logger.LogWarning("Usuário da secretaria com email {EmailUsuario} não encontrado para login", request.Email);
+                    return Result<UsuarioSecretariaLoginResponse>.Failure("UsuarioSecretaria não encontrado");
+                }
+                if (!BCrypt.Net.BCrypt.Verify(request.Senha, usuarioSecretaria.Senha))
+                {
+                    _logger.LogWarning("Tentativa de login com email {EmailUsuario} falhou: senha incorreta", request.Email);
+                    return Result<UsuarioSecretariaLoginResponse>.Failure("Senha incorreta");
+                }
+                _logger.LogInformation("Usuário da secretaria com email {EmailUsuario} logado com sucesso", request.Email);
+                return await Task.FromResult(Result<UsuarioSecretariaLoginResponse>.Success(new UsuarioSecretariaLoginResponse
+                {
+
+                    Token = "sjikjd"
+
+                }));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Erro ao realizar login do usuário da secretaria com email {EmailUsuario}", request.Email);
+                return Result<UsuarioSecretariaLoginResponse>.Failure("Erro ao realizar login do usuário da secretaria");
+            }
         }
     }
 }

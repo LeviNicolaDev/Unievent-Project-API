@@ -1,14 +1,15 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository;
 
 public class EnderecoRepository : IEnderecoRepository
 {
     private AppDbContext _context;
-    public EnderecoRepository(AppDbContext context)
+    public EnderecoRepository(AppDbContext context, IConfiguration config)
     {
         _context = context;
     }

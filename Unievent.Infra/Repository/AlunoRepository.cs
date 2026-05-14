@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
@@ -8,7 +9,7 @@ namespace Unievent.Infra.Repository
     public class AlunoRepository : IAlunoRepository
     {
         private readonly AppDbContext _context;
-        public AlunoRepository(AppDbContext context)
+        public AlunoRepository(AppDbContext context, IConfiguration config)
         {
             _context = context;
         }
@@ -28,6 +29,11 @@ namespace Unievent.Infra.Repository
         {
             _context.Aluno.Remove(aluno);
             return Task.FromResult(true);
+        }
+
+        async Task<Aluno> IAlunoRepository.ListarAlunoByEmail(string email)
+        {
+            return await _context.Aluno.FirstOrDefaultAsync(a => a.Email == email);
         }
 
         async Task<Aluno> IAlunoRepository.ListarAlunoById(int id)

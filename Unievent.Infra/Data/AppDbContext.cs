@@ -40,7 +40,7 @@ public class AppDbContext : DbContext
             .HasMaxLength(300);
         modelBuilder.Entity<Instituicao>()
             .Property(i => i.Cnpj)
-            .HasMaxLength(14);
+            .HasMaxLength(18);
         modelBuilder.Entity<Endereco>()
             .Property(e => e.Cep)
             .HasMaxLength(8);
@@ -54,5 +54,7 @@ public class AppDbContext : DbContext
             .HasQueryFilter(s => s.IsAtivo);
         modelBuilder.Entity<Aluno>()
        .HasQueryFilter(s => s.IsAtivo);
+        modelBuilder.Entity<Evento>()
+        .Property(e => e.Categoria).HasConversion<string>();
     }
 }

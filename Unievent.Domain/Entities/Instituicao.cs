@@ -13,13 +13,13 @@ public class Instituicao : EntidadeBase
         SenhaLogin = senhaLogin;
         FotoPerfil = fotoPerfil;
         Cnpj = cnpj;
-        IdEndereco = idEndereco;
+        EnderecoId = idEndereco;
     }
     public int Id { get; set; }
     public required string EmailLogin { get; set; }
     public required string SenhaLogin { get; set; }
     public required string FotoPerfil { get; set; }
     public required string Cnpj { get; set; }
-    public int IdEndereco { get; set; }
+    public required int EnderecoId { get; set; }
     public Endereco Endereco { get; set; }
 }

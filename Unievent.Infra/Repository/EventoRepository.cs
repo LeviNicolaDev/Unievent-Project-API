@@ -1,14 +1,16 @@
-﻿using Unievent.Application.Interfaces.Repository;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 using Unievent.Infra.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository
 {
     public class EventoRepository : IEventoRepository
     {
         private readonly AppDbContext _context;
-        public EventoRepository(AppDbContext context)
+        public EventoRepository(AppDbContext context, IConfiguration config)
         {
             _context = context;
         }
@@ -31,9 +33,20 @@ namespace Unievent.Infra.Repository
             return Task.FromResult(true);
         }
 
+        async Task<IList<Evento>> IEventoRepository.ListarEventoByCategoria(Categoria categoria)
+        {
+            var eventos = await _context.Evento.Where(e => e.Categoria == categoria).AsNoTracking().ToListAsync();
+            return eventos;
+        }
+
         async Task<Evento> IEventoRepository.ListarEventoById(int id)
         {
             return await _context.Evento.Where(e => e.Id == id).FirstOrDefaultAsync();
+        }
+
+        async Task<Evento> IEventoRepository.ListarEventoByResponsavel(int responsavelId)
+        {
+            return await _context.Evento.Where(r => r.ResponsavelEventoId == responsavelId).FirstOrDefaultAsync();
         }
 
         async Task<IEnumerable<Evento>> IEventoRepository.ListarEventos()

@@ -1,14 +1,15 @@
-﻿using Unievent.Application.Interfaces.Repository;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
 using Unievent.Infra.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace Unievent.Infra.Repository
 {
     public class UsuarioSecretariaRepository : IUsuarioSecretariaRepository
     {
         private readonly AppDbContext _context;
-        public UsuarioSecretariaRepository(AppDbContext context)
+        public UsuarioSecretariaRepository(AppDbContext context, IConfiguration config)
         {
             _context = context;
         }
@@ -50,6 +51,8 @@ namespace Unievent.Infra.Repository
         {
             return _context.SaveChangesAsync();
         }
+
+
 
 
     }
