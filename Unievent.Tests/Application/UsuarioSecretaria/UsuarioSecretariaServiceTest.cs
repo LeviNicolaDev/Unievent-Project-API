@@ -66,10 +66,10 @@ public class UsuarioSecretariaServiceTest
 
             // Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.NomeUsuario.Should().Be(nome);
-            result.Data.RoleUsuario.Should().Be(role);
-            result.Data.EmailUsuario.Should().Be(email);
-            result.Data.Chave.Should().Be(chave);
+            result.Value.NomeUsuario.Should().Be(nome);
+            result.Value.RoleUsuario.Should().Be(role);
+            result.Value.EmailUsuario.Should().Be(email);
+            result.Value.Chave.Should().Be(chave);
             _repositoryMock.Verify(r =>
                 r.CriarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
         }
@@ -95,7 +95,7 @@ public class UsuarioSecretariaServiceTest
 
             // Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("A senha deve ter no minimo 6 caracteres");
+            result.Errors.Should().Contain("A senha deve ter no minimo 6 caracteres");
             _repositoryMock.Verify(r =>
                 r.CriarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
         }
@@ -130,7 +130,7 @@ public class UsuarioSecretariaServiceTest
             var result = await _service.CriarUsuarioSecretaria(request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Email já cadastrado para outro usuário da secretaria");
+            result.Errors.Should().Contain("Email já cadastrado para outro usuário da secretaria");
             _repositoryMock.Verify(r => r.CriarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
 
         }
@@ -163,7 +163,7 @@ public class UsuarioSecretariaServiceTest
                 //Assert
                 result.IsSuccess.Should().BeTrue();
                 _repositoryMock.Verify(r => r.DeletarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
-                result.Message.Should().Be("UsuarioSecretaria deletado com sucesso");
+
             }
         }
 
@@ -192,7 +192,7 @@ public class UsuarioSecretariaServiceTest
             //Assert
             result.IsSuccess.Should().BeFalse();
             _repositoryMock.Verify(r => r.DeletarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
-            result.Message.Should().Be("UsuarioSecretaria não encontrado");
+            result.Errors.Should().Contain("UsuarioSecretaria não encontrado");
         }
 
         public class AtualizarUsuario : UsuarioSecretariaServiceTest
@@ -229,10 +229,10 @@ public class UsuarioSecretariaServiceTest
                 var result = await _service.AtualizarUsuarioSecretaria(1, request);
                 //Assert
                 result.IsSuccess.Should().BeTrue();
-                result.Data.NomeUsuario.Should().Be(request.NomeUsuario);
-                result.Data.RoleUsuario.Should().Be(request.Role);
-                result.Data.EmailUsuario.Should().Be(request.EmailUsuario);
-                result.Data.Chave.Should().Be(usuarioExistente.Chave);
+                result.Value.NomeUsuario.Should().Be(request.NomeUsuario);
+                result.Value.RoleUsuario.Should().Be(request.Role);
+                result.Value.EmailUsuario.Should().Be(request.EmailUsuario);
+                result.Value.Chave.Should().Be(usuarioExistente.Chave);
                 _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
 
 
@@ -278,7 +278,7 @@ public class UsuarioSecretariaServiceTest
                 var result = await _service.AtualizarUsuarioSecretaria(1, request);
                 //Assert
                 result.IsSuccess.Should().BeFalse();
-                result.Message.Should().Be("Email já cadastrado para outro usuário da secretaria");
+                result.Errors.Should().Contain("Email já cadastrado para outro usuário da secretaria");
                 _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
 
 
@@ -356,7 +356,7 @@ public class UsuarioSecretariaServiceTest
                 var result = await _service.ListarUsuarioSecretariaById(1);
                 //Assert
                 result.IsSuccess.Should().BeTrue();
-                result.Data.Id.Should().Be(1);
+                result.Value.Id.Should().Be(1);
 
             }
 
@@ -381,7 +381,7 @@ public class UsuarioSecretariaServiceTest
                 var result = await _service.ListarUsuarioSecretariaById(1);
                 //Assert
                 result.IsSuccess.Should().BeFalse();
-                result.Message.Should().Be("UsuarioSecretaria não encontrado");
+                result.Errors.Should().Contain("UsuarioSecretaria não encontrado");
 
             }
         }

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Configuration;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 using Unievent.Infra.Data;
 
 namespace Unievent.Infra.Repository
@@ -32,9 +33,9 @@ namespace Unievent.Infra.Repository
             return Task.FromResult(true);
         }
 
-        async Task<IEnumerable<Evento>> IEventoRepository.ListarEventoByCategoria(string categoria)
+        async Task<IList<Evento>> IEventoRepository.ListarEventoByCategoria(Categoria categoria)
         {
-            var eventos = await _context.Evento.Where(e => e.Categoria == categoria).ToListAsync();
+            var eventos = await _context.Evento.Where(e => e.Categoria == categoria).AsNoTracking().ToListAsync();
             return eventos;
         }
 

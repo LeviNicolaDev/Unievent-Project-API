@@ -60,10 +60,9 @@ public class CertificadoServiceTest
                 Nome = "Evento Teste",
                 ResponsavelEventoId = 1,
                 Capacidade = 40,
-                Categoria = "Tecnologia",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 DataEvento = DateTime.Now.AddDays(10),
                 Descricao = "Descrição do evento",
-                HoraEvento = "14:00",
                 Thumbnail = new List<string> { "thumbnail.jpg" },
             });
             _repositoryMock.Setup(r => r.CriarCertificado(It.IsAny<Domain.Entities.Certificado>())).ReturnsAsync((Domain.Entities.Certificado c) => c);
@@ -95,7 +94,7 @@ public class CertificadoServiceTest
             var result = await _service.CriarCertificado(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Aluno não encontrado");
+            result.Errors.Should().Contain("Aluno não encontrado");
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId), Times.Once);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
 
@@ -127,7 +126,7 @@ public class CertificadoServiceTest
             var result = await _service.CriarCertificado(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Evento não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId), Times.Once);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Once);
             _repositoryMock.Verify(r => r.CriarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Never);
@@ -155,7 +154,7 @@ public class CertificadoServiceTest
             var result = await _service.CriarCertificado(request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Dados inválidos");
+            result.Errors.Should().Contain("Texto é obrigatório");
             _requestValidatorMock.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
@@ -200,10 +199,9 @@ public class CertificadoServiceTest
                 Nome = "Evento Teste",
                 ResponsavelEventoId = 1,
                 Capacidade = 40,
-                Categoria = "Tecnologia",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 DataEvento = DateTime.Now.AddDays(10),
                 Descricao = "Descrição do evento",
-                HoraEvento = "14:00",
                 Thumbnail = new List<string> { "thumbnail.jpg" },
             });
             _repositoryMock.Setup(r => r.AtualizarCertificado(It.IsAny<Domain.Entities.Certificado>())).ReturnsAsync((Domain.Entities.Certificado c) => c);
@@ -235,7 +233,7 @@ public class CertificadoServiceTest
             var result = await _service.AtualizarCertificado(999, request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Certificado não encontrado");
+            result.Errors.Should().Contain("Certificado não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(999), Times.Once);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
@@ -261,7 +259,7 @@ public class CertificadoServiceTest
             var result = await _service.AtualizarCertificado(1, request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Dados inválidos");
+            result.Errors.Should().Contain("Texto é obrigatório");
             _updateValidatorMock.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repositoryMock.Verify(r => r.ListarCertificadoById(It.IsAny<int>()), Times.Never);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
@@ -293,7 +291,7 @@ public class CertificadoServiceTest
             var result = await _service.AtualizarCertificado(1, request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Aluno não encontrado");
+            result.Errors.Should().Contain("Aluno não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId.Value), Times.Once);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
@@ -334,7 +332,7 @@ public class CertificadoServiceTest
             var result = await _service.AtualizarCertificado(1, request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Evento não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId.Value), Times.Once);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId.Value), Times.Once);
@@ -365,7 +363,7 @@ public class CertificadoServiceTest
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
             _repositoryMock.Verify(r => r.DeletarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
-            result.Message.Should().Be("Certificado deletado com sucesso");
+
         }
 
         [Fact]
@@ -377,7 +375,7 @@ public class CertificadoServiceTest
             var result = await _service.DeletarCertificado(999);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Certificado não encontrado");
+            result.Errors.Should().Contain("Certificado não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(999), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
@@ -400,9 +398,9 @@ public class CertificadoServiceTest
             var result = await _service.ListarCertificadoById(1);
             // Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.Should().NotBeNull();
-            result.Data.Id.Should().Be(1);
-            result.Data.Texto.Should().Be("Certificado de participação");
+            result.Value.Should().NotBeNull();
+            result.Value.Id.Should().Be(1);
+            result.Value.Texto.Should().Be("Certificado de participação");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
         }
 
@@ -415,7 +413,7 @@ public class CertificadoServiceTest
             var result = await _service.ListarCertificadoById(999);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Certificado não encontrado");
+            result.Errors.Should().Contain("Certificado não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(999), Times.Once);
         }
     }

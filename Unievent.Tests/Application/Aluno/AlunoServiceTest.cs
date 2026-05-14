@@ -55,9 +55,9 @@ public class AlunoServiceTest
             var result = await _alunoService.CriarAluno(request);
             // Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.Nome.Should().Be(request.Nome);
-            result.Data.Email.Should().Be(request.Email);
-            result.Data.DataNascimento.Should().Be(request.DataNascimento);
+            result.Value.Nome.Should().Be(request.Nome);
+            result.Value.Email.Should().Be(request.Email);
+            result.Value.DataNascimento.Should().Be(request.DataNascimento);
             _repositoryMock.Verify(r => r.CriarAluno(It.IsAny<Unievent.Domain.Entities.Aluno>()), Times.Once);
         }
 
@@ -94,7 +94,7 @@ public class AlunoServiceTest
             var result = await _alunoService.CriarAluno(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Email já cadastrado para outro aluno");
+            result.Errors.Contains("Email já cadastrado para outro aluno").Should().Be(true);
             _repositoryMock.Verify(r => r.CriarAluno(It.IsAny<Unievent.Domain.Entities.Aluno>()), Times.Never);
         }
 
@@ -121,7 +121,7 @@ public class AlunoServiceTest
                 .Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
                 {
-            new FluentValidation.Results.ValidationFailure("Dados", "Dados inválidos")
+            new FluentValidation.Results.ValidationFailure("Email", "O email deve ser válido")
                 }));
 
             // Act
@@ -129,7 +129,7 @@ public class AlunoServiceTest
 
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Dados inválidos");
+            result.Errors.Should().Contain("O email deve ser válido");
 
             _validatorRequest.Verify(
                 v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default),
@@ -167,7 +167,6 @@ public class AlunoServiceTest
                 result.IsSuccess.Should().BeTrue();
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
                 _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
-                result.Message.Should().Be("Aluno deletado com sucesso");
             }
 
             [Fact]
@@ -183,7 +182,7 @@ public class AlunoServiceTest
                 result.IsSuccess.Should().BeFalse();
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
                 _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
-                result.Message.Should().Be("Aluno não encontrado");
+                result.Errors.Should().Contain("Aluno não encontrado");
             }
         }
         public class ListarAluno : AlunoServiceTest
@@ -224,7 +223,7 @@ public class AlunoServiceTest
                 // Assert
                 result.IsSuccess.Should().BeFalse();
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
-                result.Message.Should().Be("Aluno não encontrado");
+                result.Errors.Should().Contain("Aluno não encontrado");
             }
 
         }
@@ -295,7 +294,7 @@ public class AlunoServiceTest
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
                 _repositoryMock.Verify(r => r.AtualizarAluno(It.IsAny<Unievent.Domain.Entities.Aluno>()), Times.Never);
                 _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
-                result.Message.Should().Be("Aluno não encontrado");
+                result.Errors.Should().Contain("Aluno não encontrado");
             }
 
             [Fact]
@@ -320,7 +319,7 @@ public class AlunoServiceTest
                     .Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default))
                     .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
                     {
-            new FluentValidation.Results.ValidationFailure("Dados", "Dados inválidos")
+            new FluentValidation.Results.ValidationFailure("Senha", "A senha deve ter no minimo 6 caracteres")
                     }));
 
                 // Act
@@ -328,7 +327,7 @@ public class AlunoServiceTest
 
                 // Assert
                 result.IsSuccess.Should().BeFalse();
-                result.Message.Should().Be("Dados inválidos");
+                result.Errors.Should().Contain("A senha deve ter no minimo 6 caracteres");
 
                 _validatorUpdate.Verify(
                     v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default),

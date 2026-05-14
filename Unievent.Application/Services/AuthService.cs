@@ -1,6 +1,7 @@
-using Microsoft.AspNetCore.Identity.Data;
+
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
+using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Auth;
 using Unievent.Application.Interfaces.Repository;
 
@@ -23,26 +24,26 @@ public class AuthService
         _logger = logger;
     }
 
-    public async Task<ResultData<string>> Login(LoginRequest request)
+    public async Task<Result<string>> Login(UsuarioSecretariaLoginRequest request)
     {
         try
         {
             var usuario = await _repository.ListarUsuarioSecretariaByEmail(request.Email);
-            if (usuario is null || !BCrypt.Net.BCrypt.Verify(request.Password, usuario.Senha))
+            if (usuario is null || !BCrypt.Net.BCrypt.Verify(request.Senha, usuario.Senha))
             {
                 _logger.LogWarning("Tentativa de login inválida para {Email}", request.Email);
-                return ResultData<string>.Failure("Email ou senha inválidos");
+                return Result<string>.Failure("Email ou senha inválidos");
             }
 
             var token = _jwtTokenGenerator.GerarToken(usuario.Id, usuario.EmailUsuario, usuario.RoleUsuario);
 
             _logger.LogInformation("Login realizado com sucesso para {Email}", request.Email);
-            return new ResultData<string>(token);
+            return Result<string>.Success(token);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao realizar login para {Email}", request.Email);
-            return ResultData<string>.Failure("Erro interno ao realizar login");
+            return Result<string>.Failure("Erro interno ao realizar login");
         }
     }
 }

@@ -41,11 +41,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste",
                 Descricao = "Descrição do evento de teste",
                 DataEvento = DateTime.Now.AddDays(10),
-                Categoria = "Categoria de Teste",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 100,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "18:00"
             };
 
             _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -55,18 +54,7 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 FotoPerfil = "fototeste.jpg"
             });
-            _repository.Setup(r => r.ListarEventoByResponsavel(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.Evento
-            {
-                Id = 1,
-                Nome = "Evento Existente",
-                DataEvento = DateTime.Now.AddDays(10),
-                ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
-                Capacidade = 50,
-                Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
-                Descricao = "Descrição do evento existente"
-            });
+            _repository.Setup(r => r.ListarEventoByResponsavel(It.IsAny<int>())).ReturnsAsync((Domain.Entities.Evento)null);
 
             _repository.Setup(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>())).ReturnsAsync((Domain.Entities.Evento e) => e);
             _repository.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
@@ -89,11 +77,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste",
                 Descricao = "Descrição do evento de teste",
                 DataEvento = DateTime.Now.AddDays(10),
-                Categoria = "Categoria de Teste",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 100,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "18:00"
             };
 
             _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -102,7 +89,7 @@ public class EventoServiceTest
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Responsável não encontrado.");
+            result.Errors.Should().Contain("Responsável não encontrado.");
             _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Never);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -117,11 +104,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste",
                 Descricao = "Descrição do evento de teste",
                 DataEvento = DateTime.Now.AddDays(10),
-                Categoria = "Categoria de Teste",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 100,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "18:00"
             };
 
             _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -137,17 +123,16 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             //Act
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("O responsável já possui um evento cadastrado para esta data.");
+            result.Errors.Should().Contain("O responsável já possui um evento cadastrado para esta data.");
             _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Once);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -164,11 +149,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste",
                 Descricao = "Descrição do evento de teste",
                 DataEvento = DateTime.Now.AddDays(10),
-                Categoria = "Categoria de Teste",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 100,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "18:00"
             };
 
             _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
@@ -179,7 +163,7 @@ public class EventoServiceTest
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Dados inválidos");
+            result.Errors.Should().Contain("O campo 'Nome' é obrigatório.");
             _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(It.IsAny<int>()), Times.Never);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -198,11 +182,11 @@ public class EventoServiceTest
                 Nome = "Evento de Teste Atualizado",
                 Descricao = "Descrição do evento de teste atualizado",
                 DataEvento = DateTime.Now.AddDays(15),
-                Categoria = "Categoria de Teste Atualizada",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 150,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "19:00"
+
             };
 
             _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -212,10 +196,9 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.ResponsavelEvento
@@ -230,10 +213,9 @@ public class EventoServiceTest
                 Nome = "Outro Evento Existente",
                 DataEvento = DateTime.Now.AddDays(20),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 100,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "20:00",
                 Descricao = "Descrição do outro evento existente"
             });
             _repository.Setup(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>())).ReturnsAsync((Domain.Entities.Evento e) => e);
@@ -258,11 +240,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste Atualizado",
                 Descricao = "Descrição do evento de teste atualizado",
                 DataEvento = DateTime.Now.AddDays(15),
-                Categoria = "Categoria de Teste Atualizada",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 150,
-                Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "19:00"
+                Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") }
             };
 
             _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -271,7 +252,7 @@ public class EventoServiceTest
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Evento não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -287,11 +268,11 @@ public class EventoServiceTest
                 Nome = "Evento de Teste Atualizado",
                 Descricao = "Descrição do evento de teste atualizado",
                 DataEvento = DateTime.Now.AddDays(15),
-                Categoria = "Categoria de Teste Atualizada",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 150,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "19:00"
+
             };
 
             _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -301,17 +282,16 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.ResponsavelEvento)null);            //Act
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Responsável não encontrado.");
+            result.Errors.Should().Contain("Responsável não encontrado.");
             _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId.Value), Times.Never);
@@ -329,11 +309,10 @@ public class EventoServiceTest
                 Nome = "Evento de Teste Atualizado",
                 Descricao = "Descrição do evento de teste atualizado",
                 DataEvento = DateTime.Now.AddDays(15),
-                Categoria = "Categoria de Teste Atualizada",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 150,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "19:00"
             };
 
             _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -343,10 +322,9 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.ResponsavelEvento
@@ -361,17 +339,16 @@ public class EventoServiceTest
                 Nome = "Outro Evento Existente",
                 DataEvento = DateTime.Now.AddDays(15),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 100,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "20:00",
                 Descricao = "Descrição do outro evento existente"
             });
             //Act
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("O responsável já possui um evento cadastrado para esta data.");
+            result.Errors.Should().Contain("O responsável já possui um evento cadastrado para esta data.");
             _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId.Value), Times.Once);
@@ -389,11 +366,10 @@ public class EventoServiceTest
                 Nome = "",
                 Descricao = "Descrição do evento de teste atualizado",
                 DataEvento = DateTime.Now.AddDays(15),
-                Categoria = "Categoria de Teste Atualizada",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
                 Capacidade = 150,
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-                HoraEvento = "19:00"
             };
 
             _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
@@ -404,7 +380,7 @@ public class EventoServiceTest
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Dados inválidos");
+            result.Errors.Should().Contain("O campo 'Nome' é obrigatório.");
             _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repository.Verify(r => r.ListarEventoById(It.IsAny<int>()), Times.Never);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -423,10 +399,9 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             _repository.Setup(r => r.DeletarEvento(It.IsAny<Domain.Entities.Evento>())).ReturnsAsync(true);
@@ -449,7 +424,7 @@ public class EventoServiceTest
             var result = await _service.DeletarEvento(1);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Evento não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.DeletarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -468,17 +443,16 @@ public class EventoServiceTest
                 Nome = "Evento Existente",
                 DataEvento = DateTime.Now.AddDays(10),
                 ResponsavelEventoId = 1,
-                Categoria = "Categoria Existente",
+                Categoria = Domain.Enuns.Categoria.Palestra,
                 Capacidade = 50,
                 Thumbnail = new List<string> { "thumbnail.jpg" },
-                HoraEvento = "18:00",
                 Descricao = "Descrição do evento existente"
             });
             //Act
             var result = await _service.ListarEventoById(1);
             //Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.Id.Should().Be(1);
+            result.Value.Id.Should().Be(1);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
         }
 
@@ -491,7 +465,7 @@ public class EventoServiceTest
             var result = await _service.ListarEventoById(1);
             //Assert
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Evento não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
         }
     }

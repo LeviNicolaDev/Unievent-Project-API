@@ -49,7 +49,7 @@ public class EnderecoServiceTest
             var result = await _service.CriarEndereco(request);
             // Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.Rua.Should().Be(request.Rua);
+            result.Value.Rua.Should().Be(request.Rua);
             _repositoryMock.Verify(r => r.CriarEndereco(It.IsAny<Domain.Entities.Endereco>()), Times.Once);
         }
         [Fact]
@@ -150,7 +150,7 @@ public class EnderecoServiceTest
             //Assert
 
             result.IsFailure.Should().BeTrue();
-            result.Message.Should().Be("Endereco não encontrado");
+            result.Errors.Should().Contain("Endereco não encontrado");
             _repositoryMock.Verify(r => r.AtualizarEndereco(It.IsAny<Domain.Entities.Endereco>()), Times.Never);
         }
 
@@ -226,7 +226,7 @@ public class EnderecoServiceTest
             var result = await _service.DeletarEndereco(1);
             //Assert 
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Endereco não encontrado");
+            result.Errors.Should().Contain("Endereco não encontrado");
             _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
             _repositoryMock.Verify(r => r.DeletarEndereco(It.IsAny<Domain.Entities.Endereco>()), Times.Never);
         }
@@ -264,7 +264,7 @@ public class EnderecoServiceTest
             var result = await _service.ListarEnderecoById(1);
             //Assert 
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Endereco não encontrado");
+            result.Errors.Should().Contain("Endereco não encontrado");
             _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
         }
     }

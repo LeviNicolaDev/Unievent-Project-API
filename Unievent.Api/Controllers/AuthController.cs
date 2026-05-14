@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Services;
 
 namespace Unievent.Api.Controllers;
@@ -16,12 +17,12 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] UsuarioSecretariaLoginRequest request)
     {
         var result = await _authService.Login(request);
         if (!result.IsSuccess)
-            return Unauthorized(result);
+            return Unauthorized(result.Errors);
 
-        return Ok(result.Data);
+        return Ok(result.Value);
     }
 }

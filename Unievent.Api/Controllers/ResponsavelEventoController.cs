@@ -9,7 +9,7 @@ namespace Unievent.Api.Controllers
     [Route("api/[controller]")]
     public class ResponsavelEventoController(IResponsavelEventoService _service) : ControllerBase
     {
-        [HttpPost("CriarResponsavelEvento")]
+        [HttpPost]
         [Consumes("multipart/form-data")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> CriarResponsavelEvento([FromForm] ResponsavelEventoRequest request)
@@ -17,60 +17,60 @@ namespace Unievent.Api.Controllers
             var response = await _service.CriarResponsavelEvento(request);
             if (response.IsFailure)
             {
-                return BadRequest(response.Message);
+                return BadRequest(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
 
         }
 
-        [HttpPut("AtualizarResponsavelEvento/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> AtualizarResponsavelEvento(int id, [FromBody] ResponsavelEventoUpdate update)
         {
             var response = await _service.AtualizarResponsavelEvento(id, update);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
 
         }
 
-        [HttpGet("ListarResponsaveisEvento")]
+        [HttpGet]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarResponsaveisEvento()
         {
             var response = await _service.ListarResponsaveisEvento();
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
 
         }
 
-        [HttpGet("ListarResponsavelEventoById/{id}")]
+        [HttpGet("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarResponsavelEventoById(int id)
         {
             var response = await _service.ListarResponsavelEventoById(id);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
         }
 
-        [HttpDelete("DeletarResponsavelEvento/{id}")]
+        [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> DeletarResponsavelEvento(int id)
         {
             var response = await _service.DeletarResponsavelEvento(id);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Message);
+            return Ok(response.Errors);
         }
     }
 }

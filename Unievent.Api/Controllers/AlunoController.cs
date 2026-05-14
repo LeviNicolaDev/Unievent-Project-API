@@ -15,7 +15,7 @@ public class AlunoController : ControllerBase
         _service = service;
     }
 
-    [HttpPost("CriarAluno")]
+    [HttpPost]
     [Consumes("multipart/form-data")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> CriarAluno([FromForm] AlunoRequest request)
@@ -23,13 +23,13 @@ public class AlunoController : ControllerBase
         var aluno = await _service.CriarAluno(request);
         if (aluno.IsFailure)
         {
-            return BadRequest(aluno.Message);
+            return BadRequest(aluno.Errors);
         }
-        return Ok(aluno.Data);
+        return Ok(aluno.Value);
 
     }
 
-    [HttpPatch("AtualizarAluno/{id}")]
+    [HttpPatch("{id}")]
     [Consumes("multipart/form-data")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromForm] AlunoUpdate update)
@@ -37,37 +37,37 @@ public class AlunoController : ControllerBase
         var aluno = await _service.AtualizarAluno(id, update);
         if (aluno.IsFailure)
         {
-            return BadRequest(aluno.Message);
+            return BadRequest(aluno.Errors);
         }
-        return Ok(aluno.Data);
+        return Ok(aluno.Value);
     }
 
-    [HttpGet("ListarAlunos")]
+    [HttpGet]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarAlunos()
     {
         var alunos = await _service.ListarAlunos();
         if (alunos.IsFailure)
         {
-            return NotFound(alunos.Message);
+            return NotFound(alunos.Errors);
         }
-        return Ok(alunos.Data);
+        return Ok(alunos.Value);
 
     }
 
-    [HttpGet("ListarAlunoById/{id}")]
+    [HttpGet("{id}")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarAlunoById([FromRoute] int id)
     {
         var aluno = await _service.ListarAlunoById(id);
         if (aluno.IsFailure)
         {
-            return NotFound(aluno.Message);
+            return NotFound(aluno.Errors);
         }
-        return Ok(aluno.Data);
+        return Ok(aluno.Value);
 
     }
-    [HttpDelete("DeletarAluno/{id}")]
+    [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarAluno([FromRoute] int id)
     {
@@ -75,9 +75,9 @@ public class AlunoController : ControllerBase
         var aluno = await _service.DeletarAluno(id);
         if (aluno.IsFailure)
         {
-            return NotFound(aluno.Message);
+            return NotFound(aluno.Errors);
         }
-        return Ok(aluno.Message);
+        return Ok(aluno.Value);
 
     }
 }

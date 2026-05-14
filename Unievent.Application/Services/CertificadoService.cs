@@ -16,7 +16,7 @@ public class CertificadoService : ICertificadoService
     private readonly IValidator<CertificadoUpdate> _updateValidator;
     private readonly IAlunoRepository _alunoRepository;
     private readonly IEventoRepository _eventoRepository;
-    public CertificadoService(ICertificadoRepository repository, ILogger<CertificadoService> logger, IValidator<CertificadoRequest> requestValidator, 
+    public CertificadoService(ICertificadoRepository repository, ILogger<CertificadoService> logger, IValidator<CertificadoRequest> requestValidator,
     IValidator<CertificadoUpdate> updateValidator, IAlunoRepository alunoRepository, IEventoRepository eventoRepository)
     {
 
@@ -28,21 +28,22 @@ public class CertificadoService : ICertificadoService
         _eventoRepository = eventoRepository;
     }
 
-    async Task<ResultData<CertificadoResponse>> ICertificadoService.AtualizarCertificado(int id, CertificadoUpdate update)
+    async Task<Result<CertificadoResponse>> ICertificadoService.AtualizarCertificado(int id, CertificadoUpdate update)
     {
         try
         {
-            var resuultValidation = await _updateValidator.ValidateAsync(update);
-            if (!resuultValidation.IsValid){
+            var resultValidation = await _updateValidator.ValidateAsync(update);
+            if (!resultValidation.IsValid)
+            {
                 _logger.LogWarning("Dados inválidos para atualização do certificado com ID {CertificadoId}", id);
-                return ResultData<CertificadoResponse>.Failure("Dados inválidos");
+                return Result<CertificadoResponse>.Failure(resultValidation.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando atualização do certificado com ID {CertificadoId}", id);
             var certificado = await _repository.ListarCertificadoById(id);
             if (certificado is null)
             {
                 _logger.LogWarning("Certificado com ID {CertificadoId} não encontrado para atualização", id);
-                return ResultData<CertificadoResponse>.Failure("Certificado não encontrado");
+                return Result<CertificadoResponse>.Failure("Certificado não encontrado");
             }
             if (!string.IsNullOrWhiteSpace(update.Texto))
             {
@@ -54,31 +55,31 @@ public class CertificadoService : ICertificadoService
             }
             if (update.AlunoId.HasValue)
             {
-                 var aluno = await _alunoRepository.ListarAlunoById(update.AlunoId.Value);
+                var aluno = await _alunoRepository.ListarAlunoById(update.AlunoId.Value);
 
                 if (aluno == null)
                 {
-                _logger.LogWarning("Aluno com ID {AlunoId} não encontrado...", update.AlunoId);
-                return ResultData<CertificadoResponse>.Failure("Aluno não encontrado");
-                }   
+                    _logger.LogWarning("Aluno com ID {AlunoId} não encontrado...", update.AlunoId);
+                    return Result<CertificadoResponse>.Failure("Aluno não encontrado");
+                }
 
                 certificado.AlunoId = update.AlunoId.Value;
             }
             if (update.EventoId.HasValue)
             {
-            var evento = await _eventoRepository.ListarEventoById(update.EventoId.Value);
-            if(evento == null)
+                var evento = await _eventoRepository.ListarEventoById(update.EventoId.Value);
+                if (evento == null)
                 {
-                _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização do certificado com ID {CertificadoId}", update.EventoId, id);
-                return ResultData<CertificadoResponse>.Failure("Evento não encontrado");       
+                    _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização do certificado com ID {CertificadoId}", update.EventoId, id);
+                    return Result<CertificadoResponse>.Failure("Evento não encontrado");
                 }
                 certificado.EventoId = update.EventoId.Value;
             }
-          
+
             await _repository.AtualizarCertificado(certificado);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Certificado com ID {CertificadoId} atualizado com sucesso", id);
-            return ResultData<CertificadoResponse>.Success(new CertificadoResponse
+            return Result<CertificadoResponse>.Success(new CertificadoResponse
             {
                 Id = id,
                 DataCertifcado = certificado.DataCertifcado,
@@ -90,32 +91,35 @@ public class CertificadoService : ICertificadoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao atualizar certificado com ID {CertificadoId}", id);
-            return ResultData<CertificadoResponse>.Failure($"Erro ao atualizar certificado");
+            return Result<CertificadoResponse>.Failure($"Erro ao atualizar certificado");
         }
     }
 
 
-    async Task<ResultData<CertificadoResponse>> ICertificadoService.CriarCertificado(CertificadoRequest request)
+    async Task<Result<CertificadoResponse>> ICertificadoService.CriarCertificado(CertificadoRequest request)
     {
         try
         {
             var validationResult = await _requestValidator.ValidateAsync(request);
-            if (!validationResult.IsValid)            {
+            if (!validationResult.IsValid)
+            {
                 _logger.LogWarning("Dados inválidos para criação do certificado para aluno ID {AlunoId} e evento ID {EventoId}", request.AlunoId, request.EventoId);
-                return ResultData<CertificadoResponse>.Failure("Dados inválidos");
+                return Result<CertificadoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando criação de certificado para aluno ID {AlunoId} e evento ID {EventoId}", request.AlunoId, request.EventoId);
-            
+
             var aluno = await _alunoRepository.ListarAlunoById(request.AlunoId);
-            if (aluno is null)            {
+            if (aluno is null)
+            {
                 _logger.LogWarning("Aluno com ID {AlunoId} não encontrado para criação do certificado", request.AlunoId);
-                return ResultData<CertificadoResponse>.Failure("Aluno não encontrado");
+                return Result<CertificadoResponse>.Failure("Aluno não encontrado");
             }
             var evento = await _eventoRepository.ListarEventoById(request.EventoId);
-            if (evento is null)            {
+            if (evento is null)
+            {
                 _logger.LogWarning("Evento com ID {EventoId} não encontrado para criação do certificado", request.EventoId);
-                return ResultData<CertificadoResponse>.Failure("Evento não encontrado");
-            }   
+                return Result<CertificadoResponse>.Failure("Evento não encontrado");
+            }
 
             var certificado = new Certificado
             {
@@ -127,7 +131,7 @@ public class CertificadoService : ICertificadoService
             await _repository.CriarCertificado(certificado);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Certificado criado com sucesso com ID {CertificadoId}", certificado.Id);
-            return ResultData<CertificadoResponse>.Success(new CertificadoResponse
+            return Result<CertificadoResponse>.Success(new CertificadoResponse
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
@@ -139,11 +143,11 @@ public class CertificadoService : ICertificadoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao criar certificado");
-            return ResultData<CertificadoResponse>.Failure("Erro ao criar certificado");
+            return Result<CertificadoResponse>.Failure("Erro ao criar certificado");
         }
     }
 
-    async Task<Result> ICertificadoService.DeletarCertificado(int id)
+    async Task<Result<bool>> ICertificadoService.DeletarCertificado(int id)
     {
         try
         {
@@ -152,21 +156,21 @@ public class CertificadoService : ICertificadoService
             if (certificado is null)
             {
                 _logger.LogWarning("Certificado com ID {CertificadoId} não encontrado para deleção", id);
-                return Result.Failure("Certificado não encontrado");
+                return Result<bool>.Failure("Certificado não encontrado");
             }
             await _repository.DeletarCertificado(certificado);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Certificado com ID {CertificadoId} deletado com sucesso", id);
-            return Result.Success("Certificado deletado com sucesso");
+            return Result<bool>.Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao deletar certificado com ID {CertificadoId}", id);
-            return Result.Failure("Erro ao deletar certificado");
+            return Result<bool>.Failure("Erro ao deletar certificado");
         }
     }
 
-    async Task<ResultData<CertificadoResponse>> ICertificadoService.ListarCertificadoById(int id)
+    async Task<Result<CertificadoResponse>> ICertificadoService.ListarCertificadoById(int id)
     {
         try
         {
@@ -175,10 +179,10 @@ public class CertificadoService : ICertificadoService
             if (certificado is null)
             {
                 _logger.LogWarning("Certificado com ID {CertificadoId} não encontrado", id);
-                return ResultData<CertificadoResponse>.Failure("Certificado não encontrado");
+                return Result<CertificadoResponse>.Failure("Certificado não encontrado");
             }
             _logger.LogInformation("Certificado com ID {CertificadoId} encontrado com sucesso", id);
-            return ResultData<CertificadoResponse>.Success(new CertificadoResponse
+            return Result<CertificadoResponse>.Success(new CertificadoResponse
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
@@ -190,18 +194,18 @@ public class CertificadoService : ICertificadoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar certificado com ID {CertificadoId}", id);
-            return ResultData<CertificadoResponse>.Failure("Erro ao buscar certificado");
+            return Result<CertificadoResponse>.Failure("Erro ao buscar certificado");
         }
     }
 
-    async Task<ResultData<IEnumerable<CertificadoResponse>>> ICertificadoService.ListarCertificados()
+    async Task<Result<IEnumerable<CertificadoResponse>>> ICertificadoService.ListarCertificados()
     {
         try
         {
             _logger.LogInformation("Iniciando listagem de certificados");
             var certificados = await _repository.ListarCertificados();
             _logger.LogInformation("Certificados listados com sucesso {CertificadosCount}", certificados.Count());
-            return ResultData<IEnumerable<CertificadoResponse>>.Success(certificados.Select(certificado => new CertificadoResponse
+            return Result<IEnumerable<CertificadoResponse>>.Success(certificados.Select(certificado => new CertificadoResponse
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
@@ -214,7 +218,7 @@ public class CertificadoService : ICertificadoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao listar certificados");
-            return ResultData<IEnumerable<CertificadoResponse>>.Failure("Erro ao listar certificados");
+            return Result<IEnumerable<CertificadoResponse>>.Failure("Erro ao listar certificados");
         }
     }
 }

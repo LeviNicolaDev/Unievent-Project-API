@@ -1,14 +1,15 @@
+using Unievent.Domain.Enuns;
+
 namespace Unievent.Application.Dtos.Evento;
 
 public record EventoResponse
 {
-    public int Id { get; set; }
-    public string Nome { get; set; }
-    public string Descricao { get; set; }
-    public string Categoria { get; set; }
-    public string HoraEvento { get; set; }
-    public DateTime DataEvento { get; set; }
-    public int Capacidade { get; set; }
-    public IList<string> Thumbnail { get; set; }
-    public int IdResponsavelEvento { get; set; }
+    public int Id { get; init; }
+    public string Nome { get; init; }
+    public string Descricao { get; init; }
+    public Categoria Categoria { get; init; }
+    public DateTime DataEvento { get; init; }
+    public int Capacidade { get; init; }
+    public IList<string> Thumbnail { get; init; }
+    public int IdResponsavelEvento { get; init; }
 }

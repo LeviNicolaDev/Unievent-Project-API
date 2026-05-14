@@ -9,66 +9,66 @@ namespace Unievent.Api.Controllers
     [Route("api/[controller]")]
     public class UsuarioSecretariaController(IUsuarioSecretariaService _service) : ControllerBase
     {
-        [HttpPost("CriarUsuarioSecretaria")]
+        [HttpPost]
 
         public async Task<IActionResult> CriarUsuarioSecretaria([FromBody] UsuarioSecretariaRequest request)
         {
             var response = await _service.CriarUsuarioSecretaria(request);
             if (response.IsFailure)
             {
-                return BadRequest(response.Message);
+                return BadRequest(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
         }
 
-        [HttpPut("AtualizarUsuarioSecretaria/{id}")]
+        [HttpPut("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> AtualizarUsuarioSecretaria(int id, [FromBody] UsuarioSecretariaUpdate update)
         {
             var response = await _service.AtualizarUsuarioSecretaria(id, update);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
 
         }
 
-        [HttpGet("ListarUsuarioSecretaria")]
+        [HttpGet]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarUsuarioSecretaria()
         {
             var response = await _service.ListarUsuarioSecretaria();
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
 
         }
 
-        [HttpGet("ListarUsuarioSecretariaById/{id}")]
+        [HttpGet("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> ListarUsuarioSecretariaById(int id)
         {
             var response = await _service.ListarUsuarioSecretariaById(id);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Data);
+            return Ok(response.Value);
         }
 
-        [HttpDelete("DeletarUsuarioSecretaria/{id}")]
+        [HttpDelete("{id}")]
         [Authorize(Roles = "Admin,Secretaria")]
         public async Task<IActionResult> DeletarUsuarioSecretaria(int id)
         {
             var response = await _service.DeletarUsuarioSecretaria(id);
             if (response.IsFailure)
             {
-                return NotFound(response.Message);
+                return NotFound(response.Errors);
             }
-            return Ok(response.Message);
+            return Ok(response.Value);
         }
     }
 }

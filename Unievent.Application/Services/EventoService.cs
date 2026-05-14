@@ -6,6 +6,7 @@ using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 
 namespace Unievent.Application.Services
 {
@@ -26,7 +27,7 @@ namespace Unievent.Application.Services
             _responsavelEventoRepository = responsavelEventoRepository;
         }
 
-        async Task<ResultData<EventoResponse>> IEventoService.AtualizarEvento(int id, EventoUpdate update)
+        async Task<Result<EventoResponse>> IEventoService.AtualizarEvento(int id, EventoUpdate update)
         {
             try
             {
@@ -34,7 +35,7 @@ namespace Unievent.Application.Services
                 if (!validationResult.IsValid)
                 {
                     _logger.LogWarning("Dados inválidos para atualização do evento com ID {EventoId}", id);
-                    return ResultData<EventoResponse>.Failure("Dados inválidos");
+                    return Result<EventoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
                 }
 
                 _logger.LogInformation("Iniciando atualização do evento com ID {EventoId}", id);
@@ -43,7 +44,7 @@ namespace Unievent.Application.Services
                 if (evento is null)
                 {
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização", id);
-                    return ResultData<EventoResponse>.Failure("Evento não encontrado");
+                    return Result<EventoResponse>.Failure("Evento não encontrado");
                 }
 
                 if (update.ResponsavelEventoId != null)
@@ -54,7 +55,7 @@ namespace Unievent.Application.Services
                     if (responsavel == null)
                     {
                         _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", update.ResponsavelEventoId);
-                        return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
+                        return Result<EventoResponse>.Failure("Responsável não encontrado.");
                     }
 
                     evento.ResponsavelEventoId = update.ResponsavelEventoId.Value;
@@ -70,7 +71,7 @@ namespace Unievent.Application.Services
                         responsavelJaTemEvento.DataEvento.Date == update.DataEvento.Value.Date)
                     {
                         _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", responsavelIdFinal);
-                        return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
+                        return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
                     }
 
                     evento.DataEvento = update.DataEvento.Value.Date;
@@ -79,8 +80,8 @@ namespace Unievent.Application.Services
                 if (update.Capacidade.HasValue)
                     evento.Capacidade = update.Capacidade.Value;
 
-                if (!string.IsNullOrWhiteSpace(update.Categoria))
-                    evento.Categoria = update.Categoria;
+                if (update.Categoria.HasValue)
+                    evento.Categoria = update.Categoria.Value;
 
                 if (!string.IsNullOrWhiteSpace(update.Descricao))
                     evento.Descricao = update.Descricao;
@@ -104,13 +105,12 @@ namespace Unievent.Application.Services
 
                 _logger.LogInformation("Evento com ID {EventoId} atualizado com sucesso", id);
 
-                return ResultData<EventoResponse>.Success(new EventoResponse
+                return Result<EventoResponse>.Success(new EventoResponse
                 {
                     Id = id,
                     Capacidade = evento.Capacidade,
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
-                    HoraEvento = evento.HoraEvento,
                     Descricao = evento.Descricao,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
@@ -120,11 +120,11 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar evento com ID {EventoId}", id);
-                return ResultData<EventoResponse>.Failure("Erro ao atualizar evento");
+                return Result<EventoResponse>.Failure("Erro ao atualizar evento");
             }
         }
 
-        async Task<ResultData<EventoResponse>> IEventoService.CriarEvento(EventoRequest request)
+        async Task<Result<EventoResponse>> IEventoService.CriarEvento(EventoRequest request)
         {
             try
             {
@@ -132,7 +132,7 @@ namespace Unievent.Application.Services
                 if (!validationResult.IsValid)
                 {
                     _logger.LogWarning("Dados inválidos para criação do evento com nome {EventoNome}", request.Nome);
-                    return ResultData<EventoResponse>.Failure("Dados inválidos");
+                    return Result<EventoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
                 }
                 _logger.LogInformation("Iniciando criação de evento para responsável ID {ResponsavelId} e data {DataEvento}", request.ResponsavelEventoId, request.DataEvento);
 
@@ -142,7 +142,7 @@ namespace Unievent.Application.Services
                 if (responsavel == null)
                 {
                     _logger.LogWarning("Responsável com ID {ResponsavelId} não encontrado.", request.ResponsavelEventoId);
-                    return ResultData<EventoResponse>.Failure("Responsável não encontrado.");
+                    return Result<EventoResponse>.Failure("Responsável não encontrado.");
                 }
 
                 var responsavelJaTemEvento = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
@@ -150,7 +150,7 @@ namespace Unievent.Application.Services
                 if (responsavelJaTemEvento != null && responsavelJaTemEvento.DataEvento.Date == request.DataEvento.Date)
                 {
                     _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", request.ResponsavelEventoId);
-                    return ResultData<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
+                    return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
                 }
 
                 var imagens = new List<string>();
@@ -164,8 +164,7 @@ namespace Unievent.Application.Services
                 {
                     Capacidade = request.Capacidade,
                     Categoria = request.Categoria,
-                    HoraEvento = request.HoraEvento,
-                    DataEvento = request.DataEvento.Date,
+                    DataEvento = request.DataEvento,
                     Descricao = request.Descricao,
                     ResponsavelEventoId = request.ResponsavelEventoId,
                     Nome = request.Nome,
@@ -175,13 +174,12 @@ namespace Unievent.Application.Services
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Evento criado com sucesso com ID {EventoId}", evento.Id);
 
-                return ResultData<EventoResponse>.Success(new EventoResponse
+                return Result<EventoResponse>.Success(new EventoResponse
                 {
                     Id = evento.Id,
                     Capacidade = evento.Capacidade,
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
-                    HoraEvento = evento.HoraEvento,
                     Descricao = evento.Descricao,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
@@ -191,7 +189,7 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar evento");
-                return ResultData<EventoResponse>.Failure("Erro ao criar evento");
+                return Result<EventoResponse>.Failure("Erro ao criar evento");
             }
         }
 
@@ -210,7 +208,7 @@ namespace Unievent.Application.Services
             return $"/imagens/{nomeArquivo}";
         }
 
-        async Task<Result> IEventoService.DeletarEvento(int id)
+        async Task<Result<bool>> IEventoService.DeletarEvento(int id)
         {
             try
             {
@@ -219,21 +217,21 @@ namespace Unievent.Application.Services
                 if (evento is null)
                 {
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado para deleção", id);
-                    return Result.Failure("Evento não encontrado");
+                    return Result<bool>.Failure("Evento não encontrado");
                 }
                 await _repository.DeletarEvento(evento);
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Evento com ID {EventoId} deletado com sucesso", id);
-                return Result.Success("Evento deletado com sucesso");
+                return Result<bool>.Success(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao deletar evento com ID {EventoId}", id);
-                return Result.Failure("Erro ao deletar evento");
+                return Result<bool>.Failure("Erro ao deletar evento");
             }
         }
 
-        async Task<ResultData<EventoResponse>> IEventoService.ListarEventoById(int id)
+        async Task<Result<EventoResponse>> IEventoService.ListarEventoById(int id)
         {
             try
             {
@@ -242,16 +240,15 @@ namespace Unievent.Application.Services
                 if (evento is null)
                 {
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado", id);
-                    return ResultData<EventoResponse>.Failure("Evento não encontrado");
+                    return Result<EventoResponse>.Failure("Evento não encontrado");
                 }
                 _logger.LogInformation("Evento com ID {EventoId} encontrado com sucesso", id);
-                return ResultData<EventoResponse>.Success(new EventoResponse
+                return Result<EventoResponse>.Success(new EventoResponse
                 {
                     Id = evento.Id,
                     Capacidade = evento.Capacidade,
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
-                    HoraEvento = evento.HoraEvento,
                     Descricao = evento.Descricao,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
@@ -261,24 +258,23 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar evento com ID {EventoId}", id);
-                return ResultData<EventoResponse>.Failure("Erro ao buscar evento");
+                return Result<EventoResponse>.Failure("Erro ao buscar evento");
             }
         }
 
-        async Task<ResultData<IEnumerable<EventoResponse>>> IEventoService.ListarEventos()
+        async Task<Result<IEnumerable<EventoResponse>>> IEventoService.ListarEventos()
         {
             try
             {
                 _logger.LogInformation("Iniciando listagem de eventos");
                 var eventos = await _repository.ListarEventos();
                 _logger.LogInformation("Eventos listados com sucesso {EventosCount}", eventos.Count());
-                return ResultData<IEnumerable<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
+                return Result<IEnumerable<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
                 {
                     Id = e.Id,
                     Capacidade = e.Capacidade,
                     Categoria = e.Categoria,
                     DataEvento = e.DataEvento,
-                    HoraEvento = e.HoraEvento,
                     Descricao = e.Descricao,
                     IdResponsavelEvento = e.ResponsavelEventoId,
                     Nome = e.Nome,
@@ -288,38 +284,37 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar eventos");
-                return ResultData<IEnumerable<EventoResponse>>.Failure("Erro ao listar eventos");
+                return Result<IEnumerable<EventoResponse>>.Failure("Erro ao listar eventos");
             }
         }
 
-        async Task<ResultData<IEnumerable<EventoResponse>>> IEventoService.ListarEventosByCategoria(string categoria)
+        async Task<Result<IList<EventoResponse>>> IEventoService.ListarEventosByCategoria(Categoria categoria)
         {
             try
             {
                 _logger.LogInformation("Iniciando busca de eventos com categoria {Categoria}", categoria);
                 var eventos = await _repository.ListarEventoByCategoria(categoria);
                 _logger.LogInformation("Busca de eventos com categoria {Categoria} realizada com sucesso. Total de eventos encontrados: {EventosCount}", categoria, eventos.Count());
-                return ResultData<IEnumerable<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
+                return Result<IList<EventoResponse>>.Success(eventos.Select(e => new EventoResponse
                 {
                     Id = e.Id,
                     Capacidade = e.Capacidade,
                     Categoria = e.Categoria,
                     DataEvento = e.DataEvento,
-                    HoraEvento = e.HoraEvento,
                     Descricao = e.Descricao,
                     IdResponsavelEvento = e.ResponsavelEventoId,
                     Nome = e.Nome,
                     Thumbnail = e.Thumbnail.ToList()
-                }));
+                }).ToList());
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar eventos com categoria {Categoria}", categoria);
-                return ResultData<IEnumerable<EventoResponse>>.Failure("Erro ao buscar eventos por categoria");
+                return Result<IList<EventoResponse>>.Failure("Erro ao buscar eventos por categoria");
             }
         }
 
-        async Task<ResultData<EventoResponse>> IEventoService.ListarEventosByResponsavel(int responsavelId)
+        async Task<Result<EventoResponse>> IEventoService.ListarEventosByResponsavel(int responsavelId)
         {
             try
             {
@@ -328,16 +323,15 @@ namespace Unievent.Application.Services
                 if (evento is null)
                 {
                     _logger.LogWarning("Evento para responsável ID {ResponsavelId} não encontrado", responsavelId);
-                    return ResultData<EventoResponse>.Failure("Evento não encontrado para o responsável informado");
+                    return Result<EventoResponse>.Failure("Evento não encontrado para o responsável informado");
                 }
                 _logger.LogInformation("Evento para responsável ID {ResponsavelId} encontrado com sucesso", responsavelId);
-                return ResultData<EventoResponse>.Success(new EventoResponse
+                return Result<EventoResponse>.Success(new EventoResponse
                 {
                     Id = evento.Id,
                     Capacidade = evento.Capacidade,
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
-                    HoraEvento = evento.HoraEvento,
                     Descricao = evento.Descricao,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Nome = evento.Nome,
@@ -347,7 +341,7 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar evento para responsável ID {ResponsavelId}", responsavelId);
-                return ResultData<EventoResponse>.Failure("Erro ao buscar evento por responsável");
+                return Result<EventoResponse>.Failure("Erro ao buscar evento por responsável");
             }
         }
     }

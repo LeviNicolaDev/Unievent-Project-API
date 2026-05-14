@@ -24,9 +24,9 @@ public class EnderecoController : ControllerBase
         var endereco = await _service.CriarEndereco(request);
         if (endereco.IsFailure)
         {
-            return BadRequest(endereco.Message);
+            return BadRequest(endereco.Errors);
         }
-        return Ok(endereco.Data);
+        return Ok(endereco.Value);
 
     }
 
@@ -38,13 +38,13 @@ public class EnderecoController : ControllerBase
         var endereco = await _service.AtualizarEndereco(id, update);
         if (endereco.IsFailure)
         {
-            return NotFound(endereco.Message);
+            return NotFound(endereco.Errors);
         }
-        return Ok(endereco.Data);
+        return Ok(endereco.Value);
 
     }
 
-    [HttpGet("ListarEnderecos")]
+    [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarEnderecos()
     {
@@ -53,27 +53,27 @@ public class EnderecoController : ControllerBase
         var enderecos = await _service.ListarEnderecos();
         if (enderecos.IsFailure)
         {
-            return NotFound(enderecos.Message);
+            return NotFound(enderecos.Errors);
         }
-        return Ok(enderecos.Data);
+        return Ok(enderecos.Value);
 
 
     }
 
-    [HttpGet("ListarEnderecoById/{id}")]
+    [HttpGet("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarEnderecoById([FromRoute] int id)
     {
         var endereco = await _service.ListarEnderecoById(id);
         if (endereco.IsFailure)
         {
-            return NotFound(endereco.Message);
+            return NotFound(endereco.Errors);
         }
-        return Ok(endereco.Data);
+        return Ok(endereco.Value);
 
     }
 
-    [HttpDelete("DeletarEndereco/{id}")]
+    [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarEndereco([FromRoute] int id)
     {
@@ -81,9 +81,9 @@ public class EnderecoController : ControllerBase
         var response = await _service.DeletarEndereco(id);
         if (response.IsFailure)
         {
-            return NotFound(response.Message);
+            return BadRequest(response.Errors);
         }
-        return Ok(response.Message);
+        return Ok(response.Value);
 
 
     }

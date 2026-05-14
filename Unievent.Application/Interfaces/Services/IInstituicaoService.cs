@@ -5,9 +5,9 @@ namespace Unievent.Application.Interfaces.Services;
 
 public interface IInstituicaoService
 {
-    public Task<ResultData<InstituicaoResponse>> CriarInstituicao(InstituicaoRequest request);
-    public Task<ResultData<InstituicaoResponse>> AtualizarInstituicao(int id, InstituicaoUpdate update);
-    public Task<Result> DeletarInstituicao(int id);
-    public Task<ResultData<IEnumerable<InstituicaoResponse>>> ListarInstituicoes();
-    public Task<ResultData<InstituicaoResponse>> ListarInstituicaoById(int id);
+    public Task<Result<InstituicaoResponse>> CriarInstituicao(InstituicaoRequest request);
+    public Task<Result<InstituicaoResponse>> AtualizarInstituicao(int id, InstituicaoUpdate update);
+    public Task<Result<bool>> DeletarInstituicao(int id);
+    public Task<Result<IEnumerable<InstituicaoResponse>>> ListarInstituicoes();
+    public Task<Result<InstituicaoResponse>> ListarInstituicaoById(int id);
 }

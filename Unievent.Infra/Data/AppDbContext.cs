@@ -54,5 +54,7 @@ public class AppDbContext : DbContext
             .HasQueryFilter(s => s.IsAtivo);
         modelBuilder.Entity<Aluno>()
        .HasQueryFilter(s => s.IsAtivo);
+        modelBuilder.Entity<Evento>()
+        .Property(e => e.Categoria).HasConversion<string>();
     }
 }

@@ -25,20 +25,20 @@ namespace Unievent.Application.Services
         }
 
 
-        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.AtualizarUsuarioSecretaria(int id, UsuarioSecretariaUpdate update)
         {
             try
             {
                 _logger.LogInformation("Iniciando atualização do usuário da secretaria com ID {UsuarioSecretariaId}", id);
                 var validator = await _updateValidator.ValidateAsync(update);
                 if (!validator.IsValid)
-                    return ResultData<UsuarioSecretariaResponse>.Failure(validator.Errors.First().ErrorMessage);
+                    return Result<UsuarioSecretariaResponse>.Failure(validator.Errors.Select(e => e.ErrorMessage).ToList());
                 var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(update.EmailUsuario);
                 var usuarioSecretaria = await _repository.ListarUsuarioSecretariaById(id);
                 if (usuarioSecretaria is null)
                 {
                     _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado para atualização", id);
-                    return ResultData<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+                    return Result<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
                 }
                 if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente == null)
                 {
@@ -47,7 +47,7 @@ namespace Unievent.Application.Services
                 else if (!string.IsNullOrWhiteSpace(update.EmailUsuario) && emailExistente != null)
                 {
                     _logger.LogWarning("Email {Email} já cadastrado para outro usuário da secretaria", update.EmailUsuario);
-                    return ResultData<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
+                    return Result<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
                 }
                 if (!string.IsNullOrWhiteSpace(update.NomeUsuario))
                 {
@@ -66,7 +66,7 @@ namespace Unievent.Application.Services
                 else
                 {
                     _logger.LogWarning("Cargo {Role} inválido para o usuário da secretaria com ID {UsuarioSecretariaId}. Digite 'Secretaria' ou 'Admin'", update.Role, id);
-                    return ResultData<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria");
+                    return Result<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria");
                 }
 
                 /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
@@ -79,7 +79,7 @@ namespace Unievent.Application.Services
                 await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} atualizado com sucesso", id);
-                return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
                 {
                     Id = usuarioSecretaria.Id,
                     EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -93,18 +93,18 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao atualizar usuário da secretaria com ID {UsuarioSecretariaId}", id);
-                return ResultData<UsuarioSecretariaResponse>.Failure($"Erro ao atualizar usuário da secretaria");
+                return Result<UsuarioSecretariaResponse>.Failure($"Erro ao atualizar usuário da secretaria");
             }
         }
 
-        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.CriarUsuarioSecretaria(UsuarioSecretariaRequest request)
         {
             try
             {
                 _logger.LogInformation("Iniciando criação do usuário da secretaria com email {EmailUsuario}", request.EmailUsuario);
                 var validator = await _requestValidator.ValidateAsync(request);
                 if (!validator.IsValid)
-                    return ResultData<UsuarioSecretariaResponse>.Failure(validator.Errors.First().ErrorMessage);
+                    return Result<UsuarioSecretariaResponse>.Failure(validator.Errors.Select(e => e.ErrorMessage).ToList());
 
                 var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Secretaria;
                 var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
@@ -112,7 +112,7 @@ namespace Unievent.Application.Services
                 if (emailExistente != null)
                 {
                     _logger.LogWarning("Email {EmailUsuario} já cadastrado para outro usuário da secretaria", request.EmailUsuario);
-                    return ResultData<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
+                    return Result<UsuarioSecretariaResponse>.Failure("Email já cadastrado para outro usuário da secretaria");
                 }
                 var usuarioSecretaria = new UsuarioSecretaria
                 {
@@ -126,7 +126,7 @@ namespace Unievent.Application.Services
                 await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Usuário da secretaria com email {EmailUsuario} criado com sucesso", request.EmailUsuario);
-                return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
                 {
                     Id = usuarioSecretaria.Id,
                     EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -139,11 +139,11 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao criar usuário da secretaria com email {EmailUsuario}", request.EmailUsuario);
-                return ResultData<UsuarioSecretariaResponse>.Failure("Erro ao criar usuário da secretaria");
+                return Result<UsuarioSecretariaResponse>.Failure("Erro ao criar usuário da secretaria");
             }
         }
 
-        async Task<Result> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
+        async Task<Result<bool>> IUsuarioSecretariaService.DeletarUsuarioSecretaria(int id)
         {
             try
             {
@@ -152,28 +152,28 @@ namespace Unievent.Application.Services
                 if (usuarioSecretaria is null)
                 {
                     _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado para deleção", id);
-                    return Result.Failure("UsuarioSecretaria não encontrado");
+                    return Result<bool>.Failure("UsuarioSecretaria não encontrado");
                 }
                 usuarioSecretaria.IsAtivo = false;
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} deletado com sucesso", id);
-                return Result.Success("UsuarioSecretaria deletado com sucesso");
+                return Result<bool>.Success(true);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao deletar usuário da secretaria com ID {UsuarioSecretariaId}", id);
-                return Result.Failure("Erro ao deletar usuário da secretaria");
+                return Result<bool>.Failure("Erro ao deletar usuário da secretaria");
             }
         }
 
-        async Task<ResultData<IEnumerable<UsuarioSecretariaResponse>>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
+        async Task<Result<IEnumerable<UsuarioSecretariaResponse>>> IUsuarioSecretariaService.ListarUsuarioSecretaria()
         {
             try
             {
                 _logger.LogInformation("Iniciando listagem de usuários da secretaria");
                 var usuarioSecretarias = await _repository.ListarUsuarioSecretarias();
                 _logger.LogInformation("Usuários da secretaria listados com sucesso {UsuarioSecretariasCount}", usuarioSecretarias.Count());
-                return ResultData<IEnumerable<UsuarioSecretariaResponse>>.Success(usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
+                return Result<IEnumerable<UsuarioSecretariaResponse>>.Success(usuarioSecretarias.Select(usuarioSecretaria => new UsuarioSecretariaResponse
                 {
                     Id = usuarioSecretaria.Id,
                     EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -186,11 +186,11 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao listar usuários da secretaria");
-                return ResultData<IEnumerable<UsuarioSecretariaResponse>>.Failure("Erro ao listar usuários da secretaria");
+                return Result<IEnumerable<UsuarioSecretariaResponse>>.Failure("Erro ao listar usuários da secretaria");
             }
         }
 
-        async Task<ResultData<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
+        async Task<Result<UsuarioSecretariaResponse>> IUsuarioSecretariaService.ListarUsuarioSecretariaById(int id)
         {
             try
             {
@@ -199,10 +199,10 @@ namespace Unievent.Application.Services
                 if (usuarioSecretaria is null)
                 {
                     _logger.LogWarning("Usuário da secretaria com ID {UsuarioSecretariaId} não encontrado", id);
-                    return ResultData<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
+                    return Result<UsuarioSecretariaResponse>.Failure("UsuarioSecretaria não encontrado");
                 }
                 _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} encontrado com sucesso", id);
-                return ResultData<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
+                return Result<UsuarioSecretariaResponse>.Success(new UsuarioSecretariaResponse
                 {
                     Id = usuarioSecretaria.Id,
                     EmailUsuario = usuarioSecretaria.EmailUsuario,
@@ -215,11 +215,11 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao buscar usuário da secretaria com ID {UsuarioSecretariaId}", id);
-                return ResultData<UsuarioSecretariaResponse>.Failure("Erro ao buscar usuário da secretaria");
+                return Result<UsuarioSecretariaResponse>.Failure("Erro ao buscar usuário da secretaria");
             }
         }
 
-        async Task<ResultData<UsuarioSecretariaLoginResponse>> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
+        async Task<Result<UsuarioSecretariaLoginResponse>> IUsuarioSecretariaService.Login(UsuarioSecretariaLoginRequest request)
         {
             try
             {
@@ -228,15 +228,15 @@ namespace Unievent.Application.Services
                 if (usuarioSecretaria is null)
                 {
                     _logger.LogWarning("Usuário da secretaria com email {EmailUsuario} não encontrado para login", request.Email);
-                    return ResultData<UsuarioSecretariaLoginResponse>.Failure("UsuarioSecretaria não encontrado");
+                    return Result<UsuarioSecretariaLoginResponse>.Failure("UsuarioSecretaria não encontrado");
                 }
                 if (!BCrypt.Net.BCrypt.Verify(request.Senha, usuarioSecretaria.Senha))
                 {
                     _logger.LogWarning("Tentativa de login com email {EmailUsuario} falhou: senha incorreta", request.Email);
-                    return ResultData<UsuarioSecretariaLoginResponse>.Failure("Senha incorreta");
+                    return Result<UsuarioSecretariaLoginResponse>.Failure("Senha incorreta");
                 }
                 _logger.LogInformation("Usuário da secretaria com email {EmailUsuario} logado com sucesso", request.Email);
-                return await Task.FromResult(ResultData<UsuarioSecretariaLoginResponse>.Success(new UsuarioSecretariaLoginResponse
+                return await Task.FromResult(Result<UsuarioSecretariaLoginResponse>.Success(new UsuarioSecretariaLoginResponse
                 {
 
                     Token = "sjikjd"
@@ -246,7 +246,7 @@ namespace Unievent.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Erro ao realizar login do usuário da secretaria com email {EmailUsuario}", request.Email);
-                return ResultData<UsuarioSecretariaLoginResponse>.Failure("Erro ao realizar login do usuário da secretaria");
+                return Result<UsuarioSecretariaLoginResponse>.Failure("Erro ao realizar login do usuário da secretaria");
             }
         }
     }

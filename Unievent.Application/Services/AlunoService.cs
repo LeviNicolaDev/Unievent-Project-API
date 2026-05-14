@@ -24,7 +24,7 @@ public class AlunoService : IAlunoService
         _validatorRequest = validatorRequest;
         _validatorUpdate = validatorUpdate;
     }
-    async Task<ResultData<AlunoResponse>> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
+    async Task<Result<AlunoResponse>> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
     {
         try
         {
@@ -33,13 +33,13 @@ public class AlunoService : IAlunoService
             if (!validationResult.IsValid)
             {
                 _logger.LogWarning("Dados inválidos para atualização do aluno com ID {AlunoId}", id);
-                return ResultData<AlunoResponse>.Failure("Dados inválidos");
+                return Result<AlunoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             var aluno = await _repository.ListarAlunoById(id);
             if (aluno is null)
             {
                 _logger.LogWarning("Aluno com ID {AlunoId} não encontrado para atualização", id);
-                return ResultData<AlunoResponse>.Failure("Aluno não encontrado");
+                return Result<AlunoResponse>.Failure("Aluno não encontrado");
             }
             if (!string.IsNullOrWhiteSpace(update.Nome))
             {
@@ -65,7 +65,7 @@ public class AlunoService : IAlunoService
             await _repository.AtualizarAluno(aluno);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno com ID {AlunoId} atualizado com sucesso", id);
-            return new ResultData<AlunoResponse>(new AlunoResponse
+            return Result<AlunoResponse>.Success(new AlunoResponse
             {
                 Id = id,
                 Nome = aluno.Nome,
@@ -80,7 +80,7 @@ public class AlunoService : IAlunoService
         {
             _logger.LogError(ex, "Erro ao atualizar aluno com ID {AlunoId}", id);
 
-            return ResultData<AlunoResponse>.Failure($"Erro ao atualizar aluno");
+            return Result<AlunoResponse>.Failure($"Erro ao atualizar aluno");
         }
 
     }
@@ -102,7 +102,7 @@ public class AlunoService : IAlunoService
         return $"/imagens/{nomeArquivo}";
     }
 
-    async Task<ResultData<AlunoResponse>> IAlunoService.CriarAluno(AlunoRequest request)
+    async Task<Result<AlunoResponse>> IAlunoService.CriarAluno(AlunoRequest request)
     {
         try
         {
@@ -110,7 +110,7 @@ public class AlunoService : IAlunoService
             if (!validationResult.IsValid)
             {
                 _logger.LogWarning("Dados inválidos para criação de aluno com email {Email}", request.Email);
-                return ResultData<AlunoResponse>.Failure("Dados inválidos");
+                return Result<AlunoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando criação de novo aluno com email {Email}", request.Email);
             var senha = BCrypt.Net.BCrypt.HashPassword(request.Senha);
@@ -119,7 +119,7 @@ public class AlunoService : IAlunoService
             if (emailExistente != null)
             {
                 _logger.LogWarning("Tentativa de criar aluno com email já existente: {Email}", request.Email);
-                return ResultData<AlunoResponse>.Failure("Email já cadastrado para outro aluno");
+                return Result<AlunoResponse>.Failure("Email já cadastrado para outro aluno");
             }
             var imagem = await SalvarImagem(request.FotoPerfil);
 
@@ -135,7 +135,7 @@ public class AlunoService : IAlunoService
             await _repository.CriarAluno(aluno);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno criado com sucesso com ID {AlunoId}", aluno.Id);
-            return ResultData<AlunoResponse>.Success(new AlunoResponse
+            return Result<AlunoResponse>.Success(new AlunoResponse
             {
                 Id = aluno.Id,
                 Nome = aluno.Nome,
@@ -149,12 +149,12 @@ public class AlunoService : IAlunoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao criar aluno");
-            return ResultData<AlunoResponse>.Failure("Erro ao criar aluno");
+            return Result<AlunoResponse>.Failure("Erro ao criar aluno");
 
         }
     }
 
-    async Task<Result> IAlunoService.DeletarAluno(int id)
+    async Task<Result<bool>> IAlunoService.DeletarAluno(int id)
     {
         try
         {
@@ -163,21 +163,21 @@ public class AlunoService : IAlunoService
             if (aluno is null)
             {
                 _logger.LogWarning("Aluno com ID {AlunoId} não encontrado para deleção", id);
-                return Result.Failure("Aluno não encontrado");
+                return Result<bool>.Failure("Aluno não encontrado");
             }
             aluno.IsAtivo = false;
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno com ID {AlunoId} deletado com sucesso", id);
-            return Result.Success("Aluno deletado com sucesso");
+            return Result<bool>.Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao deletar aluno com ID {AlunoId}", id);
-            return Result.Failure("Erro ao deletar aluno");
+            return Result<bool>.Failure("Erro ao deletar aluno");
         }
     }
 
-    async Task<ResultData<AlunoResponse>> IAlunoService.ListarAlunoById(int id)
+    async Task<Result<AlunoResponse>> IAlunoService.ListarAlunoById(int id)
     {
         try
         {
@@ -186,10 +186,10 @@ public class AlunoService : IAlunoService
             if (aluno is null)
             {
                 _logger.LogWarning("Aluno com ID {AlunoId} não encontrado", id);
-                return ResultData<AlunoResponse>.Failure("Aluno não encontrado");
+                return Result<AlunoResponse>.Failure("Aluno não encontrado");
             }
             _logger.LogInformation("Aluno com ID {AlunoId} encontrado com sucesso", id);
-            return ResultData<AlunoResponse>.Success(new AlunoResponse
+            return Result<AlunoResponse>.Success(new AlunoResponse
             {
                 Id = aluno.Id,
                 Nome = aluno.Nome,
@@ -203,18 +203,18 @@ public class AlunoService : IAlunoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar aluno com ID {AlunoId}", id);
-            return ResultData<AlunoResponse>.Failure("Erro ao buscar aluno");
+            return Result<AlunoResponse>.Failure("Erro ao buscar aluno");
         }
     }
 
-    async Task<ResultData<IEnumerable<AlunoResponse>>> IAlunoService.ListarAlunos()
+    async Task<Result<IEnumerable<AlunoResponse>>> IAlunoService.ListarAlunos()
     {
         try
         {
             _logger.LogInformation("Iniciando listagem de todos os alunos");
             var alunos = await _repository.ListarAlunos();
             _logger.LogInformation("Listagem de alunos realizada com sucesso. Total de alunos encontrados: {TotalAlunos}", alunos.Count());
-            return ResultData<IEnumerable<AlunoResponse>>.Success(alunos.Select(a => new AlunoResponse
+            return Result<IEnumerable<AlunoResponse>>.Success(alunos.Select(a => new AlunoResponse
             {
                 Id = a.Id,
                 Nome = a.Nome,
@@ -228,7 +228,7 @@ public class AlunoService : IAlunoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao listar alunos");
-            return ResultData<IEnumerable<AlunoResponse>>.Failure("Erro ao listar alunos");
+            return Result<IEnumerable<AlunoResponse>>.Failure("Erro ao listar alunos");
         }
 
     }

@@ -18,8 +18,7 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
             .NotEmpty().WithMessage("O campo 'Data' é obrigatório.")
             .GreaterThan(DateTime.Now).WithMessage("A data do evento deve ser futura.");
         RuleFor(e => e.Categoria)
-            .NotEmpty().WithMessage("O campo 'Categoria' é obrigatório.")
-            .MaximumLength(100).WithMessage("O campo 'Categoria' deve conter no máximo 100 caracteres.");
+            .IsInEnum().WithMessage("O campo 'Categoria' deve ser um dos valores permitidos.");
         RuleFor(e => e.ResponsavelEventoId)
             .NotEmpty().WithMessage("O campo 'Responsável' é obrigatório.");
         RuleFor(e => e.Capacidade)
@@ -27,8 +26,6 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
             .GreaterThanOrEqualTo(1).WithMessage("A capacidade do evento deve ser um valor positivo.");
         RuleFor(e => e.Thumbnail)
             .NotEmpty().WithMessage("O campo 'Thumbnail' é obrigatório.");
-        RuleFor(e => e.HoraEvento)
-            .NotEmpty().WithMessage("O campo 'Hora' é obrigatório.");
 
     }
 }

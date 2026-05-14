@@ -14,7 +14,7 @@ public class InstituicaoController : ControllerBase
     {
         _service = service;
     }
-    [HttpPost("CriarInstituicao")]
+    [HttpPost]
     [Consumes("multipart/form-data")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> CriarInstituicao([FromForm] InstituicaoRequest request)
@@ -22,14 +22,15 @@ public class InstituicaoController : ControllerBase
         var instituicao = await _service.CriarInstituicao(request);
         if (instituicao.IsFailure)
         {
-            return BadRequest(instituicao.Message);
+            return BadRequest(instituicao.Errors);
         }
-        return Ok(instituicao.Data);
+        return Ok(instituicao.Value);
 
 
     }
 
-    [HttpPatch("AtualizarInstituicao/{id}")]
+
+    [HttpPatch("{id}")]
     [Consumes("multipart/form-data")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AtualizarInstituicao([FromRoute] int id, [FromForm] InstituicaoUpdate update)
@@ -38,15 +39,15 @@ public class InstituicaoController : ControllerBase
         var instituicao = await _service.AtualizarInstituicao(id, update);
         if (instituicao.IsFailure)
         {
-            return BadRequest(instituicao.Message);
+            return BadRequest(instituicao.Errors);
         }
-        return Ok(instituicao.Data);
+        return Ok(instituicao.Value);
 
 
 
     }
 
-    [HttpGet("ListarInstituicoes")]
+    [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarInstituicoes()
     {
@@ -54,15 +55,15 @@ public class InstituicaoController : ControllerBase
         var instituicoes = await _service.ListarInstituicoes();
         if (instituicoes.IsFailure)
         {
-            return NotFound(instituicoes.Message);
+            return NotFound(instituicoes.Errors);
         }
-        return Ok(instituicoes.Data);
+        return Ok(instituicoes.Value);
 
 
 
     }
 
-    [HttpGet("ListarInstituicaoById/{id}")]
+    [HttpGet("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> ListarInstituicaoById([FromRoute] int id)
     {
@@ -70,23 +71,23 @@ public class InstituicaoController : ControllerBase
         var instituicao = await _service.ListarInstituicaoById(id);
         if (instituicao.IsFailure)
         {
-            return NotFound(instituicao.Message);
+            return NotFound(instituicao.Errors);
         }
-        return Ok(instituicao.Data);
+        return Ok(instituicao.Value);
 
 
     }
 
-    [HttpDelete("DeletarInstituicao/{id}")]
+    [HttpDelete("{id}")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> DeletarInstituicao([FromRoute] int id)
     {
         var response = await _service.DeletarInstituicao(id);
         if (response.IsFailure)
         {
-            return NotFound(response.Message);
+            return NotFound(response.Errors);
         }
-        return Ok(response.Message);
+        return Ok(response.Value);
 
     }
 

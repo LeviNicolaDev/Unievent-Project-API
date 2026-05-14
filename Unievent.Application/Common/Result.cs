@@ -2,29 +2,43 @@ using Microsoft.AspNetCore.Http;
 
 namespace Unievent.Application.Common;
 
-public class Result
+
+public class Result<T>
 {
-    public Result(bool isSuccess, string message)
-    {
-        IsSuccess = isSuccess;
-        Message = message;
-    }
     public bool IsSuccess { get; private set; }
     public bool IsFailure => !IsSuccess;
-    public string Message { get; private set; }
 
-    public static Result Success(string message = "") => new(true, message);
-    public static Result Failure(string message) => new(false, message);
-}
+    public T? Value { get; private set; }
+    public List<string> Errors { get; private set; } = new();
 
-public class ResultData<T> : Result
-{
-    public ResultData(T? data, bool isSuccess = true, string message = "") : base(isSuccess, message)
+    private Result() { }
+
+    public static Result<T> Success(T value)
     {
-        Data = data;
+        return new Result<T>
+        {
+            IsSuccess = true,
+            Value = value
+        };
     }
-    public T? Data { get; private set; }
 
-    public static ResultData<T> Success(T data) => new(data);
-    public static ResultData<T> Failure(string message) => new(default, false, message);
+
+    public static Result<T> Failure(string error)
+    {
+        return new Result<T>
+        {
+            IsSuccess = false,
+            Errors = new List<string> { error }
+        };
+    }
+
+    public static Result<T> Failure(List<string> errors)
+    {
+        return new Result<T>
+        {
+            IsSuccess = false,
+            Errors = errors
+        };
+    }
 }
+

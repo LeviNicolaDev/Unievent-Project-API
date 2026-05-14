@@ -14,7 +14,7 @@ public class EventoValidatorTest
     {
         _requestValidator = new EventoRequestValidator();
         _updateValidator = new EventoUpdateValidator();
-        
+
     }
     [Fact]
     public async Task Deve_Validar_Dados_Com_Sucesso()
@@ -24,11 +24,10 @@ public class EventoValidatorTest
             Nome = "Evento de Teste",
             Descricao = "Descrição do evento de teste",
             DataEvento = DateTime.Now.AddDays(10),
-            Categoria = "Categoria de Teste",
+            Categoria = Domain.Enuns.Categoria.Feira,
             ResponsavelEventoId = 1,
             Capacidade = 100,
             Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-            HoraEvento = "18:00"
         };
 
         var result = await _requestValidator.ValidateAsync(request);
@@ -43,10 +42,10 @@ public class EventoValidatorTest
             Nome = "Evento de Teste",
             Descricao = "Descrição do evento de teste",
             DataEvento = DateTime.Now.AddDays(10),
-            Categoria = "Categoria de Teste",
+            Categoria = Domain.Enuns.Categoria.Palestra,
             Capacidade = 100,
             Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-            HoraEvento = "18:00"
+
         };
 
         var result = await _updateValidator.ValidateAsync(update);
@@ -61,11 +60,10 @@ public class EventoValidatorTest
             Nome = "",
             Descricao = "",
             DataEvento = DateTime.Now.AddDays(-1),
-            Categoria = "",
+            Categoria = Domain.Enuns.Categoria.Palestra,
             ResponsavelEventoId = 65,
             Capacidade = 72,
             Thumbnail = null,
-            HoraEvento = ""
         };
         var result = await _requestValidator.ValidateAsync(request);
         result.IsValid.Should().BeFalse();
@@ -78,13 +76,13 @@ public class EventoValidatorTest
             Nome = "Evento de Teste",
             Descricao = "Descrição do evento de teste",
             DataEvento = DateTime.Now.AddDays(10),
-            Categoria = "Categoria de Teste",
+            Categoria = Domain.Enuns.Categoria.Palestra,
             Capacidade = -1,
             Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
-            HoraEvento = "18:00"
+
         };
 
         var result = await _updateValidator.ValidateAsync(update);
         result.IsValid.Should().BeFalse();
     }
-    }
+}

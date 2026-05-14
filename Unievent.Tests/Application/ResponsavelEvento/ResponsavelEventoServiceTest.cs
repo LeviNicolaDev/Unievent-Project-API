@@ -54,8 +54,8 @@ public class ResponsavelEventoServiceTest
 
             // Assert
             result.IsSuccess.Should().BeTrue();
-            result.Data.Should().NotBeNull();
-            result.Data.Nome.Should().Be(request.Nome);
+            result.Value.Should().NotBeNull();
+            result.Value.Nome.Should().Be(request.Nome);
             _repositoryMock.Verify(r => r.CriarResponsavelEvento(It.IsAny<Domain.Entities.ResponsavelEvento>()), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
         }
@@ -207,7 +207,7 @@ public class ResponsavelEventoServiceTest
             _repositoryMock.Verify(r => r.ListarResponsavelEventoById(It.IsAny<int>()), Times.Once);
             _repositoryMock.Verify(r => r.DeletarResponsavelEvento(It.IsAny<Domain.Entities.ResponsavelEvento>()), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
-            result.Message.Should().Be("Responsável do evento deletado com sucesso");
+
         }
 
         [Fact]
@@ -258,7 +258,7 @@ public class ResponsavelEventoServiceTest
             // Assert
             result.IsSuccess.Should().BeFalse();
             _repositoryMock.Verify(r => r.ListarResponsavelEventoById(It.IsAny<int>()), Times.Once);
-            result.Message.Should().Be("Responsável do evento não encontrado");
+            result.Errors.Should().Contain("Responsável do evento não encontrado");
         }
     }
 }

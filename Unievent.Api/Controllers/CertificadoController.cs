@@ -16,76 +16,76 @@ public class CertificadoController : ControllerBase
         _service = service;
     }
 
-    [HttpPost("CriarCertificado")]
+    [HttpPost]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> CriarCertificado([FromBody] CertificadoRequest request)
     {
         var certificado = await _service.CriarCertificado(request);
         if (certificado.IsFailure)
         {
-            return BadRequest(certificado.Message);
+            return BadRequest(certificado.Errors);
         }
 
-        return Ok(certificado.Data);
+        return Ok(certificado.Value);
 
 
     }
 
-    [HttpPatch("AtualizarCertificado/{id}")]
+    [HttpPatch("{id}")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> AtualizarCertificado([FromRoute] int id, [FromBody] CertificadoUpdate update)
     {
         var certificado = await _service.AtualizarCertificado(id, update);
         if (certificado.IsFailure)
         {
-            return NotFound(certificado.Message);
+            return BadRequest(certificado.Errors);
         }
 
 
-        return Ok(certificado.Data);
+        return Ok(certificado.Value);
 
     }
 
-    [HttpGet("ListarCertificados")]
+    [HttpGet]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarCertificados()
     {
         var certificados = await _service.ListarCertificados();
         if (certificados.IsFailure)
         {
-            return NotFound(certificados.Message);
+            return NotFound(certificados.Errors);
         }
 
-        return Ok(certificados.Data);
+        return Ok(certificados.Value);
 
 
     }
 
-    [HttpGet("ListarCertificadoById/{id}")]
+    [HttpGet("{id}")]
     [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> ListarCertificadoById([FromRoute] int id)
     {
         var certificado = await _service.ListarCertificadoById(id);
         if (certificado.IsFailure)
         {
-            return NotFound(certificado.Message);
+            return NotFound(certificado.Errors);
         }
 
-        return Ok(certificado.Data);
+        return Ok(certificado.Value);
 
 
     }
 
-    [HttpDelete("DeletarCertificado/{id}")]
+    [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeletarCertificado([FromRoute] int id)
     {
         var response = await _service.DeletarCertificado(id);
         if (response.IsFailure)
         {
-            return NotFound(response.Message);
+            return NotFound(response.Errors);
         }
-        return Ok(response.Message);
+        return Ok(response.Value);
 
 
 

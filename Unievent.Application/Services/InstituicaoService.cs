@@ -18,7 +18,7 @@ public class InstituicaoService : IInstituicaoService
     private readonly IValidator<InstituicaoUpdate> _updateValidator;
     private readonly ILogger<InstituicaoService> _logger;
     public InstituicaoService(IInstituicaoRepository repository, IEnderecoRepository repositoryEndereco, ILogger<InstituicaoService> logger,
-    IValidator<InstituicaoRequest> requestValidator,IValidator<InstituicaoUpdate> updateValidator)
+    IValidator<InstituicaoRequest> requestValidator, IValidator<InstituicaoUpdate> updateValidator)
     {
         _repository = repository;
         _repositoryEndereco = repositoryEndereco;
@@ -26,15 +26,15 @@ public class InstituicaoService : IInstituicaoService
         _requestValidator = requestValidator;
         _updateValidator = updateValidator;
     }
-    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
+    async Task<Result<InstituicaoResponse>> IInstituicaoService.AtualizarInstituicao(int id, InstituicaoUpdate update)
     {
         try
         {
             var validationResult = await _updateValidator.ValidateAsync(update);
             if (!validationResult.IsValid)
             {
-            _logger.LogInformation("Dados invalidos para atualização da instituição com ID {InstituicaoId}", id);
-            return ResultData<InstituicaoResponse>.Failure("Dados Inválidos");    
+                _logger.LogInformation("Dados invalidos para atualização da instituição com ID {InstituicaoId}", id);
+                return Result<InstituicaoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando atualização da instituição com ID {InstituicaoId}", id);
             var emailExistente = await _repository.ListarInstituicaoByEmail(update.EmailLogin);
@@ -42,7 +42,7 @@ public class InstituicaoService : IInstituicaoService
             if (instituicao is null)
             {
                 _logger.LogWarning("Instituição com ID {InstituicaoId} não encontrada para atualização", id);
-                return ResultData<InstituicaoResponse>.Failure("Instituição não encontrada");
+                return Result<InstituicaoResponse>.Failure("Instituição não encontrada");
             }
 
             if (update.EnderecoId.HasValue)
@@ -51,7 +51,7 @@ public class InstituicaoService : IInstituicaoService
                 if (endereco is null)
                 {
                     _logger.LogWarning("Endereço com ID {EnderecoId} não encontrado para ser associado à instituição", update.EnderecoId.Value);
-                    return ResultData<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
+                    return Result<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
                 }
                 instituicao.EnderecoId = endereco.Id;
             }
@@ -76,7 +76,7 @@ public class InstituicaoService : IInstituicaoService
             else if (!string.IsNullOrWhiteSpace(update.EmailLogin) && emailExistente != null)
             {
                 _logger.LogWarning("Email {EmailLogin} já cadastrado para outra instituição", update.EmailLogin);
-                return ResultData<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
+                return Result<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
             }
 
             if (!string.IsNullOrWhiteSpace(update.Cnpj) && Cnpj.TryParse(update.Cnpj, out var cnpj))
@@ -86,12 +86,12 @@ public class InstituicaoService : IInstituicaoService
             else
             {
                 _logger.LogWarning("CNPJ {Cnpj} inválido para atualização", update.Cnpj);
-                return ResultData<InstituicaoResponse>.Failure("Digite um CNPJ válido");
+                return Result<InstituicaoResponse>.Failure("Digite um CNPJ válido");
             }
             await _repository.AtualizarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Instituição com ID {InstituicaoId} atualizada com sucesso", id);
-            return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
+            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
             {
                 Id = id,
                 Cnpj = instituicao.Cnpj,
@@ -103,7 +103,7 @@ public class InstituicaoService : IInstituicaoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao atualizar instituição com ID {InstituicaoId}", id);
-            return ResultData<InstituicaoResponse>.Failure($"Erro ao atualizar instituição");
+            return Result<InstituicaoResponse>.Failure($"Erro ao atualizar instituição");
         }
 
 
@@ -124,33 +124,33 @@ public class InstituicaoService : IInstituicaoService
 
 
 
-    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.CriarInstituicao(InstituicaoRequest request)
+    async Task<Result<InstituicaoResponse>> IInstituicaoService.CriarInstituicao(InstituicaoRequest request)
     {
         try
         {
             var validationResult = await _requestValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
-            _logger.LogInformation("Dados invalidos para criação da instituição com email {EmailLogin}", request.EmailLogin);
-            return ResultData<InstituicaoResponse>.Failure("Dados Inválidos");    
+                _logger.LogInformation("Dados invalidos para criação da instituição com email {EmailLogin}", request.EmailLogin);
+                return Result<InstituicaoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando criação de nova instituição com email {EmailLogin}", request.EmailLogin);
             if (!Cnpj.TryParse(request.Cnpj, out var cnpj))
             {
                 _logger.LogWarning("CNPJ {Cnpj} inválido para criação", request.Cnpj);
-                return ResultData<InstituicaoResponse>.Failure("Digite um CNPJ válido");
+                return Result<InstituicaoResponse>.Failure("Digite um CNPJ válido");
             }
             var endereco = await _repositoryEndereco.ListarEnderecoById(request.EnderecoId);
             if (endereco is null)
             {
                 _logger.LogWarning("Endereço com ID {EnderecoId} não encontrado para ser associado à instituição", request.EnderecoId);
-                return ResultData<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
+                return Result<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
             }
             var emailExistente = await _repository.ListarInstituicaoByEmail(request.EmailLogin);
             if (emailExistente != null)
             {
                 _logger.LogWarning("Email {EmailLogin} já cadastrado para outra instituição", request.EmailLogin);
-                return ResultData<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
+                return Result<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
             }
             var cnpjValido = cnpj.ToString();
             var imagem = await SalvarImagem(request.FotoPerfil);
@@ -166,7 +166,7 @@ public class InstituicaoService : IInstituicaoService
             await _repository.CriarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Instituição criada com sucesso com email {EmailLogin}", request.EmailLogin);
-            return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
+            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
             {
                 Id = instituicao.Id,
                 Cnpj = instituicao.Cnpj,
@@ -178,11 +178,11 @@ public class InstituicaoService : IInstituicaoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao criar instituição com email {EmailLogin}", request.EmailLogin);
-            return ResultData<InstituicaoResponse>.Failure("Erro ao criar instituição");
+            return Result<InstituicaoResponse>.Failure("Erro ao criar instituição");
         }
 
     }
-    async Task<Result> IInstituicaoService.DeletarInstituicao(int id)
+    async Task<Result<bool>> IInstituicaoService.DeletarInstituicao(int id)
     {
         try
         {
@@ -191,21 +191,21 @@ public class InstituicaoService : IInstituicaoService
             if (instituicao is null)
             {
                 _logger.LogWarning("Instituição com ID {InstituicaoId} não encontrada para deleção", id);
-                return Result.Failure("Instituição não encontrada");
+                return Result<bool>.Failure("Instituição não encontrada");
             }
             await _repository.DeletarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Instituição com ID {InstituicaoId} deletada com sucesso", id);
-            return Result.Success("Instituicao deletada com sucesso");
+            return Result<bool>.Success(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao deletar instituição com ID {InstituicaoId}", id);
-            return Result.Failure("Erro ao deletar instituição");
+            return Result<bool>.Failure("Erro ao deletar instituição");
         }
     }
 
-    async Task<ResultData<InstituicaoResponse>> IInstituicaoService.ListarInstituicaoById(int id)
+    async Task<Result<InstituicaoResponse>> IInstituicaoService.ListarInstituicaoById(int id)
     {
         try
         {
@@ -214,10 +214,10 @@ public class InstituicaoService : IInstituicaoService
             if (instituicao is null)
             {
                 _logger.LogWarning("Instituição com ID {InstituicaoId} não encontrada", id);
-                return ResultData<InstituicaoResponse>.Failure("Instituição não encontrada");
+                return Result<InstituicaoResponse>.Failure("Instituição não encontrada");
             }
             _logger.LogInformation("Instituição com ID {InstituicaoId} encontrada com sucesso", id);
-            return ResultData<InstituicaoResponse>.Success(new InstituicaoResponse
+            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
             {
                 Id = id,
                 Cnpj = instituicao.Cnpj,
@@ -230,11 +230,11 @@ public class InstituicaoService : IInstituicaoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao buscar instituição com ID {InstituicaoId}", id);
-            return ResultData<InstituicaoResponse>.Failure("Erro ao buscar instituição");
+            return Result<InstituicaoResponse>.Failure("Erro ao buscar instituição");
         }
     }
 
-    async Task<ResultData<IEnumerable<InstituicaoResponse>>> IInstituicaoService.ListarInstituicoes()
+    async Task<Result<IEnumerable<InstituicaoResponse>>> IInstituicaoService.ListarInstituicoes()
     {
         try
         {
@@ -242,7 +242,7 @@ public class InstituicaoService : IInstituicaoService
             var instituicoes = await _repository.ListarInstituicoes();
             _logger.LogInformation("Instituições listadas com sucesso {InstituicoesCount}", instituicoes.Count());
 
-            return ResultData<IEnumerable<InstituicaoResponse>>.Success(instituicoes.Select(instituicao => new InstituicaoResponse
+            return Result<IEnumerable<InstituicaoResponse>>.Success(instituicoes.Select(instituicao => new InstituicaoResponse
             {
                 Id = instituicao.Id,
                 Cnpj = instituicao.Cnpj,
@@ -254,7 +254,7 @@ public class InstituicaoService : IInstituicaoService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao listar instituições");
-            return ResultData<IEnumerable<InstituicaoResponse>>.Failure("Erro ao listar instituições");
+            return Result<IEnumerable<InstituicaoResponse>>.Failure("Erro ao listar instituições");
         }
     }
 }

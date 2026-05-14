@@ -105,7 +105,7 @@ public class InstituicaoServiceTest
             result.IsSuccess.Should().BeFalse();
             _mockRepository.Verify(r => r.CriarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Never);
             _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
-            result.Message.Should().Be("Endereço não encontrado para ser associado à instituição");
+            result.Errors.Should().Contain("Endereço não encontrado para ser associado à instituição");
         }
 
         public async Task Deve_Falhar_Criar_Instituicao_Quando_Validator_Falhar()
@@ -222,7 +222,7 @@ public class InstituicaoServiceTest
             var result = await _service.AtualizarInstituicao(instituicaoId, request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Instituição não encontrada");
+            result.Errors.Should().Contain("Instituição não encontrada");
             _mockRepository.Verify(r => r.ListarInstituicaoById(It.IsAny<int>()), Times.Once);
             _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
@@ -280,7 +280,7 @@ public class InstituicaoServiceTest
             var result = await _service.AtualizarInstituicao(instituicaoId, request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Email já cadastrado para outra instituição");
+            result.Errors.Should().Contain("Email já cadastrado para outra instituição");
             _mockRepository.Verify(r => r.AtualizarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Never);
             _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
@@ -329,7 +329,7 @@ public class InstituicaoServiceTest
             var result = await _service.AtualizarInstituicao(instituicaoId, request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Endereço não encontrado para ser associado à instituição");
+            result.Errors.Should().Contain("Endereço não encontrado para ser associado à instituição");
             _mockRepository.Verify(r => r.AtualizarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Never);
             _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
@@ -386,7 +386,7 @@ public class InstituicaoServiceTest
             var result = await _service.DeletarInstituicao(instituicaoId);
             //Assert
             result.IsSuccess.Should().BeTrue();
-            result.Message.Should().Be("Instituicao deletada com sucesso");
+
             _mockRepository.Verify(r => r.DeletarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Once);
         }
 
@@ -400,7 +400,7 @@ public class InstituicaoServiceTest
             var result = await _service.DeletarInstituicao(instituicaoId);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Instituição não encontrada");
+            result.Errors.Should().Contain("Instituição não encontrada");
 
             _mockRepository.Verify(r => r.DeletarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Never);
         }
@@ -441,7 +441,7 @@ public class InstituicaoServiceTest
             var result = await _service.ListarInstituicaoById(instituicaoId);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            result.Message.Should().Be("Instituição não encontrada");
+            result.Errors.Should().Contain("Instituição não encontrada");
             _mockRepository.Verify(r => r.ListarInstituicaoById(It.IsAny<int>()), Times.Once);
         }
     }
