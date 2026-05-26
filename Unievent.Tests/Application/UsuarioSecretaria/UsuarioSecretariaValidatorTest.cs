@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Validators.UsuarioSecretaria;
+using Unievent.Domain.Enuns;
 using Xunit;
 
 namespace Unievent.Tests.Application;
@@ -21,7 +22,7 @@ public class UsuarioSecretariaValidatorTest
         var request = new UsuarioSecretariaRequest
         {
             NomeUsuario = "Ryan",
-            RoleUsuario = "Admin",
+            RoleUsuario = Role.Admin,
             EmailUsuario = "ryan@email.com",
             Senha = "123"
         };
@@ -32,8 +33,8 @@ public class UsuarioSecretariaValidatorTest
     }
 
     [Theory]
-    [InlineData("Ryan", "Admin", "ryan@fatec.sp.gov.br", "senha2")]
-    public async Task Deve_Passar_Quando_Dados_Sao_Validos_No_Request(string nome, string role, string email, string senha)
+    [InlineData("Ryan", Role.Admin, "ryan@fatec.sp.gov.br", "senha2")]
+    public async Task Deve_Passar_Quando_Dados_Sao_Validos_No_Request(string nome, Role role, string email, string senha)
     {
         var request = new UsuarioSecretariaRequest
         {
@@ -56,7 +57,7 @@ public class UsuarioSecretariaValidatorTest
         {
             EmailUsuario = "teste@gmail.com",
             NomeUsuario = "ryan",
-            RoleUsuario = "Admin",
+            RoleUsuario = Role.Admin,
             Senha = "senhaforte"
         };
 
@@ -67,8 +68,8 @@ public class UsuarioSecretariaValidatorTest
 
 
     [Theory]
-    [InlineData("Ryan", "Admin", "ryan@fatec.sp.gov.br", "senha2")]
-    public async Task Deve_Passar_Quando_Dados_Sao_Validos_No_Update(string nome, string role, string email, string senha)
+    [InlineData("Ryan", Role.Admin, "ryan@fatec.sp.gov.br", "senha2")]
+    public async Task Deve_Passar_Quando_Dados_Sao_Validos_No_Update(string nome, Role role, string email, string senha)
     {
         var request = new UsuarioSecretariaUpdate
         {
@@ -90,7 +91,7 @@ public class UsuarioSecretariaValidatorTest
         {
             EmailUsuario = "teste@gmail.com",
             NomeUsuario = "ryan",
-            Role = "Admin",
+            Role = Role.Admin,
             Senha = "senhaforte"
         };
 
@@ -105,7 +106,7 @@ public class UsuarioSecretariaValidatorTest
         var request = new UsuarioSecretariaUpdate
         {
             NomeUsuario = "Ryan",
-            Role = "Admin",
+            Role = Role.Admin,
             EmailUsuario = "ryan@email.com",
             Senha = "123"
         };

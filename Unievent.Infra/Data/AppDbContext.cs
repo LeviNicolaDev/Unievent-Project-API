@@ -26,34 +26,31 @@ public class AppDbContext : DbContext
         //    .Property(s => s.TentativasLogin)
         //    .HasDefaultValue(0);
 
-        modelBuilder.Entity<UsuarioSecretaria>()
-            .HasIndex(s => s.Chave)
-            .IsUnique();
-        modelBuilder.Entity<UsuarioSecretaria>()
-            .HasIndex(s => s.EmailUsuario)
-            .IsUnique();
-        modelBuilder.Entity<Aluno>()
-            .HasIndex(a => a.Email)
-            .IsUnique();
-        modelBuilder.Entity<UsuarioSecretaria>()
-            .Property(s => s.Chave)
-            .HasMaxLength(300);
-        modelBuilder.Entity<Instituicao>()
-            .Property(i => i.Cnpj)
-            .HasMaxLength(18);
-        modelBuilder.Entity<Endereco>()
-            .Property(e => e.Cep)
-            .HasMaxLength(8);
-        modelBuilder.Entity<Endereco>()
-            .Property(e => e.Estado)
-            .HasMaxLength(2);
-        modelBuilder.Entity<Endereco>()
-            .Property(e => e.Numero)
-            .HasMaxLength(5);
-        modelBuilder.Entity<UsuarioSecretaria>()
-            .HasQueryFilter(s => s.IsAtivo);
-        modelBuilder.Entity<Aluno>()
-       .HasQueryFilter(s => s.IsAtivo);
+        modelBuilder.Entity<UsuarioSecretaria>(u =>
+        {
+            u.HasIndex(s => s.EmailUsuario).IsUnique();
+            u.HasIndex(s => s.Chave).IsUnique();
+            u.Property(s => s.Chave).HasMaxLength(300);
+            u.Property(s => s.RoleUsuario).HasConversion<string>();
+            u.HasQueryFilter(s => s.IsAtivo);
+
+        });
+        modelBuilder.Entity<Aluno>(a =>
+        {
+            a.HasIndex(a => a.Email).IsUnique();
+            a.HasQueryFilter(a => a.IsAtivo);
+        });
+        modelBuilder.Entity<Instituicao>(i =>
+        {
+            i.HasIndex(i => i.Cnpj).IsUnique();
+            i.Property(i => i.Cnpj).HasMaxLength(18);
+        });
+        modelBuilder.Entity<Endereco>(e =>
+        {
+            e.Property(e => e.Cep).HasMaxLength(8);
+            e.Property(e => e.Estado).HasMaxLength(2);
+            e.Property(e => e.Numero).HasMaxLength(5);
+        });
         modelBuilder.Entity<Evento>()
         .Property(e => e.Categoria).HasConversion<string>();
     }

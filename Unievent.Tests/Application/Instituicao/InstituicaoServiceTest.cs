@@ -54,7 +54,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockEnderecoRepository.Setup(r => r.ListarEnderecoById(request.EnderecoId)).ReturnsAsync(new Domain.Entities.Endereco
             {
                 Id = 1,
@@ -96,7 +96,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockEnderecoRepository.Setup(r => r.ListarEnderecoById(request.EnderecoId)).ReturnsAsync((Domain.Entities.Endereco)null);
 
             //act
@@ -126,7 +126,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _mockRequestValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Dados", "Dados Inválidos")
             }));
@@ -135,7 +135,7 @@ public class InstituicaoServiceTest
             var result = await _service.CriarInstituicao(request);
             //Assert
             result.IsSuccess.Should().BeFalse();
-            _mockRequestValidator.Verify(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>()), Times.Once);
+            _mockRequestValidator.Verify(v => v.ValidateAsync(It.IsAny<InstituicaoRequest>(), It.IsAny<CancellationToken>()), Times.Once);
             _mockRepository.Verify(r => r.CriarInstituicao(It.IsAny<Domain.Entities.Instituicao>()), Times.Never);
             _mockRepository.Verify(r => r.SaveChangesAsync(), Times.Never);
         }
@@ -163,7 +163,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockRepository.Setup(r => r.ListarInstituicaoById(instituicaoId)).ReturnsAsync(new Domain.Entities.Instituicao
             {
                 Id = instituicaoId,
@@ -216,7 +216,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockRepository.Setup(r => r.ListarInstituicaoById(instituicaoId)).ReturnsAsync((Domain.Entities.Instituicao)null);
             //act
             var result = await _service.AtualizarInstituicao(instituicaoId, request);
@@ -246,7 +246,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockRepository.Setup(r => r.ListarInstituicaoById(instituicaoId)).ReturnsAsync(new Domain.Entities.Instituicao
             {
                 Id = instituicaoId,
@@ -304,7 +304,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _mockRepository.Setup(r => r.ListarInstituicaoById(instituicaoId)).ReturnsAsync(new Domain.Entities.Instituicao
             {
                 Id = instituicaoId,
@@ -352,7 +352,7 @@ public class InstituicaoServiceTest
                 }
             };
 
-            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _mockUpdateValidator.Setup(v => v.ValidateAsync(It.IsAny<InstituicaoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Dados", "Dados Inválidos")
             }));

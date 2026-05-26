@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Unievent.Application.Interfaces.Services;
 using Unievent.Application.Services;
 
 namespace Unievent.Api.Controllers
@@ -7,9 +8,9 @@ namespace Unievent.Api.Controllers
     [Route("api/[controller]")]
     public class EmailController : ControllerBase
     {
-        private readonly EmailService _service;
+        private readonly IEmailService _service;
 
-        public EmailController(EmailService emailService)
+        public EmailController(IEmailService emailService)
         {
             _service = emailService;
         }

@@ -15,7 +15,7 @@ namespace Unievent.Application.Services
         public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
         {
             _logger = logger;
-            _emailPassword = configuration["emailPassword"];
+            _emailPassword = configuration["emailPassword"] ?? configuration["PASSWORD_EMAIL"];
         }
 
         public async Task<Result<bool>> EnviarEmailConfirmacaoConta(string email, string nome, string chave)

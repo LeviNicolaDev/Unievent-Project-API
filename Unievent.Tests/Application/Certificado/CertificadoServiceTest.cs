@@ -44,7 +44,7 @@ public class CertificadoServiceTest
                 AlunoId = 1,
                 EventoId = 1
             };
-            _requestValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync(new Domain.Entities.Aluno
             {
                 Id = request.AlunoId,
@@ -88,7 +88,7 @@ public class CertificadoServiceTest
                 AlunoId = 999,
                 EventoId = 1
             };
-            _requestValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync((Domain.Entities.Aluno)null);
             // Act
             var result = await _service.CriarCertificado(request);
@@ -111,7 +111,7 @@ public class CertificadoServiceTest
                 AlunoId = 1,
                 EventoId = 999
             };
-            _requestValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync(new Domain.Entities.Aluno
             {
                 Id = request.AlunoId,
@@ -146,7 +146,7 @@ public class CertificadoServiceTest
                 Texto = ""
 
             };
-            _requestValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult
+            _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult
             {
                 Errors = { new FluentValidation.Results.ValidationFailure("Texto", "Texto é obrigatório") }
             });
@@ -155,7 +155,7 @@ public class CertificadoServiceTest
             //Assert
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Texto é obrigatório");
-            _requestValidatorMock.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _requestValidatorMock.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
         }
@@ -174,7 +174,7 @@ public class CertificadoServiceTest
                 AlunoId = 1,
                 EventoId = 1
             };
-            _updateValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarCertificadoById(1)).ReturnsAsync(new Domain.Entities.Certificado
             {
                 Id = 1,
@@ -227,7 +227,7 @@ public class CertificadoServiceTest
                 AlunoId = 1,
                 EventoId = 1
             };
-            _updateValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarCertificadoById(999)).ReturnsAsync((Domain.Entities.Certificado)null);
             // Act
             var result = await _service.AtualizarCertificado(999, request);
@@ -251,7 +251,7 @@ public class CertificadoServiceTest
                 Texto = ""
 
             };
-            _updateValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult
+            _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult
             {
                 Errors = { new FluentValidation.Results.ValidationFailure("Texto", "Texto é obrigatório") }
             });
@@ -277,7 +277,7 @@ public class CertificadoServiceTest
                 AlunoId = 999,
                 EventoId = 1
             };
-            _updateValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarCertificadoById(1)).ReturnsAsync(new Domain.Entities.Certificado
             {
                 Id = 1,
@@ -308,7 +308,7 @@ public class CertificadoServiceTest
                 DataCertifcado = DateTime.Now.AddDays(-1),
                 Texto = "Certificado de participação"
             };
-            _updateValidatorMock.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarCertificadoById(1)).ReturnsAsync(new Domain.Entities.Certificado
             {
                 Id = 1,

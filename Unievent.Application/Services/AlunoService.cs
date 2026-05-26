@@ -166,6 +166,7 @@ public class AlunoService : IAlunoService
                 return Result<bool>.Failure("Aluno não encontrado");
             }
             aluno.IsAtivo = false;
+            await _repository.AtualizarAluno(aluno);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno com ID {AlunoId} deletado com sucesso", id);
             return Result<bool>.Success(true);

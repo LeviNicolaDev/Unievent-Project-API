@@ -58,23 +58,16 @@ namespace Unievent.Application.Services
                     var senhaHash = BCrypt.Net.BCrypt.HashPassword(update.Senha);
                     usuarioSecretaria.Senha = senhaHash;
                 }
-                if (!string.IsNullOrWhiteSpace(update.Role) && update.Role.Equals("Secretaria", StringComparison.CurrentCultureIgnoreCase) || update.Role.Equals("Admin", StringComparison.CurrentCultureIgnoreCase))
+                if (update.Role.HasValue && update.Role != usuarioSecretaria.RoleUsuario)
                 {
-                    var role = Enum.TryParse(update.Role, out Role result) ? result : Role.Secretaria;
-                    usuarioSecretaria.RoleUsuario = role;
+
+                    usuarioSecretaria.RoleUsuario = update.Role.Value;
                 }
                 else
                 {
                     _logger.LogWarning("Cargo {Role} inválido para o usuário da secretaria com ID {UsuarioSecretariaId}. Digite 'Secretaria' ou 'Admin'", update.Role, id);
-                    return Result<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria");
+                    return Result<UsuarioSecretariaResponse>.Failure("Cargo inválido para o usuário da secretaria ou usuario secretaria ja tem esse cargo");
                 }
-
-                /* if (!string.IsNullOrWhiteSpace(update.IsAtivo) && update.IsAtivo.Equals("ativo", StringComparison.CurrentCultureIgnoreCase))
-                 {
-                     usuarioSecretaria.IsAtivo = true;
-                     // var status = Enum.TryParse(update.Status, out Situacao situacao) ? situacao : Situacao.inativo;
-
-                 }*/
 
                 await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
                 await _repository.SaveChangesAsync();
@@ -106,7 +99,7 @@ namespace Unievent.Application.Services
                 if (!validator.IsValid)
                     return Result<UsuarioSecretariaResponse>.Failure(validator.Errors.Select(e => e.ErrorMessage).ToList());
 
-                var role = Enum.TryParse(request.RoleUsuario, out Role result) ? result : Role.Secretaria;
+                var role = Enum.TryParse(request.RoleUsuario.ToString(), out Role result) ? result : Role.Secretaria;
                 var senhaHash = BCrypt.Net.BCrypt.HashPassword(request.Senha);
                 var emailExistente = await _repository.ListarUsuarioSecretariaByEmail(request.EmailUsuario);
                 if (emailExistente != null)
@@ -155,6 +148,7 @@ namespace Unievent.Application.Services
                     return Result<bool>.Failure("UsuarioSecretaria não encontrado");
                 }
                 usuarioSecretaria.IsAtivo = false;
+                await _repository.AtualizarUsuarioSecretaria(usuarioSecretaria);
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Usuário da secretaria com ID {UsuarioSecretariaId} deletado com sucesso", id);
                 return Result<bool>.Success(true);

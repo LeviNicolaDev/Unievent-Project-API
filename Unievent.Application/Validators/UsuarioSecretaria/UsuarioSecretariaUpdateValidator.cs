@@ -19,6 +19,6 @@ public class UsuarioSecretariaUpdateValidator : AbstractValidator<UsuarioSecreta
         RuleFor(s => s.Senha)
         .MinimumLength(6).WithMessage("A senha deve conter no minimo 6 caracteres").When(s => !string.IsNullOrWhiteSpace(s.Senha));
         RuleFor(s => s.Role)
-        .NotEmpty().WithMessage("O cargo deve ser preenchido").When(s => s.Role != null);
+        .IsInEnum().WithMessage("O cargo deve ser preenchido").When(s => s.Role != null);
     }
 }
