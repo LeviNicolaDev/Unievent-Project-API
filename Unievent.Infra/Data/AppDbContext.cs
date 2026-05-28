@@ -17,6 +17,7 @@ public class AppDbContext : DbContext
     public DbSet<Certificado> Certificado { get; set; }
     public DbSet<ResponsavelEvento> ResponsavelEvento { get; set; }
     public DbSet<Endereco> Endereco { get; set; }
+    public DbSet<Participacao> Participacao { get; set; }
     public DbSet<Instituicao> Instituicao { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,5 +54,6 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<Evento>()
         .Property(e => e.Categoria).HasConversion<string>();
+
     }
 }

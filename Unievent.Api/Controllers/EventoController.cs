@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Services;
@@ -8,7 +9,7 @@ namespace Unievent.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class EventoController(IEventoService _service) : ControllerBase
+    public class EventoController(IEventoService _service, IParticipacaoService participacaoService) : ControllerBase
     {
         [HttpPost]
         [Consumes("multipart/form-data")]
@@ -92,6 +93,36 @@ namespace Unievent.Api.Controllers
             if (result.IsFailure)
                 return BadRequest(result.Errors);
 
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/inscrever-se")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<ActionResult> InscreverEvento([FromRoute] int id)
+        {
+            var aluno = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (aluno is null) return BadRequest("Aluno não autenticado");
+            var result = await participacaoService.InscreverAsync(int.Parse(aluno), id);
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Errors);
+            }
+            return Ok(result.Value);
+        }
+
+        [HttpPost("{id}/confirmar-presenca")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<ActionResult> ConfirmarPresenca([FromRoute] int id)
+        {
+            var aluno = int.Parse(
+        User.FindFirst(ClaimTypes.NameIdentifier)!.Value
+    );
+
+            var result = await participacaoService.GarantirPresencaAsync(aluno, id);
+            if (result.IsFailure)
+            {
+                return BadRequest(result.Errors);
+            }
             return Ok(result.Value);
         }
     }

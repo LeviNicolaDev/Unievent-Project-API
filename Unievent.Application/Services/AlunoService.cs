@@ -130,6 +130,7 @@ public class AlunoService : IAlunoService
                 FotoPerfil = imagem,
                 DataNascimento = request.DataNascimento,
                 IsAtivo = true,
+                Role = Domain.Enuns.Role.Aluno,
                 Senha = senha
             };
             await _repository.CriarAluno(aluno);
@@ -142,7 +143,7 @@ public class AlunoService : IAlunoService
                 Email = aluno.Email,
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
-
+                Role = aluno.Role,
                 DataNascimento = aluno.DataNascimento
             });
         }

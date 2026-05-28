@@ -14,6 +14,7 @@ namespace Unievent.Api.Configurations.DependencyInjection
             services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
             services.AddScoped<IResponsavelEventoRepository, ResponsavelEventoRepository>();
             services.AddScoped<IUsuarioSecretariaRepository, UsuarioSecretariaRepository>();
+            services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
 
 
             return services;
