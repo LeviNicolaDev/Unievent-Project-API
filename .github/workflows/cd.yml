@@ -18,7 +18,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker image build -t ysouzay/api-unievent:latest .
+        run: docker image build -t ${{ secrets.DOCKER_USERNAME }}/api-unievent:latest .
 
       - name: Push Docker Image
-        run: docker push ysouzay/api-unievent:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/api-unievent:latest

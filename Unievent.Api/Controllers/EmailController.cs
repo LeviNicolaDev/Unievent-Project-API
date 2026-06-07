@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Unievent.Application.Dtos.Email;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Application.Services;
 
@@ -16,9 +17,9 @@ namespace Unievent.Api.Controllers
         }
 
         [HttpPost("enviar-email-confirmacao-conta")]
-        public async Task<IActionResult> EnviarEmailConfirmacaoContaAsync([FromBody] string email, string nome, string chave)
+        public async Task<IActionResult> EnviarEmailConfirmacaoContaAsync([FromBody] EmailConfirmacaoRequest request)
         {
-            var response = await _service.EnviarEmailConfirmacaoConta(email, nome, chave);
+            var response = await _service.EnviarEmailConfirmacaoConta(request.Email, request.Nome, request.Chave);
             if (response.IsFailure)
             {
                 return BadRequest(response.Errors);

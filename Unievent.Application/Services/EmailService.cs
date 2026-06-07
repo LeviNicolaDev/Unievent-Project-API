@@ -1,75 +1,58 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using System.Net;
 using System.Net.Mail;
 using Unievent.Application.Common;
+using Unievent.Application.Configurations.Email;
 using Unievent.Application.Interfaces.Services;
-using Unievent.Domain.Entities;
+using Unievent.Application.Templates;
 
 namespace Unievent.Application.Services
 {
     public class EmailService : IEmailService
     {
         private readonly ILogger<EmailService> _logger;
-        private readonly string _emailPassword;
+        private readonly EmailSettings _emailSettings;
 
-        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
+        public EmailService(IOptions<EmailSettings> emailSettings, ILogger<EmailService> logger)
         {
             _logger = logger;
-            _emailPassword = configuration["emailPassword"] ?? configuration["PASSWORD_EMAIL"];
+            _emailSettings = emailSettings.Value;
         }
 
-        public async Task<Result<bool>> EnviarEmailConfirmacaoConta(string email, string nome, string chave)
+        public async Task<Result<bool>> SendAsync(string destinatario, string assunto, string mensagemHtml)
         {
             try
             {
-                _logger.LogInformation("Enviando email de confirmação de conta para {Email}", email);
-
-                var enviarEmail = new EmailModel()
+                using var message = new MailMessage
                 {
-                    Titulo = "Confirmação de Conta - Unievent",
-                    Mensagem = TemplateEmailConfirmarConta(nome, chave),
-                    Destinatario = email
+                    From = new MailAddress(_emailSettings.Email),
+                    Subject = assunto,
+                    Body = mensagemHtml,
+                    IsBodyHtml = true
                 };
 
-                var message = new MailMessage()
-                {
-                    From = new MailAddress("adm.unievent@gmail.com"),
-                    Subject = enviarEmail.Titulo,
-                    Body = enviarEmail.Mensagem
-                };
-                message.To.Add(email);
+                message.To.Add(destinatario);
 
-                using SmtpClient smtpClient = new SmtpClient("smtp.gmail.com", 587);
-                smtpClient.Credentials = new System.Net.NetworkCredential("adm.unievent@gmail.com", _emailPassword);
-                smtpClient.EnableSsl = true;
-                smtpClient.Send(message);
+                using var smtpClient = new SmtpClient(_emailSettings.Host, _emailSettings.Port);
 
-                _logger.LogInformation("Email de confirmação enviado com sucesso para {Email}", email);
+                smtpClient.Credentials = new NetworkCredential(_emailSettings.Email, _emailSettings.Password);
+                smtpClient.EnableSsl = _emailSettings.EnableSsl;
+                await smtpClient.SendMailAsync(message);
+
                 return Result<bool>.Success(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Erro ao enviar email de confirmação para {Email}", email);
-                return Result<bool>.Failure("Erro ao enviar email de confirmação de conta");
+                _logger.LogError(ex, "Erro ao enviar e-mail para {Email}", destinatario);
+                return Result<bool>.Failure("Erro ao enviar e-mail");
             }
         }
 
-        private string TemplateEmailConfirmarConta(string nome, string chave)
+        public async Task<Result<bool>> EnviarEmailConfirmacaoConta(string email, string nome, string chave)
         {
-            return $@"<html>
-                        <head>
-                            <meta charset=""UTF-8"">
-                            <title>Confirmação de Conta</title>
-                        </head>
-                        <body>
-                            <h1>Olá, {nome}!</h1>
-                            <p>Obrigado por se registrar em nosso serviço. Para confirmar sua conta, por favor clique no link abaixo:</p>
-                            <a href=""http://localhost/unievent-project/src/Service/ConfirmarEmail.php?chave={chave}"">Confirmar Conta</a>
-                            <p>Se você não se registrou, por favor ignore este email.</p>
-                            <p>Atenção: nunca solicitamos o envio de senhas, dados pessoais ou arquivos anexados por e-mail.<br><br>Em caso de dúvidas, entre em contato com nosso suporte.</p>
-                            <p>Atenciosamente,<br>Equipe Unievent</p>
-                        </body>
-                    </html>";
+            _logger.LogInformation("Enviando e-mail de confirmação para {Email}", email);
+            return await SendAsync(email, "Confirmação de Conta - Unievent", EmailTemplates.ConfirmacaoConta(nome, chave, _emailSettings.BaseUrl));
         }
     }
 }
