@@ -47,7 +47,7 @@ public class AlunoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorRequest.Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequest.Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarAlunoByEmail(It.IsAny<string>())).ReturnsAsync((Unievent.Domain.Entities.Aluno)null);
             _repositoryMock.Setup(r => r.CriarAluno(It.IsAny<Unievent.Domain.Entities.Aluno>())).ReturnsAsync((Unievent.Domain.Entities.Aluno a) => a);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
@@ -78,7 +78,7 @@ public class AlunoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorRequest.Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequest.Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarAlunoByEmail(It.IsAny<string>())).ReturnsAsync(new Unievent.Domain.Entities.Aluno
             {
                 Id = 2,
@@ -118,7 +118,7 @@ public class AlunoServiceTest
             };
 
             _validatorRequest
-                .Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default))
+                .Setup(v => v.ValidateAsync(It.IsAny<AlunoRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
                 {
             new FluentValidation.Results.ValidationFailure("Email", "O email deve ser válido")
@@ -132,7 +132,7 @@ public class AlunoServiceTest
             result.Errors.Should().Contain("O email deve ser válido");
 
             _validatorRequest.Verify(
-                v => v.ValidateAsync(It.IsAny<AlunoRequest>(), default),
+                v => v.ValidateAsync(It.IsAny<AlunoRequest>(), It.IsAny<CancellationToken>()),
                 Times.Once
             );
 
@@ -148,6 +148,7 @@ public class AlunoServiceTest
             {
                 // Arrange
                 using var stream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes("conteudo fake"));
+                Domain.Entities.Aluno aluno = null;
                 var alunoId = 1;
                 _repositoryMock.Setup(r => r.ListarAlunoById(alunoId)).ReturnsAsync(new Unievent.Domain.Entities.Aluno
                 {
@@ -160,11 +161,15 @@ public class AlunoServiceTest
                     IsAtivo = true
 
                 });
+                _repositoryMock.Setup(r => r.AtualizarAluno(It.IsAny<Domain.Entities.Aluno>())).Callback<Domain.Entities.Aluno>(a => aluno = a)
+                .ReturnsAsync((Domain.Entities.Aluno a) => a);
                 _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
                 // Act
                 var result = await _alunoService.DeletarAluno(alunoId);
                 // Assert
+                aluno?.IsAtivo.Should().BeFalse();
                 result.IsSuccess.Should().BeTrue();
+                _repositoryMock.Verify(r => r.AtualizarAluno(It.IsAny<Domain.Entities.Aluno>()), Times.Once);
                 _repositoryMock.Verify(r => r.ListarAlunoById(alunoId), Times.Once);
                 _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
             }
@@ -246,7 +251,7 @@ public class AlunoServiceTest
                         ContentType = "image/jpeg"
                     }
                 };
-                _validatorUpdate.Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+                _validatorUpdate.Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
                 _repositoryMock.Setup(r => r.ListarAlunoById(It.IsAny<int>())).ReturnsAsync(new Unievent.Domain.Entities.Aluno
                 {
                     Id = alunoId,
@@ -285,7 +290,7 @@ public class AlunoServiceTest
                         ContentType = "image/jpeg"
                     }
                 };
-                _validatorUpdate.Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+                _validatorUpdate.Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
                 _repositoryMock.Setup(r => r.ListarAlunoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.Aluno)null);
                 // Act
                 var result = await _alunoService.AtualizarAluno(alunoId, update);
@@ -316,7 +321,7 @@ public class AlunoServiceTest
                 };
 
                 _validatorUpdate
-                    .Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default))
+                    .Setup(v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
                     {
             new FluentValidation.Results.ValidationFailure("Senha", "A senha deve ter no minimo 6 caracteres")
@@ -330,7 +335,7 @@ public class AlunoServiceTest
                 result.Errors.Should().Contain("A senha deve ter no minimo 6 caracteres");
 
                 _validatorUpdate.Verify(
-                    v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), default),
+                    v => v.ValidateAsync(It.IsAny<AlunoUpdate>(), It.IsAny<CancellationToken>()),
                     Times.Once
                 );
 

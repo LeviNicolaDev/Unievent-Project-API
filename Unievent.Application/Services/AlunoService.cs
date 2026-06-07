@@ -130,6 +130,7 @@ public class AlunoService : IAlunoService
                 FotoPerfil = imagem,
                 DataNascimento = request.DataNascimento,
                 IsAtivo = true,
+                Role = Domain.Enuns.Role.Aluno,
                 Senha = senha
             };
             await _repository.CriarAluno(aluno);
@@ -142,7 +143,7 @@ public class AlunoService : IAlunoService
                 Email = aluno.Email,
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
-
+                Role = aluno.Role,
                 DataNascimento = aluno.DataNascimento
             });
         }
@@ -166,6 +167,7 @@ public class AlunoService : IAlunoService
                 return Result<bool>.Failure("Aluno não encontrado");
             }
             aluno.IsAtivo = false;
+            await _repository.AtualizarAluno(aluno);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno com ID {AlunoId} deletado com sucesso", id);
             return Result<bool>.Success(true);

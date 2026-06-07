@@ -45,7 +45,7 @@ public class ResponsavelEventoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorRequestMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequestMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.CriarResponsavelEvento(It.IsAny<Domain.Entities.ResponsavelEvento>())).ReturnsAsync((Domain.Entities.ResponsavelEvento e) => e);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
 
@@ -74,7 +74,7 @@ public class ResponsavelEventoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorRequestMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _validatorRequestMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Nome", "Nome é obrigatório")
             }));
@@ -105,7 +105,7 @@ public class ResponsavelEventoServiceTest
                 }
             };
 
-            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.ResponsavelEvento
             {
                 Id = responsavelId,
@@ -140,7 +140,7 @@ public class ResponsavelEventoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync((Unievent.Domain.Entities.ResponsavelEvento)null);
 
             // Act
@@ -167,7 +167,7 @@ public class ResponsavelEventoServiceTest
                     ContentType = "image/jpeg"
                 }
             };
-            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>()))
+            _validatorUpdateMock.Setup(v => v.ValidateAsync(It.IsAny<ResponsavelEventoUpdate>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Nome", "Nome é obrigatório")

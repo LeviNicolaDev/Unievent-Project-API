@@ -14,6 +14,8 @@ namespace Unievent.Api.Configurations.DependencyInjection
             services.AddScoped<IInstituicaoService, InstituicaoService>();
             services.AddScoped<IEnderecoService, EnderecoService>();
             services.AddScoped<ICertificadoService, CertificadoService>();
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IParticipacaoService, ParticipacaoService>();
 
             return services;
         }

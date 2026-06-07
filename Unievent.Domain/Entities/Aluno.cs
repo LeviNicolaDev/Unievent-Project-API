@@ -1,3 +1,5 @@
+using Unievent.Domain.Enuns;
+
 namespace Unievent.Domain.Entities;
 
 public class Aluno : EntidadeBase
@@ -13,6 +15,7 @@ public class Aluno : EntidadeBase
         Senha = senha;
         Email = email;
         FotoPerfil = fotoPerfil;
+        Role = Role.Aluno;
         IsAtivo = isAtivo;
         DataNascimento = dataNascimento;
 
@@ -22,5 +25,6 @@ public class Aluno : EntidadeBase
     public required string Email { get; set; }
     public required string FotoPerfil { get; set; }
     public bool IsAtivo { get; set; }
+    public Role Role { get; set; }
     public required DateTime DataNascimento { get; set; }
 }

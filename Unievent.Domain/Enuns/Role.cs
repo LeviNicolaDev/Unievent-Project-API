@@ -3,7 +3,8 @@
     public enum Role
     {
         Admin,
-        Secretaria
+        Secretaria,
+        Aluno
 
     }
 }

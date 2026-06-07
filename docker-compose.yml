@@ -1,0 +1,25 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    volumes:
+      - sql_data:/var/opt/mssql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=${PASSWORD_DB}
+    ports:
+      - "1434:1433"
+  api:
+    depends_on:
+      - db
+    image: ysouzay/api-unievent:latest
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=Unievent;User Id=sa;Password=${PASSWORD_DB};TrustServerCertificate=True;
+      - emailPassword=${PASSWORD_EMAIL}
+      - Jwt__Key=${Jwt__Key}
+      - Jwt__Issuer=${Jwt__Issuer}
+      - Jwt__Audience=${Jwt__Audience}
+    ports:
+      - "5000:8080"
+volumes:
+  sql_data:

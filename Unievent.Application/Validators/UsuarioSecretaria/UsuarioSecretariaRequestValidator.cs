@@ -14,7 +14,7 @@ public class UsuarioSecretariaRequestValidator : AbstractValidator<UsuarioSecret
         RuleFor(s => s.NomeUsuario)
         .NotEmpty().WithMessage("O nome deve ser preenchido");
         RuleFor(s => s.RoleUsuario)
-        .NotEmpty().WithMessage("A role do usuario deve ser preenchido");
+        .IsInEnum().WithMessage("A role do usuario deve ser preenchido");
         RuleFor(s => s.Senha)
         .NotEmpty().WithMessage("A senha deve ser preenchida").MinimumLength(6).WithMessage("A senha deve conter no minimo 6 caracteres");
     }

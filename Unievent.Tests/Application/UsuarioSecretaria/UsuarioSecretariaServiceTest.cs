@@ -9,7 +9,7 @@ using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Application.Services;
 using Unievent.Domain.Entities;
-
+using Unievent.Domain.Enuns;
 using Xunit;
 
 namespace Unievent.Tests.Application;
@@ -36,10 +36,10 @@ public class UsuarioSecretariaServiceTest
     {
 
         [Theory]
-        [InlineData("Ryan", "Admin", "ryan@fatec.sp.gov.br", "te", "senha123")]
-        [InlineData("Maria", "Secretaria", "maria@fatec.sp.gov.br", "ab", "outraSenha")]
+        [InlineData("Ryan", Role.Admin, "ryan@fatec.sp.gov.br", "te", "senha123")]
+        [InlineData("Maria", Role.Secretaria, "maria@fatec.sp.gov.br", "ab", "outraSenha")]
         public async Task Criar_Usuario_Quando_Dados_Validos_Retorna_Sucesso(
-        string nome, string role, string email, string chave, string senha)
+        string nome, Role role, string email, string chave, string senha)
         {
             // Arrange
             var request = new UsuarioSecretariaRequest
@@ -50,7 +50,7 @@ public class UsuarioSecretariaServiceTest
                 Chave = chave,
                 Senha = senha
             };
-            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), default))
+            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
             _repositoryMock.Setup(r => r.ListarUsuarioSecretariaByEmail(It.IsAny<string>()))
@@ -67,7 +67,7 @@ public class UsuarioSecretariaServiceTest
             // Assert
             result.IsSuccess.Should().BeTrue();
             result.Value.NomeUsuario.Should().Be(nome);
-            result.Value.RoleUsuario.Should().Be(role);
+            result.Value.RoleUsuario.Should().Be(role.ToString());
             result.Value.EmailUsuario.Should().Be(email);
             result.Value.Chave.Should().Be(chave);
             _repositoryMock.Verify(r =>
@@ -80,12 +80,12 @@ public class UsuarioSecretariaServiceTest
             var request = new UsuarioSecretariaRequest
             {
                 NomeUsuario = "Ryan",
-                RoleUsuario = "Admin",
+                RoleUsuario = Role.Admin,
                 EmailUsuario = "ryan@fatec.sp.gov.br",
                 Chave = "chave",
                 Senha = "1265"
             };
-            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), default))
+            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[] { new FluentValidation.Results.ValidationFailure
             ("Senha", "A senha deve ter no minimo 6 caracteres") }));
 
@@ -106,12 +106,12 @@ public class UsuarioSecretariaServiceTest
             var request = new UsuarioSecretariaRequest
             {
                 NomeUsuario = "Ryan",
-                RoleUsuario = "Admin",
+                RoleUsuario = Role.Admin,
                 EmailUsuario = "ryan@fatec.sp.gov.br",
                 Senha = "123456",
                 Chave = "abc"
             };
-            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), default))
+            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
             _repositoryMock.Setup(r => r.ListarUsuarioSecretariaByEmail(It.IsAny<string>()))
@@ -141,6 +141,7 @@ public class UsuarioSecretariaServiceTest
             public async Task Deve_Deletar_Usuario_Quando_Id_Valido()
             {
                 // Arrange
+                Domain.Entities.UsuarioSecretaria usuarioExiste = null;
                 var usuario = new UsuarioSecretaria
                 {
                     Id = 1,
@@ -155,14 +156,16 @@ public class UsuarioSecretariaServiceTest
                 };
 
                 _repositoryMock.Setup(r => r.ListarUsuarioSecretariaById(It.IsAny<int>())).ReturnsAsync(usuario);
-
+                _repositoryMock.Setup(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>())).Callback<Domain.Entities.UsuarioSecretaria>(u => usuarioExiste = u).ReturnsAsync((UsuarioSecretaria u) => u);
                 _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
 
                 //Act
-                var result = await _service.DeletarUsuarioSecretaria(1);
+                var result = await _service.DeletarUsuarioSecretaria(It.IsAny<int>());
                 //Assert
                 result.IsSuccess.Should().BeTrue();
-                _repositoryMock.Verify(r => r.DeletarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
+                usuarioExiste?.IsAtivo.Should().BeFalse();
+                _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
+                _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
 
             }
         }
@@ -212,7 +215,7 @@ public class UsuarioSecretariaServiceTest
                     IsAtivo = true,
                     TentativasLogin = 0
                 };
-                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), default))
+                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult());
                 _repositoryMock.Setup(r => r.ListarUsuarioSecretariaById(It.IsAny<int>())).ReturnsAsync(usuarioExistente);
                 _repositoryMock.Setup(r => r.ListarUsuarioSecretariaByEmail(It.IsAny<string>())).ReturnsAsync((UsuarioSecretaria)null);
@@ -221,7 +224,7 @@ public class UsuarioSecretariaServiceTest
                 var request = new UsuarioSecretariaUpdate
                 {
                     NomeUsuario = "Ryan Updated",
-                    Role = "Secretaria",
+                    Role = Role.Secretaria,
                     EmailUsuario = "teste@fatec.sp.gov.br",
                     Senha = "novasenha"
                 };
@@ -230,7 +233,7 @@ public class UsuarioSecretariaServiceTest
                 //Assert
                 result.IsSuccess.Should().BeTrue();
                 result.Value.NomeUsuario.Should().Be(request.NomeUsuario);
-                result.Value.RoleUsuario.Should().Be(request.Role);
+                result.Value.RoleUsuario.Should().Be(request.Role.ToString());
                 result.Value.EmailUsuario.Should().Be(request.EmailUsuario);
                 result.Value.Chave.Should().Be(usuarioExistente.Chave);
                 _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
@@ -253,7 +256,7 @@ public class UsuarioSecretariaServiceTest
                     IsAtivo = true,
                     TentativasLogin = 0
                 };
-                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), default))
+                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult());
                 _repositoryMock.Setup(r => r.ListarUsuarioSecretariaById(It.IsAny<int>())).ReturnsAsync(usuarioExistente);
                 _repositoryMock.Setup(r => r.ListarUsuarioSecretariaByEmail(It.IsAny<string>())).ReturnsAsync(new UsuarioSecretaria
@@ -270,7 +273,7 @@ public class UsuarioSecretariaServiceTest
                 var request = new UsuarioSecretariaUpdate
                 {
                     NomeUsuario = "Ryan Updated",
-                    Role = "Secretaria",
+                    Role = Role.Secretaria,
                     EmailUsuario = "teste@fatec.sp.gov.br",
                     Senha = "novasenha"
                 };
@@ -303,11 +306,11 @@ public class UsuarioSecretariaServiceTest
                 var request = new UsuarioSecretariaUpdate
                 {
                     NomeUsuario = "Ryan Updated",
-                    Role = "Secretaria",
+                    Role = Role.Secretaria,
                     EmailUsuario = "teste@fatec.sp.gov.br",
                     Senha = "saa"
                 };
-                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), default))
+                _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaUpdate>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]{
                 new FluentValidation.Results.ValidationFailure("Senha", "Senha deve ter no minimo 6 caracteres")
                     }));

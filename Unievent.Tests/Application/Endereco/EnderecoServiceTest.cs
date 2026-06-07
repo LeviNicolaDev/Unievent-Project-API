@@ -42,7 +42,7 @@ public class EnderecoServiceTest
                 Estado = "Estado Exemplo",
                 Cep = "1234567"
             };
-            _requestValidator.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _requestValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.CriarEndereco(It.IsAny<Domain.Entities.Endereco>())).ReturnsAsync((Domain.Entities.Endereco e) => e);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
             // Act
@@ -65,7 +65,7 @@ public class EnderecoServiceTest
                 Estado = "Estado Exemplo",
                 Cep = "12345678"
             };
-            _requestValidator.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _requestValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Rua", "A rua é obrigatória.")
             }));
@@ -102,7 +102,7 @@ public class EnderecoServiceTest
                 Estado = "Estado Novo",
                 Cep = "7654321"
             };
-            _updateValidator.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidator.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarEnderecoById(enderecoExistente.Id)).ReturnsAsync(enderecoExistente);
             _repositoryMock.Setup(r => r.AtualizarEndereco(It.IsAny<Domain.Entities.Endereco>())).ReturnsAsync((Domain.Entities.Endereco e) => e);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
@@ -142,7 +142,7 @@ public class EnderecoServiceTest
                 Estado = "Estado Novo",
                 Cep = "76543218"
             };
-            _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<EnderecoUpdate>(), default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _updateValidator.Setup(v => v.ValidateAsync(It.IsAny<EnderecoUpdate>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryMock.Setup(r => r.ListarEnderecoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.Endereco)null);
 
             //Act
@@ -177,7 +177,7 @@ public class EnderecoServiceTest
                 Estado = "Estado Novo",
                 Cep = "7654321"
             };
-            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<EnderecoRequest>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<EnderecoRequest>(), It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                 new FluentValidation.Results.ValidationFailure("Dados", "Dados Inválidos")
             }));
@@ -197,7 +197,7 @@ public class EnderecoServiceTest
         public async Task Deve_Deletar_Com_Sucesso()
         {
             //Arrange
-            _repositoryMock.Setup(r => r.ListarEnderecoById(1)).ReturnsAsync(new Domain.Entities.Endereco
+            _repositoryMock.Setup(r => r.ListarEnderecoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.Endereco
             {
                 Id = 1,
                 Rua = "Rua Antiga",
@@ -210,10 +210,10 @@ public class EnderecoServiceTest
             _repositoryMock.Setup(r => r.DeletarEndereco(It.IsAny<Domain.Entities.Endereco>())).ReturnsAsync(true);
             _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
             //Act
-            var result = await _service.DeletarEndereco(1);
+            var result = await _service.DeletarEndereco(It.IsAny<int>());
             //Assert 
             result.IsSuccess.Should().BeTrue();
-            _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
+            _repositoryMock.Verify(r => r.ListarEnderecoById(It.IsAny<int>()), Times.Once);
             _repositoryMock.Verify(r => r.DeletarEndereco(It.IsAny<Domain.Entities.Endereco>()), Times.Once);
         }
 
@@ -221,13 +221,13 @@ public class EnderecoServiceTest
         public async Task Deve_Falhar_Deletar_Endereco_Quando_Id_Endereco_Invalido()
         {
             //Arrange
-            _repositoryMock.Setup(r => r.ListarEnderecoById(1)).ReturnsAsync((Domain.Entities.Endereco)null);
+            _repositoryMock.Setup(r => r.ListarEnderecoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.Endereco)null);
             //Act
-            var result = await _service.DeletarEndereco(1);
+            var result = await _service.DeletarEndereco(It.IsAny<int>());
             //Assert 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Endereco não encontrado");
-            _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
+            _repositoryMock.Verify(r => r.ListarEnderecoById(It.IsAny<int>()), Times.Once);
             _repositoryMock.Verify(r => r.DeletarEndereco(It.IsAny<Domain.Entities.Endereco>()), Times.Never);
         }
     }
@@ -238,7 +238,7 @@ public class EnderecoServiceTest
         public async Task Deve_Listar_Com_Sucesso()
         {
             //Arrange
-            _repositoryMock.Setup(r => r.ListarEnderecoById(1)).ReturnsAsync(new Domain.Entities.Endereco
+            _repositoryMock.Setup(r => r.ListarEnderecoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.Endereco
             {
                 Id = 1,
                 Rua = "Rua Antiga",
@@ -249,23 +249,23 @@ public class EnderecoServiceTest
                 Cep = "1234567"
             });
             //Act
-            var result = await _service.ListarEnderecoById(1);
+            var result = await _service.ListarEnderecoById(It.IsAny<int>());
             //Assert 
             result.IsSuccess.Should().BeTrue();
-            _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
+            _repositoryMock.Verify(r => r.ListarEnderecoById(It.IsAny<int>()), Times.Once);
         }
 
         [Fact]
         public async Task Deve_Falhar_Listar_Endereco_Quando_Id_Endereco_Invalido()
         {
             //Arrange
-            _repositoryMock.Setup(r => r.ListarEnderecoById(1)).ReturnsAsync((Domain.Entities.Endereco)null);
+            _repositoryMock.Setup(r => r.ListarEnderecoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.Endereco)null);
             //Act
-            var result = await _service.ListarEnderecoById(1);
+            var result = await _service.ListarEnderecoById(It.IsAny<int>());
             //Assert 
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Endereco não encontrado");
-            _repositoryMock.Verify(r => r.ListarEnderecoById(1), Times.Once);
+            _repositoryMock.Verify(r => r.ListarEnderecoById(It.IsAny<int>()), Times.Once);
         }
     }
 

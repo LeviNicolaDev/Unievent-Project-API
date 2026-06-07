@@ -47,7 +47,7 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequest.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.ResponsavelEvento
             {
                 Id = 1,
@@ -62,7 +62,7 @@ public class EventoServiceTest
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsSuccess.Should().BeTrue();
-            _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorRequest.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Once);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Once);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Once);
@@ -83,14 +83,14 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequest.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync((Domain.Entities.ResponsavelEvento)null);
             //Act
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsFailure.Should().BeTrue();
             result.Errors.Should().Contain("Responsável não encontrado.");
-            _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorRequest.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Never);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -110,7 +110,7 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorRequest.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repositoryResponsavelEvento.Setup(r => r.ListarResponsavelEventoById(It.IsAny<int>())).ReturnsAsync(new Domain.Entities.ResponsavelEvento
             {
                 Id = 1,
@@ -133,7 +133,7 @@ public class EventoServiceTest
             //Assert
             result.IsFailure.Should().BeTrue();
             result.Errors.Should().Contain("O responsável já possui um evento cadastrado para esta data.");
-            _validatorRequest.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorRequest.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Once);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -155,7 +155,7 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorRequest.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _validatorRequest.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                     new FluentValidation.Results.ValidationFailure("Nome", "O campo 'Nome' é obrigatório.")
             }));
@@ -189,7 +189,7 @@ public class EventoServiceTest
 
             };
 
-            _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdate.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repository.Setup(r => r.ListarEventoById(1)).ReturnsAsync(new Domain.Entities.Evento
             {
                 Id = 1,
@@ -224,7 +224,7 @@ public class EventoServiceTest
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsSuccess.Should().BeTrue();
-            _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorUpdate.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Once);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Once);
@@ -246,14 +246,14 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") }
             };
 
-            _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdate.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repository.Setup(r => r.ListarEventoById(1)).ReturnsAsync((Domain.Entities.Evento)null);
             //Act
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsFailure.Should().BeTrue();
             result.Errors.Should().Contain("Evento não encontrado");
-            _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorUpdate.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
             _repository.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -275,7 +275,7 @@ public class EventoServiceTest
 
             };
 
-            _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdate.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repository.Setup(r => r.ListarEventoById(1)).ReturnsAsync(new Domain.Entities.Evento
             {
                 Id = 1,
@@ -292,7 +292,7 @@ public class EventoServiceTest
             //Assert
             result.IsFailure.Should().BeTrue();
             result.Errors.Should().Contain("Responsável não encontrado.");
-            _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorUpdate.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId.Value), Times.Never);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -315,7 +315,7 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult());
+            _validatorUpdate.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
             _repository.Setup(r => r.ListarEventoById(1)).ReturnsAsync(new Domain.Entities.Evento
             {
                 Id = 1,
@@ -349,7 +349,7 @@ public class EventoServiceTest
             //Assert
             result.IsFailure.Should().BeTrue();
             result.Errors.Should().Contain("O responsável já possui um evento cadastrado para esta data.");
-            _validatorUpdate.Verify(v => v.ValidateAsync(request, default), Times.Once);
+            _validatorUpdate.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId.Value), Times.Once);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Never);
@@ -372,7 +372,7 @@ public class EventoServiceTest
                 Thumbnail = new List<IFormFile> { new FormFile(new MemoryStream(), 0, 0, "Thumbnail", "thumbnail.jpg") },
             };
 
-            _validatorUpdate.Setup(v => v.ValidateAsync(request, default)).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
+            _validatorUpdate.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult(new[]
             {
                     new FluentValidation.Results.ValidationFailure("Nome", "O campo 'Nome' é obrigatório.")
             }));
