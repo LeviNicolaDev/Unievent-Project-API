@@ -17,7 +17,6 @@ public class AlunoController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [Authorize(Roles = "Admin,Secretaria")]
     public async Task<IActionResult> CriarAluno([FromForm] AlunoRequest request)
     {
         var aluno = await _service.CriarAluno(request);
@@ -31,7 +30,7 @@ public class AlunoController : ControllerBase
 
     [HttpPatch("{id}")]
     [Consumes("multipart/form-data")]
-    [Authorize(Roles = "Admin,Secretaria")]
+
     public async Task<IActionResult> AtualizarAluno([FromRoute] int id, [FromForm] AlunoUpdate update)
     {
         var aluno = await _service.AtualizarAluno(id, update);
@@ -43,7 +42,7 @@ public class AlunoController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Secretaria")]
+
     public async Task<IActionResult> ListarAlunos()
     {
         var alunos = await _service.ListarAlunos();
@@ -56,7 +55,7 @@ public class AlunoController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Secretaria")]
+
     public async Task<IActionResult> ListarAlunoById([FromRoute] int id)
     {
         var aluno = await _service.ListarAlunoById(id);

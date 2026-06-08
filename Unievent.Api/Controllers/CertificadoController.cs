@@ -47,7 +47,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Secretaria")]
+
     public async Task<IActionResult> ListarCertificados()
     {
         var certificados = await _service.ListarCertificados();
@@ -62,7 +62,7 @@ public class CertificadoController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Secretaria")]
+
     public async Task<IActionResult> ListarCertificadoById([FromRoute] int id)
     {
         var certificado = await _service.ListarCertificadoById(id);

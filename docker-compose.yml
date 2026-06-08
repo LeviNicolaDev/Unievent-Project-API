@@ -15,7 +15,12 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=Unievent;User Id=sa;Password=${PASSWORD_DB};TrustServerCertificate=True;
-      - emailPassword=${PASSWORD_EMAIL}
+      - EmailSettings__Host=smtp.gmail.com
+      - EmailSettings__Port=587
+      - EmailSettings__Email=${EmailSettings__Email}
+      - EmailSettings__Password=${EmailSettings__Password}
+      - EmailSettings__EnableSsl=true
+      - EmailSettings__BaseUrl=http://localhost:5173
       - Jwt__Key=${Jwt__Key}
       - Jwt__Issuer=${Jwt__Issuer}
       - Jwt__Audience=${Jwt__Audience}

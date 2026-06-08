@@ -51,7 +51,7 @@ namespace Unievent.Infra.Repository
 
         async Task<IEnumerable<Evento>> IEventoRepository.ListarEventos()
         {
-            return await _context.Evento.ToListAsync();
+            return await _context.Evento.Include(e => e.ResponsavelEvento).ToListAsync();
         }
 
         Task IEventoRepository.SaveChangesAsync()

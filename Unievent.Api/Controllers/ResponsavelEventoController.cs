@@ -23,9 +23,10 @@ namespace Unievent.Api.Controllers
 
         }
 
-        [HttpPut("{id}")]
+        [HttpPatch("{id}")]
+        [Consumes("multipart/form-data")]
         [Authorize(Roles = "Admin,Secretaria")]
-        public async Task<IActionResult> AtualizarResponsavelEvento(int id, [FromBody] ResponsavelEventoUpdate update)
+        public async Task<IActionResult> AtualizarResponsavelEvento(int id, [FromForm] ResponsavelEventoUpdate update)
         {
             var response = await _service.AtualizarResponsavelEvento(id, update);
             if (response.IsFailure)

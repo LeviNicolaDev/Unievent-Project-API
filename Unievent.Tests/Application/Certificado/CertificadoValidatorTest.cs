@@ -22,7 +22,7 @@ public class CertificadoValidatorTest
         {
             Texto = "Certificado de participação",
             DataCertifcado = DateTime.Now.AddDays(-1),
-            AlunoId = 1,
+
             EventoId = 1
         };
 
@@ -38,15 +38,15 @@ public class CertificadoValidatorTest
         {
             Texto = "Certificado de participação",
             DataCertifcado = DateTime.Now.AddDays(+1),
-            AlunoId = -1,
+
             EventoId = 1
         };
 
         var result = await _requestValidator.ValidateAsync(request);
         result.IsValid.Should().BeFalse();
-        
+
     }
-    
+
 
 }
 

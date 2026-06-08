@@ -12,4 +12,5 @@ public record EventoResponse
     public int Capacidade { get; init; }
     public IList<string> Thumbnail { get; init; }
     public int IdResponsavelEvento { get; init; }
+    public string Responsavel { get; init; }
 }

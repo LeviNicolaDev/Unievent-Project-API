@@ -74,7 +74,7 @@ namespace Unievent.Application.Services
                         return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
                     }
 
-                    evento.DataEvento = update.DataEvento.Value.Date;
+                    evento.DataEvento = update.DataEvento.Value;
                 }
 
                 if (update.Capacidade.HasValue)
@@ -276,7 +276,7 @@ namespace Unievent.Application.Services
                     Categoria = e.Categoria,
                     DataEvento = e.DataEvento,
                     Descricao = e.Descricao,
-                    IdResponsavelEvento = e.ResponsavelEventoId,
+                    Responsavel = e.ResponsavelEvento.Nome,
                     Nome = e.Nome,
                     Thumbnail = e.Thumbnail.ToList()
                 }));

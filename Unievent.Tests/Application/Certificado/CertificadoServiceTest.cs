@@ -41,19 +41,11 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             };
             _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync(new Domain.Entities.Aluno
-            {
-                Id = request.AlunoId,
-                Nome = "Aluno Teste",
-                DataNascimento = DateTime.Now.AddYears(-20),
-                Email = "aluno@fatec.sp.gov.br",
-                FotoPerfil = "foto.jpg",
-                Senha = "senha123"
-            });
+
             _eventoRepositoryMock.Setup(e => e.ListarEventoById(request.EventoId)).ReturnsAsync(new Domain.Entities.Evento
             {
                 Id = request.EventoId,
@@ -73,7 +65,6 @@ public class CertificadoServiceTest
             result.IsSuccess.Should().BeTrue();
             _repositoryMock.Verify(r => r.CriarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId), Times.Once);
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId), Times.Once);
         }
 
@@ -85,17 +76,15 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 999,
                 EventoId = 1
             };
             _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync((Domain.Entities.Aluno)null);
             // Act
             var result = await _service.CriarCertificado(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Aluno não encontrado");
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId), Times.Once);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
 
         }
@@ -108,26 +97,17 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
                 EventoId = 999
             };
             _requestValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId)).ReturnsAsync(new Domain.Entities.Aluno
-            {
-                Id = request.AlunoId,
-                Nome = "Aluno Teste",
-                DataNascimento = DateTime.Now.AddYears(-20),
-                Email = "aluno@fatec.sp.gov.br",
-                FotoPerfil = "foto.jpg",
-                Senha = "senha123"
-            });
+
             _eventoRepositoryMock.Setup(e => e.ListarEventoById(request.EventoId)).ReturnsAsync((Domain.Entities.Evento)null);
             // Act
             var result = await _service.CriarCertificado(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Evento não encontrado");
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId), Times.Once);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Once);
             _repositoryMock.Verify(r => r.CriarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Never);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -140,7 +120,7 @@ public class CertificadoServiceTest
             //Arrange
             var request = new CertificadoRequest
             {
-                AlunoId = 1,
+
                 EventoId = 1,
                 DataCertifcado = DateTime.Now.AddDays(-1),
                 Texto = ""
@@ -156,7 +136,7 @@ public class CertificadoServiceTest
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Texto é obrigatório");
             _requestValidatorMock.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
         }
     }
@@ -171,7 +151,7 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             };
             _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -180,19 +160,10 @@ public class CertificadoServiceTest
                 Id = 1,
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             });
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId.Value)).ReturnsAsync(new Domain.Entities.Aluno
-            {
-                Id = request.AlunoId.Value,
-                Nome = "Aluno Teste",
-                DataNascimento = DateTime.Now.AddYears(-20),
-                Email = "teste@fatec.sp.gov.br",
-                FotoPerfil = "foto.jpg",
-                Senha = "senha123",
-                IsAtivo = true
-            });
+
             _eventoRepositoryMock.Setup(e => e.ListarEventoById(request.EventoId.Value)).ReturnsAsync(new Domain.Entities.Evento
             {
                 Id = request.EventoId.Value,
@@ -211,7 +182,7 @@ public class CertificadoServiceTest
             // Assert
             _repositoryMock.Verify(r => r.AtualizarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Once);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId.Value), Times.Once);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId.Value), Times.Once);
             result.IsSuccess.Should().BeTrue();
 
@@ -224,7 +195,7 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             };
             _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -245,7 +216,7 @@ public class CertificadoServiceTest
             //Arrange
             var request = new CertificadoUpdate
             {
-                AlunoId = 1,
+
                 EventoId = 1,
                 DataCertifcado = DateTime.Now.AddDays(-1),
                 Texto = ""
@@ -262,7 +233,7 @@ public class CertificadoServiceTest
             result.Errors.Should().Contain("Texto é obrigatório");
             _updateValidatorMock.Verify(v => v.ValidateAsync(request, default), Times.Once);
             _repositoryMock.Verify(r => r.ListarCertificadoById(It.IsAny<int>()), Times.Never);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(It.IsAny<int>()), Times.Never);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
         }
 
@@ -274,7 +245,7 @@ public class CertificadoServiceTest
             {
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 999,
+
                 EventoId = 1
             };
             _updateValidatorMock.Setup(v => v.ValidateAsync(request, It.IsAny<CancellationToken>())).ReturnsAsync(new FluentValidation.Results.ValidationResult());
@@ -283,17 +254,17 @@ public class CertificadoServiceTest
                 Id = 1,
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             });
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId.Value)).ReturnsAsync((Domain.Entities.Aluno)null);
+
             // Act
             var result = await _service.AtualizarCertificado(1, request);
             // Assert
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Aluno não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId.Value), Times.Once);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
         }
 
@@ -303,7 +274,7 @@ public class CertificadoServiceTest
             //Arrange
             var request = new CertificadoUpdate
             {
-                AlunoId = 1,
+
                 EventoId = 999,
                 DataCertifcado = DateTime.Now.AddDays(-1),
                 Texto = "Certificado de participação"
@@ -312,21 +283,12 @@ public class CertificadoServiceTest
             _repositoryMock.Setup(r => r.ListarCertificadoById(1)).ReturnsAsync(new Domain.Entities.Certificado
             {
                 Id = 1,
-                AlunoId = 1,
+
                 EventoId = 1,
                 DataCertifcado = DateTime.Now.AddDays(-1),
                 Texto = "Certificado de participação"
             });
-            _alunoRepositoryMock.Setup(a => a.ListarAlunoById(request.AlunoId.Value)).ReturnsAsync(new Domain.Entities.Aluno
-            {
-                Id = request.AlunoId.Value,
-                Nome = "Aluno Teste",
-                DataNascimento = DateTime.Now.AddYears(-20),
-                Email = "teste@fatec.sp.gov.br",
-                FotoPerfil = "foto.jpg",
-                Senha = "senha123",
-                IsAtivo = true
-            });
+
             _eventoRepositoryMock.Setup(e => e.ListarEventoById(request.EventoId.Value)).ReturnsAsync((Domain.Entities.Evento)null);
             // Act
             var result = await _service.AtualizarCertificado(1, request);
@@ -334,7 +296,7 @@ public class CertificadoServiceTest
             result.IsSuccess.Should().BeFalse();
             result.Errors.Should().Contain("Evento não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
-            _alunoRepositoryMock.Verify(a => a.ListarAlunoById(request.AlunoId.Value), Times.Once);
+
             _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId.Value), Times.Once);
             _repositoryMock.Verify(r => r.AtualizarCertificado(It.IsAny<Domain.Entities.Certificado>()), Times.Never);
             _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Never);
@@ -351,7 +313,7 @@ public class CertificadoServiceTest
                 Id = 1,
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             });
             _repositoryMock.Setup(r => r.DeletarCertificado(It.IsAny<Domain.Entities.Certificado>())).Returns(Task.FromResult(true));
@@ -391,7 +353,7 @@ public class CertificadoServiceTest
                 Id = 1,
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-                AlunoId = 1,
+
                 EventoId = 1
             });
             // Act

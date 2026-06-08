@@ -20,6 +20,7 @@ namespace Unievent.Application.Services
             _emailSettings = emailSettings.Value;
         }
 
+
         public async Task<Result<bool>> SendAsync(string destinatario, string assunto, string mensagemHtml)
         {
             try

@@ -42,7 +42,7 @@ namespace Unievent.Infra.Repository
 
         async Task<IEnumerable<Certificado>> ICertificadoRepository.ListarCertificados()
         {
-            return await _context.Certificado.ToListAsync();
+            return await _context.Certificado.Include(c => c.Evento).ToListAsync();
         }
 
         Task ICertificadoRepository.SaveChangesAsync()
