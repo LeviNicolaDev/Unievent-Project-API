@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { TextInput, View } from "react-native";
+import { useState } from "react";
+import { TextInput, TouchableOpacity, View } from "react-native";
 import { styles } from "../styles/globalStyles";
 
 export default function AuthInput({
@@ -12,6 +13,9 @@ export default function AuthInput({
   theme,
   value,
 }) {
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const shouldHideText = Boolean(secure && !passwordVisible);
+
   return (
     <View style={[styles.inputBox, { borderColor: theme.border }]}>
       <Ionicons name={icon} color={theme.text} size={15} />
@@ -22,13 +26,26 @@ export default function AuthInput({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={theme.muted}
-        secureTextEntry={secure}
+        secureTextEntry={shouldHideText}
         style={[styles.input, { color: theme.text }]}
         value={value}
       />
 
       {secure && (
-        <Ionicons name="eye-off-outline" color={theme.text} size={17} />
+        <TouchableOpacity
+          accessibilityLabel={
+            passwordVisible ? "Ocultar senha" : "Visualizar senha"
+          }
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={() => setPasswordVisible((visible) => !visible)}
+        >
+          <Ionicons
+            name={passwordVisible ? "eye-outline" : "eye-off-outline"}
+            color={theme.text}
+            size={17}
+          />
+        </TouchableOpacity>
       )}
     </View>
   );

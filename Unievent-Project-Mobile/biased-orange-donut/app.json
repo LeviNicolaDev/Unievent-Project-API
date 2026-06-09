@@ -26,6 +26,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O UniEvent precisa acessar sua galeria para selecionar sua foto de perfil."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "527a329d-803d-455c-bfe4-0f76216aac11"

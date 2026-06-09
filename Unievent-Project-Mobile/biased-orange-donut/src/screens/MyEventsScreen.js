@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   Alert,
   Image,
@@ -11,23 +12,36 @@ import {
 import BottomNav from "../components/BottomNav";
 import Screen from "../components/Screen";
 import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
+import { useAuth } from "../context/AuthContext";
 import { useEvents } from "../context/EventContext";
 import { styles } from "../styles/globalStyles";
+import { generateCertificatePdf } from "../utils/certificatePdf";
 
 export default function MyEventsScreen({ theme, navigation }) {
   const isLight = theme.mode === "light";
+  const { student } = useAuth();
   const { attendedEvents, hasIssuedCertificate, issueCertificate } = useEvents();
+  const [generatingCertificateId, setGeneratingCertificateId] = useState(null);
 
-  function handleCertificatePress(event) {
+  async function handleCertificatePress(event) {
+    setGeneratingCertificateId(event.id);
+
     try {
-      const certificate = issueCertificate(event.id);
-      Alert.alert(
-        "Certificado emitido",
-        certificate?.text ||
-          `O certificado de participação em ${event.title} foi gerado com sucesso.`
-      );
+      const certificate = event.certificate;
+
+      await generateCertificatePdf({
+        certificate,
+        event,
+        student,
+      });
+
+      issueCertificate(event.id);
+
+      Alert.alert("Certificado gerado", "O PDF do certificado foi gerado.");
     } catch (error) {
       Alert.alert("Certificado indisponível", error.message);
+    } finally {
+      setGeneratingCertificateId(null);
     }
   }
 
@@ -80,6 +94,7 @@ export default function MyEventsScreen({ theme, navigation }) {
           <View style={styles.myEventsList}>
             {attendedEvents.map((event) => {
               const issued = hasIssuedCertificate(event.id);
+              const generating = generatingCertificateId === event.id;
 
               return (
                 <View
@@ -123,20 +138,26 @@ export default function MyEventsScreen({ theme, navigation }) {
                     {event.hasCertificate && event.certificate ? (
                       <TouchableOpacity
                         activeOpacity={0.85}
-                        disabled={issued}
+                        disabled={generating}
                         onPress={() => handleCertificatePress(event)}
                         style={[
                           styles.myEventCertificateButton,
-                          issued && styles.certificateButtonDisabled,
+                          generating && styles.certificateButtonDisabled,
                         ]}
                       >
                         <Ionicons
-                          name={issued ? "checkmark-done" : "ribbon-outline"}
+                          name={
+                            issued ? "document-text-outline" : "ribbon-outline"
+                          }
                           size={17}
                           color="#FFFFFF"
                         />
                         <Text style={styles.myEventCertificateText}>
-                          {issued ? "Certificado emitido" : "Emitir certificado"}
+                          {generating
+                            ? "Gerando PDF..."
+                            : issued
+                            ? "Abrir certificado"
+                            : "Emitir certificado"}
                         </Text>
                       </TouchableOpacity>
                     ) : (

@@ -72,7 +72,7 @@ function attachCertificatesToEvents(events, certificates) {
 }
 
 export function EventProvider({ children }) {
-  const { token } = useAuth();
+  const { student, token } = useAuth();
   const [eventItems, setEventItems] = useState(fallbackEvents);
   const [eventsLoading, setEventsLoading] = useState(false);
   const [eventsError, setEventsError] = useState(null);
@@ -83,6 +83,12 @@ export function EventProvider({ children }) {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
   const [hydrated, setHydrated] = useState(false);
+
+  const storageSuffix = useMemo(() => {
+    if (student?.id) return `:${student.id}`;
+    if (token) return `:${token.slice(-16)}`;
+    return ":guest";
+  }, [student?.id, token]);
 
   useEffect(() => {
     let isMounted = true;
@@ -123,6 +129,12 @@ export function EventProvider({ children }) {
     let isMounted = true;
 
     async function hydrate() {
+      setHydrated(false);
+      setFavoriteIds([]);
+      setRegisteredIds([]);
+      setAttendedIds([]);
+      setCertificateIds([]);
+
       try {
         const [
           storedFavorites,
@@ -130,10 +142,10 @@ export function EventProvider({ children }) {
           storedAttended,
           storedCertificates,
         ] = await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.favorites),
-          AsyncStorage.getItem(STORAGE_KEYS.registrations),
-          AsyncStorage.getItem(STORAGE_KEYS.attended),
-          AsyncStorage.getItem(STORAGE_KEYS.certificates),
+          AsyncStorage.getItem(`${STORAGE_KEYS.favorites}${storageSuffix}`),
+          AsyncStorage.getItem(`${STORAGE_KEYS.registrations}${storageSuffix}`),
+          AsyncStorage.getItem(`${STORAGE_KEYS.attended}${storageSuffix}`),
+          AsyncStorage.getItem(`${STORAGE_KEYS.certificates}${storageSuffix}`),
         ]);
 
         if (!isMounted) return;
@@ -156,43 +168,43 @@ export function EventProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [storageSuffix]);
 
   useEffect(() => {
     if (!hydrated) return;
 
     AsyncStorage.setItem(
-      STORAGE_KEYS.favorites,
+      `${STORAGE_KEYS.favorites}${storageSuffix}`,
       JSON.stringify(favoriteIds)
     ).catch(() => null);
-  }, [favoriteIds, hydrated]);
+  }, [favoriteIds, hydrated, storageSuffix]);
 
   useEffect(() => {
     if (!hydrated) return;
 
     AsyncStorage.setItem(
-      STORAGE_KEYS.registrations,
+      `${STORAGE_KEYS.registrations}${storageSuffix}`,
       JSON.stringify(registeredIds)
     ).catch(() => null);
-  }, [registeredIds, hydrated]);
+  }, [registeredIds, hydrated, storageSuffix]);
 
   useEffect(() => {
     if (!hydrated) return;
 
     AsyncStorage.setItem(
-      STORAGE_KEYS.attended,
+      `${STORAGE_KEYS.attended}${storageSuffix}`,
       JSON.stringify(attendedIds)
     ).catch(() => null);
-  }, [attendedIds, hydrated]);
+  }, [attendedIds, hydrated, storageSuffix]);
 
   useEffect(() => {
     if (!hydrated) return;
 
     AsyncStorage.setItem(
-      STORAGE_KEYS.certificates,
+      `${STORAGE_KEYS.certificates}${storageSuffix}`,
       JSON.stringify(certificateIds)
     ).catch(() => null);
-  }, [certificateIds, hydrated]);
+  }, [certificateIds, hydrated, storageSuffix]);
 
   const getEventById = useCallback(
     (eventId) =>
@@ -228,7 +240,13 @@ export function EventProvider({ children }) {
         throw new Error("Faça login como aluno para garantir seu ingresso.");
       }
 
-      await eventsApi.register(id, token);
+      try {
+        await eventsApi.register(id, token);
+      } catch (error) {
+        if (!normalizeText(error.message).includes("ja inscrito")) {
+          throw error;
+        }
+      }
 
       setRegisteredIds((current) =>
         current.includes(id) ? current : [...current, id]
@@ -241,10 +259,21 @@ export function EventProvider({ children }) {
     async (eventId) => {
       const id = asId(eventId);
 
-      if (token) {
-        await eventsApi.confirmAttendance(id, token);
+      if (!token) {
+        throw new Error("Faça login como aluno para confirmar presença.");
       }
 
+      try {
+        await eventsApi.confirmAttendance(id, token);
+      } catch (error) {
+        if (!normalizeText(error.message).includes("presenca ja confirmada")) {
+          throw error;
+        }
+      }
+
+      setRegisteredIds((current) =>
+        current.includes(id) ? current : [...current, id]
+      );
       setAttendedIds((current) =>
         current.includes(id) ? current : [...current, id]
       );

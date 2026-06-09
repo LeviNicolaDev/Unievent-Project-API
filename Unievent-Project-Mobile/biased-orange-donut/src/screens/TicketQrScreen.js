@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import BottomNav from "../components/BottomNav";
 import Screen from "../components/Screen";
@@ -21,26 +21,26 @@ export default function TicketQrScreen({ theme, navigation, route }) {
   } = useEvents();
   const event = getEventById(route.params?.eventId) || events[0];
   const ticketCode = `UNI-${event.id.padStart(3, "0")}`;
-  const [qrReadConfirmed, setQrReadConfirmed] = useState(
-    Boolean(route.params?.qrRead)
-  );
+  const [qrReadConfirmed, setQrReadConfirmed] = useState(false);
+  const [confirmingAttendance, setConfirmingAttendance] = useState(false);
   const attended = hasAttended(event.id);
   const qrRead = qrReadConfirmed || attended;
   const certificateIssued = hasIssuedCertificate(event.id);
 
-  useEffect(() => {
-    if (!qrRead || attended) return;
+  async function handleQrRead() {
+    setConfirmingAttendance(true);
 
-    markEventAsAttended(event.id).catch((error) => {
+    try {
+      await markEventAsAttended(event.id);
+      setQrReadConfirmed(true);
+    } catch (error) {
       Alert.alert(
         "Não foi possível confirmar presença",
         error.message || "Tente novamente em instantes."
       );
-    });
-  }, [attended, event.id, markEventAsAttended, qrRead]);
-
-  function handleQrRead() {
-    setQrReadConfirmed(true);
+    } finally {
+      setConfirmingAttendance(false);
+    }
   }
 
   function handleCertificatePress() {
@@ -157,12 +157,18 @@ export default function TicketQrScreen({ theme, navigation, route }) {
             ) : (
               <TouchableOpacity
                 activeOpacity={0.85}
+                disabled={confirmingAttendance}
                 onPress={handleQrRead}
-                style={styles.qrReadButton}
+                style={[
+                  styles.qrReadButton,
+                  confirmingAttendance && styles.qrReadButtonDisabled,
+                ]}
               >
                 <Ionicons name="scan-outline" size={18} color="#FFFFFF" />
                 <Text style={styles.qrReadButtonText}>
-                  Confirmar leitura do QR Code
+                  {confirmingAttendance
+                    ? "Confirmando presença..."
+                    : "Confirmar leitura do QR Code"}
                 </Text>
               </TouchableOpacity>
             )}

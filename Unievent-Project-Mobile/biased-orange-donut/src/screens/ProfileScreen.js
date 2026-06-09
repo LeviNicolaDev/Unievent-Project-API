@@ -423,6 +423,8 @@ function ProfileInput({
   value,
 }) {
   const isLight = theme.mode === "light";
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const shouldHideText = Boolean(secure && !passwordVisible);
 
   return (
     <View style={styles.profileInputGroup}>
@@ -445,17 +447,26 @@ function ProfileInput({
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={isLight ? "#777777" : "#DADADA"}
-          secureTextEntry={secure}
+          secureTextEntry={shouldHideText}
           style={[styles.profileInput, { color: isLight ? BLACK : "#FFFFFF" }]}
           value={value}
         />
 
         {secure && (
-          <Ionicons
-            name="eye-off-outline"
-            size={18}
-            color={isLight ? BLACK : "#FFFFFF"}
-          />
+          <TouchableOpacity
+            accessibilityLabel={
+              passwordVisible ? "Ocultar senha" : "Visualizar senha"
+            }
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={() => setPasswordVisible((visible) => !visible)}
+          >
+            <Ionicons
+              name={passwordVisible ? "eye-outline" : "eye-off-outline"}
+              size={18}
+              color={isLight ? BLACK : "#FFFFFF"}
+            />
+          </TouchableOpacity>
         )}
       </View>
     </View>

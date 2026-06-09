@@ -79,6 +79,10 @@ export const ticketQrStyles = {
     paddingHorizontal: 14,
   },
 
+  qrReadButtonDisabled: {
+    backgroundColor: "#696969",
+  },
+
   qrReadButtonText: {
     color: "#FFFFFF",
     fontSize: 13,
