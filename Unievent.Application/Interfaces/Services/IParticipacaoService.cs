@@ -9,4 +9,6 @@ public interface IParticipacaoService
     Task<Result<ParticipacaoResponse>> InscreverAsync(int alunoId, int eventoId);
     Task<Result<ParticipacaoResponse>> GarantirPresencaAsync(int alunoId, int eventoId);
     Task<Result<ParticipacaoResponse>> EmitirCertificadoAsync(int alunoId, int eventoId);
+    Task<Result<IngressoResponse>> ObterIngressoAsync(int alunoId, int eventoId);
+    Task<Result<ParticipacaoResponse>> ValidarCheckInAsync(int operadorId, CheckInRequest request);
 }

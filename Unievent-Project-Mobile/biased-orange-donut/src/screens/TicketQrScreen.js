@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import QRCode from "react-native-qrcode-svg";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import BottomNav from "../components/BottomNav";
 import Screen from "../components/Screen";
 import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
 import { useEvents } from "../context/EventContext";
+import { useAuth } from "../context/AuthContext";
+import { eventsApi } from "../services/api";
 import { styles } from "../styles/globalStyles";
 
 export default function TicketQrScreen({ theme, navigation, route }) {
@@ -14,34 +16,25 @@ export default function TicketQrScreen({ theme, navigation, route }) {
   const {
     events,
     getEventById,
-    markEventAsAttended,
     hasAttended,
     hasIssuedCertificate,
     issueCertificate,
   } = useEvents();
+  const { token } = useAuth();
   const event = getEventById(route.params?.eventId) || events[0];
-  const ticketCode = `UNI-${event.id.padStart(3, "0")}`;
-  const [qrReadConfirmed, setQrReadConfirmed] = useState(false);
-  const [confirmingAttendance, setConfirmingAttendance] = useState(false);
+  const [ticketCode, setTicketCode] = useState(null);
+  const [ticketError, setTicketError] = useState(null);
   const attended = hasAttended(event.id);
-  const qrRead = qrReadConfirmed || attended;
+  const qrRead = attended;
   const certificateIssued = hasIssuedCertificate(event.id);
 
-  async function handleQrRead() {
-    setConfirmingAttendance(true);
-
-    try {
-      await markEventAsAttended(event.id);
-      setQrReadConfirmed(true);
-    } catch (error) {
-      Alert.alert(
-        "Não foi possível confirmar presença",
-        error.message || "Tente novamente em instantes."
-      );
-    } finally {
-      setConfirmingAttendance(false);
-    }
-  }
+  useEffect(() => {
+    let active = true;
+    eventsApi.getTicket(event.id, token)
+      .then((ticket) => active && setTicketCode(ticket.codigoIngresso ?? ticket.CodigoIngresso))
+      .catch((error) => active && setTicketError(error.message));
+    return () => { active = false; };
+  }, [event.id, token]);
 
   function handleCertificatePress() {
     try {
@@ -90,15 +83,15 @@ export default function TicketQrScreen({ theme, navigation, route }) {
           <Text style={styles.qrInfo}>{event.location || event.place}</Text>
 
           <View style={styles.qrBox}>
-            <QRCode
-              value={`UNIEVENT-${event.id}-${event.title}`}
+            {ticketCode ? <QRCode
+              value={ticketCode}
               size={210}
               backgroundColor="#FFFFFF"
               color="#000000"
-            />
+            /> : <Text>{ticketError || "Carregando ingresso..."}</Text>}
           </View>
 
-          <Text style={styles.qrCodeText}>Código: {ticketCode}</Text>
+          {ticketCode ? <Text style={styles.qrCodeText}>Código: {ticketCode}</Text> : null}
 
           <Text style={styles.qrHelpText}>
             Apresente este QR Code na entrada do evento para validar seu
@@ -154,24 +147,7 @@ export default function TicketQrScreen({ theme, navigation, route }) {
                   </View>
                 )}
               </>
-            ) : (
-              <TouchableOpacity
-                activeOpacity={0.85}
-                disabled={confirmingAttendance}
-                onPress={handleQrRead}
-                style={[
-                  styles.qrReadButton,
-                  confirmingAttendance && styles.qrReadButtonDisabled,
-                ]}
-              >
-                <Ionicons name="scan-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.qrReadButtonText}>
-                  {confirmingAttendance
-                    ? "Confirmando presença..."
-                    : "Confirmar leitura do QR Code"}
-                </Text>
-              </TouchableOpacity>
-            )}
+            ) : <Text style={styles.qrHelpText}>A presença será confirmada por um operador na entrada.</Text>}
           </View>
         </View>
       </View>

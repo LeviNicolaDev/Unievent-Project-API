@@ -1,4 +1,4 @@
-import { CalendarDays, Headphones, Layers3 } from 'lucide-react';
+import { CalendarDays, Headphones, Layers3, ScanLine } from 'lucide-react';
 import { AdminHeader } from '../components/navigation/AdminHeader.jsx';
 import { FeatureCard } from '../components/cards/FeatureCard.jsx';
 import { useLanguage } from '../hooks/useLanguage.js';
@@ -7,10 +7,27 @@ import gerenciarEvento from '../assets/images/img-gerenciar-evento.png';
 import pessoas from '../assets/images/userIconManagement.svg';
 import addPessoa from '../assets/images/userIconAdd.svg';
 import certificado from '../assets/images/img-certificado.png';
+import { useEffect, useState } from 'react';
+import { request } from '../services/apiClient.js';
 
 export function DashboardPage() {
   const { t } = useLanguage();
+  const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState('');
+
+  useEffect(() => {
+    request('/admin/dashboard/resumo')
+      .then(setSummary)
+      .catch((error) => setSummaryError(error.message));
+  }, []);
   const cards = [
+    {
+      to: '/check-in',
+      image: null,
+      icon: ScanLine,
+      title: 'Validar ingresso',
+      description: 'Confirme presença por código e localização.',
+    },
     {
       to: '/eventos/novo',
       image: criarEvento,
@@ -58,20 +75,21 @@ export function DashboardPage() {
           <div className="dashboard-summary">
             <article>
               <CalendarDays size={20} />
-              <strong>{t('events')}</strong>
-              <span>{t('dashboardEventsDesc')}</span>
+              <strong>{summary?.eventos ?? '—'} eventos</strong>
+              <span>{summary?.inscricoes ?? '—'} inscrições</span>
             </article>
             <article>
               <Layers3 size={20} />
-              <strong>{t('dashboardModules')}</strong>
-              <span>{t('dashboardModulesDesc')}</span>
+              <strong>{summary?.taxaComparecimento ?? '—'}% de presença</strong>
+              <span>{summary?.presentes ?? '—'} check-ins realizados</span>
             </article>
             <article>
               <Headphones size={20} />
-              <strong>{t('navSupport')}</strong>
-              <span>{t('dashboardSupportDesc')}</span>
+              <strong>{summary?.participantesExternos ?? '—'} externos</strong>
+              <span>{summary?.participantesInternos ?? '—'} internos</span>
             </article>
           </div>
+          {summaryError ? <p role="alert">Não foi possível carregar os indicadores: {summaryError}</p> : null}
         </div>
 
         <div className="dashboard-section-title">

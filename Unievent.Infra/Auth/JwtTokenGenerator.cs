@@ -18,13 +18,21 @@ public class JwtTokenGenerator : IJwtTokenGenerator
     }
 
     public string GerarToken(int id, string email, Role role)
+        => GerarTokenInterno(id, email, role, null);
+
+    public string GerarToken(int id, string email, Role role, TipoParticipante tipoParticipante)
+        => GerarTokenInterno(id, email, role, tipoParticipante);
+
+    private string GerarTokenInterno(int id, string email, Role role, TipoParticipante? tipoParticipante)
     {
-        var claims = new[]
+        var claims = new List<Claim>
         {
             new Claim (ClaimTypes.NameIdentifier, id.ToString()),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, role.ToString())
         };
+        if (tipoParticipante.HasValue)
+            claims.Add(new Claim("tipo_participante", tipoParticipante.Value.ToString()));
 
         var key = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));

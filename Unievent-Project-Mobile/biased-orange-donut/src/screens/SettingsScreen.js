@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ScrollView, Switch, Text, TouchableOpacity, View } from "react-native";
 
 import BottomNav from "../components/BottomNav";
 import Screen from "../components/Screen";
 import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
 import { styles } from "../styles/globalStyles";
+import { useAuth } from "../context/AuthContext";
+import { preferencesApi } from "../services/api";
 
 export default function SettingsScreen({
   theme,
@@ -21,6 +23,37 @@ export default function SettingsScreen({
   const [eventReminders, setEventReminders] = useState(true);
   const [certificateAlerts, setCertificateAlerts] = useState(true);
   const [favoriteSuggestions, setFavoriteSuggestions] = useState(true);
+  const { token } = useAuth();
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
+  const [remotePreferences, setRemotePreferences] = useState(null);
+
+  useEffect(() => {
+    if (!token) return;
+    preferencesApi.get(token).then((item) => {
+      setRemotePreferences(item);
+      setEventReminders(item.lembretesEventos ?? item.LembretesEventos ?? true);
+      setCertificateAlerts(item.alertasCertificados ?? item.AlertasCertificados ?? true);
+      setFavoriteSuggestions(item.recomendacoes ?? item.Recomendacoes ?? true);
+      setPreferencesLoaded(true);
+    }).catch(() => setPreferencesLoaded(true));
+  }, [token]);
+
+  useEffect(() => {
+    if (!token || !preferencesLoaded) return;
+    const timeout = setTimeout(() => {
+      preferencesApi.update(token, {
+        lembretesEventos: eventReminders,
+        alertasCertificados: certificateAlerts,
+        recomendacoes: favoriteSuggestions,
+        usarLocalizacao: remotePreferences?.usarLocalizacao ?? remotePreferences?.UsarLocalizacao ?? false,
+        categorias: String(remotePreferences?.categorias ?? remotePreferences?.Categorias ?? '').split(',').filter(Boolean),
+        latitudeAproximada: remotePreferences?.latitudeAproximada ?? remotePreferences?.LatitudeAproximada ?? null,
+        longitudeAproximada: remotePreferences?.longitudeAproximada ?? remotePreferences?.LongitudeAproximada ?? null,
+        raioKm: remotePreferences?.raioKm ?? remotePreferences?.RaioKm ?? 30,
+      }).catch(() => null);
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [token, preferencesLoaded, remotePreferences, eventReminders, certificateAlerts, favoriteSuggestions]);
 
   const accessibilityItems = [
     {

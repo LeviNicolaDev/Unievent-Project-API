@@ -26,6 +26,15 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
             .GreaterThanOrEqualTo(1).WithMessage("A capacidade do evento deve ser um valor positivo.");
         RuleFor(e => e.Thumbnail)
             .NotEmpty().WithMessage("O campo 'Thumbnail' é obrigatório.");
+        RuleFor(e => e.Visibilidade).IsInEnum();
+        RuleFor(e => e.PublicoPermitido).IsInEnum();
+        RuleFor(e => e.FimInscricoes)
+            .GreaterThan(e => e.InicioInscricoes)
+            .When(e => e.InicioInscricoes.HasValue && e.FimInscricoes.HasValue)
+            .WithMessage("O fim das inscrições deve ser posterior ao início.");
+        RuleFor(e => e.RaioCheckInMetros).InclusiveBetween(25, 5000);
+        RuleFor(e => e.Latitude).InclusiveBetween(-90, 90).When(e => e.Latitude.HasValue);
+        RuleFor(e => e.Longitude).InclusiveBetween(-180, 180).When(e => e.Longitude.HasValue);
 
     }
 }

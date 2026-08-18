@@ -95,6 +95,11 @@ export function normalizeEvent(event) {
     responsible: responsavelEventoId ? String(responsavelEventoId) : "",
     responsibleName: responsavelNome,
     responsavel: responsavelNome || (responsavelEventoId ? `#${responsavelEventoId}` : ""),
+    visibility: event.visibilidade || event.Visibilidade || "Publico",
+    audience: event.publicoPermitido || event.PublicoPermitido || "Todos",
+    latitude: event.latitude ?? event.Latitude ?? "",
+    longitude: event.longitude ?? event.Longitude ?? "",
+    checkInRadius: event.raioCheckInMetros ?? event.RaioCheckInMetros ?? 150,
   };
 }
 
@@ -126,6 +131,11 @@ function buildEventFormData(payload) {
   appendIfPresent(formData, "DataEvento", dataEvento);
   appendIfPresent(formData, "Capacidade", payload.capacity || payload.capacidade);
   appendIfPresent(formData, "ResponsavelEventoId", responsavelEventoId);
+  appendIfPresent(formData, "Visibilidade", payload.visibility || payload.visibilidade);
+  appendIfPresent(formData, "PublicoPermitido", payload.audience || payload.publicoPermitido);
+  appendIfPresent(formData, "Latitude", payload.latitude);
+  appendIfPresent(formData, "Longitude", payload.longitude);
+  appendIfPresent(formData, "RaioCheckInMetros", payload.checkInRadius || payload.raioCheckInMetros);
 
   imageFiles.forEach((file) => {
     if (file instanceof File) {

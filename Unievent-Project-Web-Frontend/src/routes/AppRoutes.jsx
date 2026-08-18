@@ -4,6 +4,7 @@ import { AdminLayout } from '../layouts/AdminLayout.jsx';
 import { PublicLayout } from '../layouts/PublicLayout.jsx';
 import { CertificateFormPage } from '../pages/CertificateFormPage.jsx';
 import { CertificatesPage } from '../pages/CertificatesPage.jsx';
+import { CheckInPage } from '../pages/CheckInPage.jsx';
 import { ConfirmEmailPage } from '../pages/ConfirmEmailPage.jsx';
 import { DashboardPage } from '../pages/DashboardPage.jsx';
 import { EventFormPage } from '../pages/EventFormPage.jsx';
@@ -37,6 +38,7 @@ export function AppRoutes() {
         <Route path="/certificados" element={<PrivateRoute><CertificatesPage /></PrivateRoute>} />
         <Route path="/certificados/novo" element={<PrivateRoute><CertificateFormPage /></PrivateRoute>} />
         <Route path="/certificados/:id/editar" element={<PrivateRoute><CertificateFormPage mode="edit" /></PrivateRoute>} />
+        <Route path="/check-in" element={<PrivateRoute><CheckInPage /></PrivateRoute>} />
         <Route path="/suporte" element={<PrivateRoute><SupportPage /></PrivateRoute>} />
       </Route>
 

@@ -20,6 +20,8 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
   const [fotoNome, setFotoNome] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [tipoParticipante, setTipoParticipante] = useState("Externo");
+  const [instituicaoId, setInstituicaoId] = useState("");
 
   function normalizeBirthDate(value) {
     const trimmed = value.trim();
@@ -43,7 +45,8 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
       !email.trim() ||
       !dataNascimento.trim() ||
       !senha ||
-      !fotoPerfil
+      !fotoPerfil ||
+      (tipoParticipante === "Interno" && !instituicaoId.trim())
     ) {
       setError("Preencha nome, e-mail, data, senha e foto de perfil.");
       return;
@@ -65,6 +68,8 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
         senha,
         dataNascimento: birthDate,
         fotoPerfil,
+        tipoParticipante,
+        instituicaoId,
       });
       await signIn({ email, senha });
       navigation.replace("Home");
@@ -135,6 +140,31 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
             theme={signupInputTheme}
             value={email}
           />
+
+          <Text style={styles.authLabel}>Tipo de participante</Text>
+          <View style={styles.row}>
+            {['Externo', 'Interno'].map((tipo) => (
+              <TouchableOpacity
+                key={tipo}
+                onPress={() => setTipoParticipante(tipo)}
+                style={[styles.authPhotoButton, { opacity: tipoParticipante === tipo ? 1 : 0.55, flex: 1 }]}
+              >
+                <Text style={styles.authPhotoButtonText}>{tipo}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {tipoParticipante === "Interno" ? <>
+            <Text style={styles.authLabel}>Código da instituição</Text>
+            <AuthInput
+              icon="business"
+              keyboardType="numeric"
+              onChangeText={setInstituicaoId}
+              placeholder="ID da instituição"
+              theme={signupInputTheme}
+              value={instituicaoId}
+            />
+          </> : null}
 
           <Text style={styles.authLabel}>Data de nascimento</Text>
           <AuthInput

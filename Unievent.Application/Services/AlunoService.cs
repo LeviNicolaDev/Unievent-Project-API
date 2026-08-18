@@ -131,7 +131,9 @@ public class AlunoService : IAlunoService
                 DataNascimento = request.DataNascimento,
                 IsAtivo = true,
                 Role = Domain.Enuns.Role.Aluno,
-                Senha = senha
+                Senha = senha,
+                TipoParticipante = request.TipoParticipante,
+                InstituicaoId = request.TipoParticipante == Domain.Enuns.TipoParticipante.Interno ? request.InstituicaoId : null
             };
             await _repository.CriarAluno(aluno);
             await _repository.SaveChangesAsync();
@@ -144,7 +146,9 @@ public class AlunoService : IAlunoService
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
                 Role = aluno.Role,
-                DataNascimento = aluno.DataNascimento
+                DataNascimento = aluno.DataNascimento,
+                TipoParticipante = aluno.TipoParticipante,
+                InstituicaoId = aluno.InstituicaoId
             });
         }
         catch (Exception ex)

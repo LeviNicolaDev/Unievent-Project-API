@@ -122,6 +122,10 @@ async function buildStudentCreateForm(data) {
   formData.append("Email", data.email.trim());
   formData.append("Senha", data.senha);
   formData.append("DataNascimento", data.dataNascimento);
+  formData.append("TipoParticipante", data.tipoParticipante || "Externo");
+  if (data.tipoParticipante === "Interno" && data.instituicaoId) {
+    formData.append("InstituicaoId", data.instituicaoId);
+  }
   appendPhoto(formData, photo);
 
   return formData;
@@ -317,11 +321,11 @@ export const eventsApi = {
       token,
     });
   },
+  getTicket(eventId, token) {
+    return apiFetch(`/Evento/${eventId}/ingresso`, { token });
+  },
   confirmAttendance(eventId, token) {
-    return apiFetch(`/Evento/${eventId}/confirmar-presenca`, {
-      method: "POST",
-      token,
-    });
+    throw new Error("A presença deve ser validada por um operador credenciado.");
   },
 };
 
@@ -329,5 +333,14 @@ export const certificatesApi = {
   async list() {
     const result = await apiFetch("/Certificado");
     return Array.isArray(result) ? result.map(mapApiCertificate) : [];
+  },
+};
+
+export const preferencesApi = {
+  get(token) {
+    return apiFetch('/me/preferencias', { token });
+  },
+  update(token, preferences) {
+    return apiFetch('/me/preferencias', { method: 'PUT', token, body: preferences });
   },
 };

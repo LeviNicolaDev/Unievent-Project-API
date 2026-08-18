@@ -61,7 +61,7 @@ public class AuthService
                 return Result<string>.Failure("Email ou senha inválidos");
             }
 
-            var token = _jwtTokenGenerator.GerarToken(usuario.Id, usuario.Email, usuario.Role);
+            var token = _jwtTokenGenerator.GerarToken(usuario.Id, usuario.Email, usuario.Role, usuario.TipoParticipante);
 
             _logger.LogInformation("Login realizado com sucesso para {Email}", request.Email);
             return Result<string>.Success(token);

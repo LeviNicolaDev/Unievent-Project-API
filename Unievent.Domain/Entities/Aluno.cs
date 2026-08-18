@@ -27,4 +27,7 @@ public class Aluno : EntidadeBase
     public bool IsAtivo { get; set; }
     public Role Role { get; set; }
     public required DateTime DataNascimento { get; set; }
+    public TipoParticipante TipoParticipante { get; set; } = TipoParticipante.Interno;
+    public int? InstituicaoId { get; set; }
+    public Instituicao? Instituicao { get; set; }
 }

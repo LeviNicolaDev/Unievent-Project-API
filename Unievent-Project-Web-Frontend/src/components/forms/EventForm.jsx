@@ -12,6 +12,11 @@ const initialForm = {
   category: "Palestra",
   date: "",
   time: "",
+  visibility: "Publico",
+  audience: "Todos",
+  latitude: "",
+  longitude: "",
+  checkInRadius: "150",
 };
 
 const uploadPlaceholder = getAssetUrl("upload.png");
@@ -204,6 +209,32 @@ export function EventForm({ event, responsiblePeople, submitLabel, onSubmit }) {
               ))}
             </select>
           </FormField>
+          <div className="inline-fields">
+            <FormField label="Visibilidade">
+              <select value={form.visibility} onChange={(event) => updateField("visibility", event.target.value)}>
+                <option value="Publico">Público</option>
+                <option value="Privado">Privado</option>
+              </select>
+            </FormField>
+            <FormField label="Público permitido">
+              <select value={form.audience} onChange={(event) => updateField("audience", event.target.value)}>
+                <option value="Todos">Todos</option>
+                <option value="SomenteInternos">Somente internos</option>
+                <option value="SomenteExternos">Somente externos</option>
+              </select>
+            </FormField>
+          </div>
+          <div className="inline-fields">
+            <FormField label="Latitude do check-in">
+              <input type="number" step="any" value={form.latitude} onChange={(event) => updateField("latitude", event.target.value)} />
+            </FormField>
+            <FormField label="Longitude do check-in">
+              <input type="number" step="any" value={form.longitude} onChange={(event) => updateField("longitude", event.target.value)} />
+            </FormField>
+            <FormField label="Raio (metros)">
+              <input type="number" min="25" max="5000" value={form.checkInRadius} onChange={(event) => updateField("checkInRadius", event.target.value)} />
+            </FormField>
+          </div>
         </div>
       </div>
       <div className="form-actions">

@@ -13,4 +13,13 @@ public record EventoResponse
     public IList<string> Thumbnail { get; init; }
     public int IdResponsavelEvento { get; init; }
     public string Responsavel { get; init; }
+    public int? InstituicaoId { get; init; }
+    public int? EnderecoId { get; init; }
+    public VisibilidadeEvento Visibilidade { get; init; }
+    public PublicoPermitido PublicoPermitido { get; init; }
+    public DateTime? InicioInscricoes { get; init; }
+    public DateTime? FimInscricoes { get; init; }
+    public double? Latitude { get; init; }
+    public double? Longitude { get; init; }
+    public int RaioCheckInMetros { get; init; }
 }

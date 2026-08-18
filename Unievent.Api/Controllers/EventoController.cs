@@ -41,7 +41,12 @@ namespace Unievent.Api.Controllers
 
         public async Task<IActionResult> ListarEventos()
         {
-            var response = await _service.ListarEventos();
+            var administrativo = User.IsInRole(Role.Admin.ToString()) || User.IsInRole(Role.Secretaria.ToString());
+            TipoParticipante? tipo = Enum.TryParse<TipoParticipante>(
+                User.FindFirst("tipo_participante")?.Value, out var tipoClaim) ? tipoClaim : null;
+            var response = administrativo
+                ? await _service.ListarEventos()
+                : await _service.ListarEventosDisponiveis(tipo);
             if (response.IsFailure)
             {
                 return NotFound(response.Errors);
@@ -110,20 +115,28 @@ namespace Unievent.Api.Controllers
             return Ok(result.Value);
         }
 
-        [HttpPost("{id}/confirmar-presenca")]
+        [HttpGet("{id}/ingresso")]
         [Authorize(Roles = "Aluno")]
-        public async Task<ActionResult> ConfirmarPresenca([FromRoute] int id)
+        public async Task<ActionResult> ObterIngresso([FromRoute] int id)
         {
             var aluno = int.Parse(
         User.FindFirst(ClaimTypes.NameIdentifier)!.Value
     );
-
-            var result = await participacaoService.GarantirPresencaAsync(aluno, id);
+            var result = await participacaoService.ObterIngressoAsync(aluno, id);
             if (result.IsFailure)
             {
                 return BadRequest(result.Errors);
             }
             return Ok(result.Value);
+        }
+
+        [HttpPost("check-in")]
+        [Authorize(Roles = "Admin,Secretaria,OperadorCheckIn")]
+        public async Task<ActionResult> ValidarCheckIn([FromBody] Application.Dtos.Participacao.CheckInRequest request)
+        {
+            var operador = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result = await participacaoService.ValidarCheckInAsync(operador, request);
+            return result.IsFailure ? BadRequest(result.Errors) : Ok(result.Value);
         }
     }
 }

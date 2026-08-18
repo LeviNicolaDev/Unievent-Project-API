@@ -13,4 +13,13 @@ public record EventoUpdate
     public IList<IFormFile>? Thumbnail { get; set; }
 
     public int? ResponsavelEventoId { get; set; }
+    public int? InstituicaoId { get; set; }
+    public int? EnderecoId { get; set; }
+    public VisibilidadeEvento? Visibilidade { get; set; }
+    public PublicoPermitido? PublicoPermitido { get; set; }
+    public DateTime? InicioInscricoes { get; set; }
+    public DateTime? FimInscricoes { get; set; }
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
+    public int? RaioCheckInMetros { get; set; }
 }

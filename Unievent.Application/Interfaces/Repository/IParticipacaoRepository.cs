@@ -9,5 +9,8 @@ public interface IParticipacaoRepository
     Task SaveChangesAsync();
     Task<Participacao?> GetByAlunoIdAndEventoIdAsync(int alunoId, int eventoId);
     Task<bool> ExistsAsync(int alunoId, int eventoId);
+    Task<int> CountByEventoIdAsync(int eventoId);
+    Task<Participacao?> GetByCodigoIngressoAsync(string codigoIngresso);
+    Task<bool> TryAddWithinCapacityAsync(Participacao participacao, int capacidade);
 
 }

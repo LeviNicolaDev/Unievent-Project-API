@@ -8,6 +8,7 @@ public class Participacao
         EventoId = eventoId;
         PresencaConfirmada = false;
         CertificadoEmitido = false;
+        CodigoIngresso = Guid.NewGuid().ToString("N");
 
     }
     public int Id { get; set; }
@@ -25,11 +26,24 @@ public class Participacao
     public bool CertificadoEmitido { get; private set; }
 
     public string? CodigoValidacao { get; private set; }
+    public string CodigoIngresso { get; private set; } = Guid.NewGuid().ToString("N");
+    public double? DistanciaCheckInMetros { get; private set; }
+    public double? PrecisaoLocalizacaoMetros { get; private set; }
+    public int? OperadorCheckInId { get; private set; }
 
     public void ConfirmarPresenca()
     {
         PresencaConfirmada = true;
         DataConfirmacao = DateTime.UtcNow;
+    }
+
+    public void ConfirmarPresenca(double distanciaMetros, double precisaoMetros, int operadorId)
+    {
+        PresencaConfirmada = true;
+        DataConfirmacao = DateTime.UtcNow;
+        DistanciaCheckInMetros = distanciaMetros;
+        PrecisaoLocalizacaoMetros = precisaoMetros;
+        OperadorCheckInId = operadorId;
     }
 
     public void EmitirCertificado(string codigo)

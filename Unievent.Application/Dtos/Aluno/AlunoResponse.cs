@@ -11,4 +11,6 @@ public record AlunoResponse
     public Role Role { get; init; }
     public string FotoPerfil { get; init; }
     public DateTime DataNascimento { get; init; }
+    public TipoParticipante TipoParticipante { get; init; }
+    public int? InstituicaoId { get; init; }
 }

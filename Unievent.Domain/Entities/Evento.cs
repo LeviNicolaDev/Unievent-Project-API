@@ -24,5 +24,17 @@ namespace Unievent.Domain.Entities
         public ResponsavelEvento ResponsavelEvento { get; set; }
         public required int Capacidade { get; set; }
         public required IList<string> Thumbnail { get; set; }
+        public int? InstituicaoId { get; set; }
+        public Instituicao? Instituicao { get; set; }
+        public int? EnderecoId { get; set; }
+        public Endereco? Endereco { get; set; }
+        public VisibilidadeEvento Visibilidade { get; set; } = VisibilidadeEvento.Publico;
+        public PublicoPermitido PublicoPermitido { get; set; } = PublicoPermitido.Todos;
+        public DateTime? InicioInscricoes { get; set; }
+        public DateTime? FimInscricoes { get; set; }
+        public double? Latitude { get; set; }
+        public double? Longitude { get; set; }
+        public int RaioCheckInMetros { get; set; } = 150;
+        public int ToleranciaCheckInMinutos { get; set; } = 60;
     }
 }
