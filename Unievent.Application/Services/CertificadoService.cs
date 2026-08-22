@@ -54,10 +54,11 @@ public class CertificadoService : ICertificadoService
                 certificado.DataCertifcado = update.DataCertifcado.Value;
             }
 
+            Evento? eventoAtualizado = null;
             if (update.EventoId.HasValue)
             {
-                var evento = await _eventoRepository.ListarEventoById(update.EventoId.Value);
-                if (evento == null)
+                eventoAtualizado = await _eventoRepository.ListarEventoById(update.EventoId.Value);
+                if (eventoAtualizado == null)
                 {
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização do certificado com ID {CertificadoId}", update.EventoId, id);
                     return Result<CertificadoResponse>.Failure("Evento não encontrado");
@@ -73,7 +74,7 @@ public class CertificadoService : ICertificadoService
                 Id = id,
                 DataCertifcado = certificado.DataCertifcado,
                 EventoId = certificado.EventoId,
-                NomeEvento = certificado.Evento.Nome,
+                NomeEvento = eventoAtualizado?.Nome ?? certificado.Evento?.Nome ?? string.Empty,
                 Texto = certificado.Texto
             });
         }
@@ -168,7 +169,7 @@ public class CertificadoService : ICertificadoService
                 DataCertifcado = certificado.DataCertifcado,
                 EventoId = certificado.EventoId,
                 Texto = certificado.Texto,
-                NomeEvento = certificado.Evento.Nome
+                NomeEvento = certificado.Evento?.Nome ?? string.Empty
             });
         }
         catch (Exception ex)
@@ -191,7 +192,7 @@ public class CertificadoService : ICertificadoService
                 DataCertifcado = certificado.DataCertifcado,
                 EventoId = certificado.EventoId,
                 Texto = certificado.Texto,
-                NomeEvento = certificado.Evento.Nome
+                NomeEvento = certificado.Evento?.Nome ?? string.Empty
             }));
 
         }

@@ -31,15 +31,11 @@ public class InstituicaoRepository : IInstituicaoRepository
         return Task.FromResult(true);
     }
 
-    async Task<Instituicao> IInstituicaoRepository.ListarInstituicaoByEmail(string email)
-    {
-        return await _context.Instituicao.FirstOrDefaultAsync(i => i.EmailLogin == email);
-
-    }
-
     async Task<Instituicao> IInstituicaoRepository.ListarInstituicaoById(int id)
     {
-        return await _context.Instituicao.FirstOrDefaultAsync(i => i.Id == id);
+        return await _context.Instituicao
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(i => i.Id == id);
     }
 
     async Task<IEnumerable<Instituicao>> IInstituicaoRepository.ListarInstituicoes()

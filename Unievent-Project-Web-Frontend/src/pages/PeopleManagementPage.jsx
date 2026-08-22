@@ -3,17 +3,20 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AdminHeader } from '../components/navigation/AdminHeader.jsx';
 import { Modal } from '../components/ui/Modal.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../hooks/useLanguage.js';
 import { deleteResponsible, listResponsiblePeople } from '../services/responsibleService.js';
 import { getAssetUrl } from '../utils/formatters.js';
 
 export function PeopleManagementPage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [people, setPeople] = useState([]);
   const [search, setSearch] = useState('');
   const [personToDelete, setPersonToDelete] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const routePrefix = user?.roleUsuario === 'Secretaria' ? '/instituicao/responsaveis' : '/responsaveis';
 
   useEffect(() => {
     loadPeople();
@@ -93,7 +96,7 @@ export function PeopleManagementPage() {
             <p>{t('peopleCopy')}</p>
           </div>
 
-          <Link className="people-create-link" to="/responsaveis/novo">
+          <Link className="people-create-link" to={`${routePrefix}/novo`}>
             <Plus size={18} />
             <span>{t('newResponsible')}</span>
           </Link>
@@ -142,7 +145,7 @@ export function PeopleManagementPage() {
                     <p>{t('personLinked')}</p>
                   </div>
                   <div className="person-actions">
-                    <Link to={`/responsaveis/${person.id}/editar`} title={t('editResponsible')}>
+                    <Link to={`${routePrefix}/${person.id}/editar`} title={t('editResponsible')}>
                       <Pencil size={17} />
                     </Link>
                     <button type="button" title={t('deleteResponsible')} onClick={() => setPersonToDelete(person)}>

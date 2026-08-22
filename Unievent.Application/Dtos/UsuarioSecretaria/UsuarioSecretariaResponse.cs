@@ -6,7 +6,10 @@ public class UsuarioSecretariaResponse
     public string NomeUsuario { get; set; }
     public string RoleUsuario { get; set; }
     public string EmailUsuario { get; set; }
+    public bool EmailConfirmado { get; set; }
 
     public string Chave { get; set; }
     public bool IsAtivo { get; set; }
+    public string Status { get; set; }
+    public int? InstituicaoId { get; set; }
 }

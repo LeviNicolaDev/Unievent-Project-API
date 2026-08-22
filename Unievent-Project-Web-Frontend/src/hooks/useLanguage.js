@@ -6,6 +6,8 @@ const LANGUAGE_EVENT = 'unievent-language-change';
 const dictionaries = {
   pt: {
     navHome: 'Home',
+    navInstitutions: 'Instituições',
+    navSecretarias: 'Secretarias',
     navEvents: 'Eventos',
     navPeople: 'Pessoas',
     navCertificates: 'Certificados',
@@ -231,6 +233,8 @@ const dictionaries = {
   },
   en: {
     navHome: 'Home',
+    navInstitutions: 'Institutions',
+    navSecretarias: 'Secretaries',
     navEvents: 'Events',
     navPeople: 'People',
     navCertificates: 'Certificates',

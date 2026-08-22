@@ -2,9 +2,17 @@ namespace Unievent.Application.Templates
 {
     public static class EmailTemplates
     {
-        public static string ConfirmacaoConta(string nome, string chave, string baseUrl)
+        public static string ConfirmacaoConta(string nome, string chave, string baseUrl, string confirmationBaseUrl = "")
         {
-            var link = $"{baseUrl}/confirmar-email?chave={chave}";
+            var origemConfirmacao = string.IsNullOrWhiteSpace(confirmationBaseUrl)
+                ? baseUrl
+                : confirmationBaseUrl;
+            var apiBaseUrl = origemConfirmacao.TrimEnd('/');
+            if (!apiBaseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+            {
+                apiBaseUrl = $"{apiBaseUrl}/api";
+            }
+            var link = $"{apiBaseUrl}/Email/confirmar-conta?chave={Uri.EscapeDataString(chave)}";
 
             return $@"
             <html>
@@ -71,6 +79,48 @@ namespace Unievent.Application.Templates
                 </p>
             </body>
             </html>";  // TODO: Colocar URL real do front-end para confirmação de email
+        }
+
+        public static string CertificadoDisponivel(string nome, string evento, string texto, string codigo, string instituicao = "")
+        {
+            var origemEvento = string.IsNullOrWhiteSpace(instituicao)
+                ? "pelo UniEvent"
+                : $"pela {instituicao}";
+
+            return $@"
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <title>Certificado disponível - Unievent</title>
+            </head>
+            <body>
+                <h1>Olá, {nome}!</h1>
+                <p>Sua presença no evento <strong>{evento}</strong>, realizado {origemEvento}, foi confirmada.</p>
+                <p>Seu certificado de participação está disponível no UniEvent.</p>
+                <p>{texto}</p>
+                <p>Código de validação: <strong>{codigo}</strong></p>
+                <p>Atenciosamente,<br /><strong>Equipe Unievent</strong></p>
+            </body>
+            </html>";
+        }
+
+        public static string AlertaEvento(string nome, string evento, string data, string motivo)
+        {
+            return $@"
+            <html>
+            <head>
+                <meta charset='UTF-8'>
+                <title>Evento recomendado - Unievent</title>
+            </head>
+            <body>
+                <h1>Olá, {nome}!</h1>
+                <p>Encontramos um evento que pode combinar com você:</p>
+                <p><strong>{evento}</strong></p>
+                <p>Data: {data}</p>
+                <p>{motivo}</p>
+                <p>Atenciosamente,<br /><strong>Equipe Unievent</strong></p>
+            </body>
+            </html>";
         }
     }
 }

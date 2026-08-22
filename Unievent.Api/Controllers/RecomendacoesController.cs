@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Unievent.Application.Rules;
 using Unievent.Domain.Enuns;
 using Unievent.Infra.Data;
 
@@ -25,11 +26,9 @@ public class RecomendacoesController(AppDbContext db) : ControllerBase
         var agora = DateTime.UtcNow;
         var candidatos = await db.Evento.AsNoTracking()
             .Include(e => e.ResponsavelEvento)
-            .Where(e => e.DataEvento > agora && e.Visibilidade == VisibilidadeEvento.Publico &&
-                (e.PublicoPermitido == PublicoPermitido.Todos ||
-                 (aluno.TipoParticipante == TipoParticipante.Interno && e.PublicoPermitido == PublicoPermitido.SomenteInternos) ||
-                 (aluno.TipoParticipante == TipoParticipante.Externo && e.PublicoPermitido == PublicoPermitido.SomenteExternos)))
+            .Where(e => e.DataEvento > agora)
             .OrderBy(e => e.DataEvento).Take(200).ToListAsync();
+        candidatos = candidatos.Where(e => EventoRules.PodeVisualizar(e, aluno)).ToList();
 
         var categorias = (preferencia?.Categorias ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         var recomendados = candidatos.Select(e =>

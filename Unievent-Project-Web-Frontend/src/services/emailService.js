@@ -12,3 +12,12 @@ export async function sendAccountConfirmationEmail({ email, nome, chave }) {
     headers: { 'Content-Type': 'application/json' },
   });
 }
+
+export async function confirmAccountEmail(chave) {
+  return request('/Email/confirmar-conta', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ Chave: chave }),
+    headers: { 'Content-Type': 'application/json' },
+  });
+}

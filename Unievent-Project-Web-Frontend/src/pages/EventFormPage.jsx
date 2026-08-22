@@ -7,20 +7,24 @@ import { Modal } from '../components/ui/Modal.jsx';
 import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../hooks/useLanguage.js';
 import { getEventById, saveEvent } from '../services/eventService.js';
+import { listInstitutions } from '../services/institutionService.js';
 import { listResponsiblePeople } from '../services/responsibleService.js';
 import { getAssetUrl } from '../utils/formatters.js';
 
 export function EventFormPage({ mode }) {
   const { t } = useLanguage();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = mode === 'edit';
   const [event, setEvent] = useState(null);
+  const [institutions, setInstitutions] = useState([]);
   const [responsiblePeople, setResponsiblePeople] = useState([]);
   const [modal, setModal] = useState(null);
   const [isLoading, setIsLoading] = useState(isEdit);
   const [error, setError] = useState('');
+  const routePrefix = user?.roleUsuario === 'Secretaria' ? '/instituicao/eventos' : '/eventos';
+  const isGlobalAdmin = user?.roleUsuario === 'Admin' && !user?.instituicaoId;
 
   useEffect(() => {
     let isMounted = true;
@@ -30,14 +34,16 @@ export function EventFormPage({ mode }) {
       setError('');
 
       try {
-        const [people, eventData] = await Promise.all([
+        const [people, loadedInstitutions, eventData] = await Promise.all([
           listResponsiblePeople(),
+          isGlobalAdmin ? listInstitutions().catch(() => []) : Promise.resolve([]),
           isEdit ? getEventById(id) : Promise.resolve(null),
         ]);
 
         if (!isMounted) return;
 
         setResponsiblePeople(Array.isArray(people) ? people : []);
+        setInstitutions(Array.isArray(loadedInstitutions) ? loadedInstitutions : []);
         if (isEdit) {
           setEvent(eventData);
         }
@@ -61,7 +67,7 @@ export function EventFormPage({ mode }) {
     return () => {
       isMounted = false;
     };
-  }, [id, isEdit]);
+  }, [id, isEdit, isGlobalAdmin]);
 
   async function handleSubmit(payload) {
     setError('');
@@ -85,7 +91,7 @@ export function EventFormPage({ mode }) {
   if (isLoading) {
     return (
       <>
-        <AdminHeader title={isEdit ? t('updateEvent') : t('createEvent')} backTo="/eventos" />
+        <AdminHeader title={isEdit ? t('updateEvent') : t('createEvent')} backTo={routePrefix} />
         <main className="event-editor-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
           <p>{t('loading') || 'Carregando...'}</p>
         </main>
@@ -95,7 +101,7 @@ export function EventFormPage({ mode }) {
 
   return (
     <>
-      <AdminHeader title={isEdit ? t('updateEvent') : t('createEvent')} backTo="/eventos" />
+      <AdminHeader title={isEdit ? t('updateEvent') : t('createEvent')} backTo={routePrefix} />
       <main className="event-editor-page">
         <section className="event-editor-hero">
           <div>
@@ -138,7 +144,9 @@ export function EventFormPage({ mode }) {
           {isEdit && !event ? null : (
             <EventForm
               event={event}
+              institutions={institutions}
               responsiblePeople={responsiblePeople}
+              showInstitutionSelect={isGlobalAdmin}
               submitLabel={isEdit ? t('updateEvent') : t('createEvent')}
               onSubmit={handleSubmit}
             />
@@ -151,8 +159,8 @@ export function EventFormPage({ mode }) {
         message={modal?.message}
         image={getAssetUrl('emoteAcess.png')}
         confirmText={t('ok')}
-        onClose={() => navigate('/eventos')}
-        onConfirm={() => navigate('/eventos')}
+        onClose={() => navigate(routePrefix)}
+        onConfirm={() => navigate(routePrefix)}
       />
     </>
   );

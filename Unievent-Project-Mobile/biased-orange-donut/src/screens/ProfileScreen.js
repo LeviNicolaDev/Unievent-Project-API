@@ -17,6 +17,10 @@ import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
 import { useEvents } from "../context/EventContext";
 import { styles } from "../styles/globalStyles";
+import {
+  formatDateForInput,
+  normalizeBrazilianDateInput,
+} from "../utils/dateFormat";
 import { pickProfilePhoto } from "../utils/photoPicker";
 
 export default function ProfileScreen({
@@ -29,6 +33,7 @@ export default function ProfileScreen({
   const [modalVisible, setModalVisible] = useState(false);
   const { student } = useAuth();
   const { events, favoriteEvents, registeredEvents } = useEvents();
+  const birthDateLabel = formatDateForInput(student?.dataNascimento);
 
   const tags = [
     "Palestras",
@@ -83,6 +88,18 @@ export default function ProfileScreen({
           <Text style={[styles.profileEmail, { color: theme.soft }]}>
             {student?.email || "aluno@fatec.sp.gov.br"}
           </Text>
+
+          {birthDateLabel ? (
+            <Text style={[styles.profileEmail, { color: theme.soft }]}>
+              {birthDateLabel}
+            </Text>
+          ) : null}
+
+          {student?.instituicaoNome ? (
+            <Text style={[styles.profileEmail, { color: theme.soft }]}>
+              {student.instituicaoNome}
+            </Text>
+          ) : null}
 
           <View style={styles.profileBtns}>
             <TouchableOpacity
@@ -176,35 +193,6 @@ export default function ProfileScreen({
   );
 }
 
-function formatDateForInput(value) {
-  if (!value) return "";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  const day = String(date.getDate()).padStart(2, "0");
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const year = date.getFullYear();
-
-  return `${day}/${month}/${year}`;
-}
-
-function normalizeBirthDate(value) {
-  const trimmed = value.trim();
-  const digitsDate = trimmed.match(/^(\d{2})(\d{2})(\d{4})$/);
-  const brDate = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-
-  if (digitsDate) {
-    return `${digitsDate[3]}-${digitsDate[2]}-${digitsDate[1]}`;
-  }
-
-  if (brDate) {
-    return `${brDate[3]}-${brDate[2]}-${brDate[1]}`;
-  }
-
-  return trimmed;
-}
-
 function EditProfileModal({ visible, onClose, student, theme }) {
   const isLight = theme.mode === "light";
   const { updateProfile } = useAuth();
@@ -265,7 +253,7 @@ function EditProfileModal({ visible, onClose, student, theme }) {
         nome,
         senha,
         dataNascimento: dataNascimento
-          ? normalizeBirthDate(dataNascimento)
+          ? normalizeBrazilianDateInput(dataNascimento)
           : undefined,
         fotoPerfil,
       });

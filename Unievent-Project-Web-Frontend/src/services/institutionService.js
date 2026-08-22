@@ -11,10 +11,19 @@ function buildInstitutionFormData(payload) {
 
   const formData = new FormData();
   const fields = {
-    EmailLogin: payload.emailLogin || payload.email,
-    SenhaLogin: payload.senhaLogin || payload.password,
+    Nome: payload.nome || payload.name,
+    NomeAbreviado: payload.nomeAbreviado || payload.shortName,
+    Codigo: payload.codigo || payload.code,
     Cnpj: payload.cnpj,
-    EnderecoId: payload.enderecoId || payload.addressId,
+    Rua: payload.rua || payload.street,
+    Cidade: payload.cidade || payload.city,
+    Bairro: payload.bairro || payload.neighborhood,
+    Estado: payload.estado || payload.state,
+    Cep: payload.cep || payload.zipCode,
+    Numero: payload.numero || payload.number,
+    Telefone: payload.telefone || payload.phone,
+    Site: payload.site,
+    IsAtivo: payload.isAtivo,
   };
 
   Object.entries(fields).forEach(([key, value]) => {
@@ -31,14 +40,58 @@ function buildInstitutionFormData(payload) {
   return formData;
 }
 
+function normalizeInstitution(institution) {
+  const id = institution.id ?? institution.Id ?? null;
+  const codigo = institution.codigo || institution.Codigo || "";
+  const nome = institution.nome || institution.Nome || institution.nomeAbreviado || institution.NomeAbreviado || "";
+  const filterValue = id ? `id:${id}` : `codigo:${codigo}`;
+
+  return {
+    ...institution,
+    id,
+    codigo,
+    nome,
+    nomeAbreviado: institution.nomeAbreviado || institution.NomeAbreviado || "",
+    cidade: institution.cidade || institution.Cidade || "",
+    estado: institution.estado || institution.Estado || "",
+    rua: institution.rua || institution.Rua || "",
+    bairro: institution.bairro || institution.Bairro || "",
+    cep: institution.cep || institution.Cep || "",
+    numero: institution.numero || institution.Numero || "",
+    temEventos: Boolean(institution.temEventos ?? institution.TemEventos),
+    totalEventos: institution.totalEventos ?? institution.TotalEventos ?? 0,
+    cnpj: institution.cnpj || institution.Cnpj || "",
+    telefone: institution.telefone || institution.Telefone || "",
+    site: institution.site || institution.Site || "",
+    fotoPerfil: institution.fotoPerfil || institution.FotoPerfil || "",
+    isAtivo: Boolean(institution.isAtivo ?? institution.IsAtivo ?? true),
+    filterValue,
+  };
+}
+
 export async function listInstitutions() {
   try {
     const response = await request('/Instituicao', {
       method: 'GET',
     });
-    return unwrapResponse(response);
+    const institutions = unwrapResponse(response);
+    return Array.isArray(institutions) ? institutions.map(normalizeInstitution) : [];
   } catch (error) {
     console.error('Erro ao listar instituições:', error);
+    throw error;
+  }
+}
+
+export async function listPublicInstitutions() {
+  try {
+    const response = await request('/Instituicao/publicas', {
+      method: 'GET',
+      skipAuth: true,
+    });
+    const institutions = unwrapResponse(response);
+    return Array.isArray(institutions) ? institutions.map(normalizeInstitution) : [];
+  } catch (error) {
+    console.error('Erro ao listar instituições públicas:', error);
     throw error;
   }
 }
@@ -48,7 +101,7 @@ export async function getInstitutionById(id) {
     const response = await request(`/Instituicao/${id}`, {
       method: 'GET',
     });
-    return unwrapResponse(response);
+    return normalizeInstitution(unwrapResponse(response));
   } catch (error) {
     console.error(`Erro ao carregar instituição ${id}:`, error);
     throw error;
@@ -66,9 +119,22 @@ export async function saveInstitution(payload) {
       body: buildInstitutionFormData(payload),
     });
 
-    return unwrapResponse(response);
+    return normalizeInstitution(unwrapResponse(response));
   } catch (error) {
     console.error('Erro ao salvar instituição:', error);
+    throw error;
+  }
+}
+
+export async function setInstitutionActive(id, isActive) {
+  try {
+    const response = await request(`/Instituicao/${id}/${isActive ? 'ativar' : 'desativar'}`, {
+      method: 'PATCH',
+    });
+
+    return normalizeInstitution(unwrapResponse(response));
+  } catch (error) {
+    console.error(`Erro ao ${isActive ? 'ativar' : 'desativar'} instituição ${id}:`, error);
     throw error;
   }
 }

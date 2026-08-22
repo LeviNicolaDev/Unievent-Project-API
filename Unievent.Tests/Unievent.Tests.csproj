@@ -17,5 +17,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Unievent.Application\Unievent.Application.csproj" />
+    <ProjectReference Include="..\Unievent.Api\Unievent.Api.csproj" />
   </ItemGroup>
 </Project>

@@ -66,6 +66,10 @@ export const homeStyles = {
     fontWeight: "600",
   },
 
+  homeFilterSelect: {
+    marginBottom: 16,
+  },
+
   homeSection: {
     marginBottom: 14,
     flexDirection: "row",

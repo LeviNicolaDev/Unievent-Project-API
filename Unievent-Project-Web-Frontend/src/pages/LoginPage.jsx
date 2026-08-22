@@ -16,7 +16,7 @@ import { useLanguage } from "../hooks/useLanguage.js";
 import { useTheme } from "../hooks/useTheme.js";
 import { loginAdmin } from "../services/authService.js";
 import { sendAccountConfirmationEmail } from "../services/emailService.js";
-import { saveUserSecretary } from "../services/userSecretaryService.js";
+import { saveInitialAdminUnievent } from "../services/userUnieventService.js";
 
 function generateConfirmationKey() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -118,11 +118,10 @@ export function LoginPage({ initialMode = "signin" }) {
 
         const confirmationKey = generateConfirmationKey();
 
-        await saveUserSecretary({
+        await saveInitialAdminUnievent({
           nomeUsuario: name,
           emailUsuario: email,
           senha: password,
-          roleUsuario: "Admin",
           chave: confirmationKey,
         });
 
@@ -142,11 +141,12 @@ export function LoginPage({ initialMode = "signin" }) {
         }
         return;
       } else {
-        // Login apenas via UsuarioSecretaria
         const response = await loginAdmin(email, password);
         if (!login(response.user, response.token)) {
-          throw new Error("Apenas usuários da secretaria podem acessar este sistema");
+          throw new Error("Apenas usuários administrativos podem acessar este sistema");
         }
+        navigate(response.user?.roleUsuario === "Secretaria" ? "/instituicao/dashboard" : "/home");
+        return;
       }
 
       navigate("/home");
@@ -200,7 +200,7 @@ export function LoginPage({ initialMode = "signin" }) {
       <section className="auth-shell">
         <aside className="auth-intro">
           <span className="auth-eyebrow">UniEvent Admin</span>
-          <h1>{isSignUp ? t("authIntroSignUp") : t("authIntroSignIn")}</h1>
+          <h1>{isSignUp ? "Cadastro Admin UniEvent" : t("authIntroSignIn")}</h1>
           <p>{t("authCopy")}</p>
 
           <div className="auth-benefits">
@@ -225,8 +225,8 @@ export function LoginPage({ initialMode = "signin" }) {
               <CalendarCheck size={24} />
             </div>
             <div>
-              <span>{isSignUp ? t("signup") : t("signin")}</span>
-              <h2>{isSignUp ? t("createAccount") : t("welcomeBack")}</h2>
+              <span>{isSignUp ? "Cadastro Admin UniEvent" : t("signin")}</span>
+              <h2>{isSignUp ? "Criar administrador global" : t("welcomeBack")}</h2>
             </div>
           </div>
 
@@ -251,9 +251,15 @@ export function LoginPage({ initialMode = "signin" }) {
               setPendingConfirmation(null);
             }}
           >
-              {t("register")}
+              Cadastro Admin UniEvent
             </button>
           </div>
+
+          {isSignUp && (
+            <p className="auth-admin-note">
+              Esse cadastro cria o administrador global da plataforma, sem vínculo com uma FATEC específica.
+            </p>
+          )}
 
           {success && (
             <div
@@ -315,12 +321,12 @@ export function LoginPage({ initialMode = "signin" }) {
             ) : null}
 
             <label className="auth-field">
-              <span>{t("institutionalEmail")}</span>
+              <span>{isSignUp ? "Email do Admin UniEvent" : t("institutionalEmail")}</span>
               <div>
                 <Mail size={18} />
                 <input
                   type="email"
-                  placeholder="nome@fatec.sp.gov.br"
+                  placeholder={isSignUp ? "admin@unievent.com" : "nome@fatec.sp.gov.br"}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -363,7 +369,7 @@ export function LoginPage({ initialMode = "signin" }) {
             )}
 
             <button className="auth-submit" type="submit" disabled={isLoading}>
-              {isLoading ? "Aguarde..." : isSignUp ? t("register") : t("enter")}
+              {isLoading ? "Aguarde..." : isSignUp ? "Cadastrar Admin UniEvent" : t("enter")}
             </button>
           </form>
         </section>

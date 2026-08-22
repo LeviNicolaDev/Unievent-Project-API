@@ -17,20 +17,21 @@ const STORAGE_KEYS = {
   student: "@unievent:student",
 };
 
-function getStudentNameFromEmail(email) {
-  return String(email || "").split("@")[0] || "Aluno";
-}
+const ROLE_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+const ID_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
 
-async function findStudentByEmail(email) {
+function decodeJwtPayload(token) {
+  const [, payload] = String(token || "").split(".");
+  if (!payload) return {};
+
   try {
-    const students = await studentsApi.list();
-    return students.find(
-      (student) =>
-        String(student.email || student.Email).toLowerCase() ===
-        String(email).toLowerCase()
-    );
+    const normalizedPayload = payload
+      .replace(/-/g, "+")
+      .replace(/_/g, "/")
+      .padEnd(Math.ceil(payload.length / 4) * 4, "=");
+    return JSON.parse(atob(normalizedPayload));
   } catch {
-    return null;
+    return {};
   }
 }
 
@@ -38,17 +39,22 @@ function normalizeStudent(student, fallbackEmail) {
   if (!student) {
     return {
       email: fallbackEmail,
-      nome: getStudentNameFromEmail(fallbackEmail),
+      nome: "Aluno",
     };
   }
 
+  const email = student.email ?? student.Email ?? fallbackEmail;
+
   return {
     id: student.id ?? student.Id,
-    nome: student.nome ?? student.Nome ?? getStudentNameFromEmail(fallbackEmail),
-    email: student.email ?? student.Email ?? fallbackEmail,
+    nome: student.nome ?? student.Nome ?? "Aluno",
+    email,
     fotoPerfil: getApiAssetUrl(student.fotoPerfil ?? student.FotoPerfil),
     dataNascimento: student.dataNascimento ?? student.DataNascimento,
     role: student.role ?? student.Role,
+    tipoParticipante: student.tipoParticipante ?? student.TipoParticipante,
+    instituicaoId: student.instituicaoId ?? student.InstituicaoId,
+    instituicaoNome: student.instituicaoNome ?? student.InstituicaoNome,
   };
 }
 
@@ -100,8 +106,26 @@ export function AuthProvider({ children }) {
   const signIn = useCallback(
     async ({ email, senha }) => {
       const authToken = await authApi.loginAluno({ email, senha });
-      const apiStudent = await findStudentByEmail(email);
-      const nextStudent = normalizeStudent(apiStudent, email);
+      const claims = decodeJwtPayload(authToken);
+      const role = claims[ROLE_CLAIM] || claims.role;
+      const tipoParticipante = claims.tipo_participante;
+      const instituicaoId = claims.instituicao_id;
+
+      if (role !== "Aluno" || tipoParticipante !== "Interno" || !instituicaoId) {
+        throw new Error("O aplicativo mobile é exclusivo para alunos da Fatec.");
+      }
+
+      const apiStudent = await studentsApi.getMe(authToken);
+      const nextStudent = {
+        ...normalizeStudent(apiStudent, email),
+        id:
+          apiStudent?.id ??
+          apiStudent?.Id ??
+          Number(claims[ID_CLAIM] || claims.nameid || claims.sub),
+        role,
+        tipoParticipante,
+        instituicaoId: Number(instituicaoId),
+      };
 
       await persistSession(authToken, nextStudent);
 
@@ -122,7 +146,10 @@ export function AuthProvider({ children }) {
       }
 
       const updatedStudent = await studentsApi.update(student.id, data, token);
-      const nextStudent = normalizeStudent(updatedStudent, student.email);
+      const refreshedStudent = await studentsApi
+        .getMe(token)
+        .catch(() => updatedStudent);
+      const nextStudent = normalizeStudent(refreshedStudent, student.email);
 
       setStudent(nextStudent);
       await AsyncStorage.setItem(

@@ -23,6 +23,14 @@ import TicketScreen from "./src/screens/TicketScreen";
 import { setLargeTextEnabled } from "./src/styles/globalStyles";
 
 const Stack = createNativeStackNavigator();
+const linking = {
+  prefixes: ["unievent://"],
+  config: {
+    screens: {
+      SignIn: "login",
+    },
+  },
+};
 
 export default function App() {
   const [isLight, setIsLight] = useState(false);
@@ -46,7 +54,7 @@ export default function App() {
 
       <AuthProvider>
         <EventProvider>
-          <NavigationContainer>
+          <NavigationContainer linking={linking}>
             <Stack.Navigator
               initialRouteName="Load"
               screenOptions={{ headerShown: false }}

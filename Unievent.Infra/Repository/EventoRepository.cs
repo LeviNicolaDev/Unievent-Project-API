@@ -35,23 +35,39 @@ namespace Unievent.Infra.Repository
 
         async Task<IList<Evento>> IEventoRepository.ListarEventoByCategoria(Categoria categoria)
         {
-            var eventos = await _context.Evento.Where(e => e.Categoria == categoria).AsNoTracking().ToListAsync();
+            var eventos = await _context.Evento
+                .Include(e => e.ResponsavelEvento)
+                .Include(e => e.Instituicao)
+                .Where(e => e.Categoria == categoria)
+                .AsNoTracking()
+                .ToListAsync();
             return eventos;
         }
 
         async Task<Evento> IEventoRepository.ListarEventoById(int id)
         {
-            return await _context.Evento.Where(e => e.Id == id).FirstOrDefaultAsync();
+            return await _context.Evento
+                .Include(e => e.ResponsavelEvento)
+                .Include(e => e.Instituicao)
+                .Where(e => e.Id == id)
+                .FirstOrDefaultAsync();
         }
 
         async Task<Evento> IEventoRepository.ListarEventoByResponsavel(int responsavelId)
         {
-            return await _context.Evento.Where(r => r.ResponsavelEventoId == responsavelId).FirstOrDefaultAsync();
+            return await _context.Evento
+                .Include(e => e.ResponsavelEvento)
+                .Include(e => e.Instituicao)
+                .Where(r => r.ResponsavelEventoId == responsavelId)
+                .FirstOrDefaultAsync();
         }
 
         async Task<IEnumerable<Evento>> IEventoRepository.ListarEventos()
         {
-            return await _context.Evento.Include(e => e.ResponsavelEvento).ToListAsync();
+            return await _context.Evento
+                .Include(e => e.ResponsavelEvento)
+                .Include(e => e.Instituicao)
+                .ToListAsync();
         }
 
         Task IEventoRepository.SaveChangesAsync()

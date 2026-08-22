@@ -14,6 +14,8 @@ export function LandingNav({ isLight, onThemeToggle }) {
 
       <div className="landing-modern-links">
         <a href="#sobre">{t('landingAbout')}</a>
+        <Link to="/descobrir-eventos">{t('navEvents')}</Link>
+        <Link to="/secretaria/cadastro">Cadastro Secretaria</Link>
         <a href="#aplicativo">{t('landingApp')}</a>
         <a href="#integrantes">{t('landingMembers')}</a>
         <a href="#contato">{t('landingContact')}</a>

@@ -53,7 +53,10 @@ namespace Unievent.Application.Services
         public async Task<Result<bool>> EnviarEmailConfirmacaoConta(string email, string nome, string chave)
         {
             _logger.LogInformation("Enviando e-mail de confirmação para {Email}", email);
-            return await SendAsync(email, "Confirmação de Conta - Unievent", EmailTemplates.ConfirmacaoConta(nome, chave, _emailSettings.BaseUrl));
+            return await SendAsync(
+                email,
+                "Confirmação de Conta - Unievent",
+                EmailTemplates.ConfirmacaoConta(nome, chave, _emailSettings.BaseUrl, _emailSettings.ConfirmationBaseUrl));
         }
     }
 }

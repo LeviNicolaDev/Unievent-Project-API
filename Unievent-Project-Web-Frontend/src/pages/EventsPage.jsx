@@ -14,17 +14,20 @@ import { Link } from "react-router-dom";
 import { AdminHeader } from "../components/navigation/AdminHeader.jsx";
 import { DataTable } from "../components/tables/DataTable.jsx";
 import { Modal } from "../components/ui/Modal.jsx";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import { useLanguage } from "../hooks/useLanguage.js";
 import { deleteEvent, listEvents } from "../services/eventService.js";
 import { formatDate, getAssetUrl } from "../utils/formatters.js";
 
 export function EventsPage() {
   const { language, t } = useLanguage();
+  const { user } = useAuth();
   const [rows, setRows] = useState([]);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const routePrefix = user?.roleUsuario === "Secretaria" ? "/instituicao/eventos" : "/eventos";
 
   useEffect(() => {
     loadEvents();
@@ -178,7 +181,7 @@ export function EventsPage() {
         label: t("actions"),
         render: (row) => (
           <div className="table-actions">
-            <Link to={`/eventos/${row.id}/editar`} title={t("edit")}>
+            <Link to={`${routePrefix}/${row.id}/editar`} title={t("edit")}>
               <Pencil size={18} />
             </Link>
             <button
@@ -188,14 +191,14 @@ export function EventsPage() {
             >
               <Trash2 size={18} />
             </button>
-            <Link to="/eventos/preview" title={t("preview")}>
+            <Link to={`${routePrefix}/preview`} title={t("preview")}>
               <Eye size={18} />
             </Link>
           </div>
         ),
       },
     ],
-    [language, t],
+    [language, routePrefix, t],
   );
 
   async function confirmDelete() {
@@ -254,7 +257,7 @@ export function EventsPage() {
             <p>{t("eventsCopy")}</p>
           </div>
 
-          <Link className="events-create-link" to="/eventos/novo">
+          <Link className="events-create-link" to={`${routePrefix}/novo`}>
             <Plus size={18} />
             <span>{t("newEvent")}</span>
           </Link>

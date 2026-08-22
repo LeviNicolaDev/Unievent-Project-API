@@ -26,6 +26,9 @@ public class Participacao
     public bool CertificadoEmitido { get; private set; }
 
     public string? CodigoValidacao { get; private set; }
+    public bool CertificadoEnviadoPorEmail { get; private set; }
+    public DateTime? DataEnvioCertificadoEmail { get; private set; }
+    public string? ErroEnvioCertificadoEmail { get; private set; }
     public string CodigoIngresso { get; private set; } = Guid.NewGuid().ToString("N");
     public double? DistanciaCheckInMetros { get; private set; }
     public double? PrecisaoLocalizacaoMetros { get; private set; }
@@ -35,6 +38,13 @@ public class Participacao
     {
         PresencaConfirmada = true;
         DataConfirmacao = DateTime.UtcNow;
+    }
+
+    public void ConfirmarPresencaPorCodigo(int operadorId)
+    {
+        PresencaConfirmada = true;
+        DataConfirmacao = DateTime.UtcNow;
+        OperadorCheckInId = operadorId;
     }
 
     public void ConfirmarPresenca(double distanciaMetros, double precisaoMetros, int operadorId)
@@ -51,7 +61,31 @@ public class Participacao
         if (!PresencaConfirmada)
             throw new Exception("Aluno sem presença confirmada.");
 
+        if (CertificadoEmitido && !string.IsNullOrWhiteSpace(CodigoValidacao))
+            return;
+
         CertificadoEmitido = true;
-        CodigoValidacao = codigo;
+        CodigoValidacao = string.IsNullOrWhiteSpace(CodigoValidacao) ? codigo : CodigoValidacao;
+    }
+
+    public void RegistrarEnvioCertificadoEmail()
+    {
+        if (!CertificadoEmitido)
+            throw new Exception("Certificado ainda não foi emitido.");
+
+        CertificadoEnviadoPorEmail = true;
+        DataEnvioCertificadoEmail = DateTime.UtcNow;
+        ErroEnvioCertificadoEmail = null;
+    }
+
+    public void RegistrarFalhaEnvioCertificadoEmail(string erro)
+    {
+        if (!CertificadoEmitido)
+            throw new Exception("Certificado ainda não foi emitido.");
+
+        CertificadoEnviadoPorEmail = false;
+        ErroEnvioCertificadoEmail = string.IsNullOrWhiteSpace(erro)
+            ? "Falha ao enviar e-mail do certificado"
+            : erro;
     }
 }

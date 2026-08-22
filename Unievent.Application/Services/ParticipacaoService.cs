@@ -3,7 +3,9 @@ using Unievent.Application.Common;
 using Unievent.Application.Dtos.Participacao;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
+using Unievent.Application.Rules;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 
 namespace Unievent.Application.Services;
 
@@ -13,13 +15,21 @@ public class ParticipacaoService : IParticipacaoService
     private readonly IParticipacaoRepository _repositoryParticipacao;
     private readonly ILogger<ParticipacaoService> _logger;
     private readonly IAlunoRepository _repositoryAluno;
-    public ParticipacaoService(IEventoRepository repositoryEvento, IParticipacaoRepository repositoryParticipacao, IAlunoRepository repositoryAluno, ILogger<ParticipacaoService> logger)
+    private readonly ICertificadoAutomaticoService? _certificadoAutomaticoService;
+
+    public ParticipacaoService(
+        IEventoRepository repositoryEvento,
+        IParticipacaoRepository repositoryParticipacao,
+        IAlunoRepository repositoryAluno,
+        ILogger<ParticipacaoService> logger,
+        ICertificadoAutomaticoService? certificadoAutomaticoService = null)
     {
 
         _repositoryEvento = repositoryEvento;
         _repositoryParticipacao = repositoryParticipacao;
         _repositoryAluno = repositoryAluno;
         _logger = logger;
+        _certificadoAutomaticoService = certificadoAutomaticoService;
     }
 
     async Task<Result<IngressoResponse>> IParticipacaoService.ObterIngressoAsync(int alunoId, int eventoId)
@@ -34,33 +44,57 @@ public class ParticipacaoService : IParticipacaoService
 
     async Task<Result<ParticipacaoResponse>> IParticipacaoService.ValidarCheckInAsync(int operadorId, CheckInRequest request)
     {
-        if (request.PrecisaoMetros <= 0 || request.PrecisaoMetros > 50)
-            return Result<ParticipacaoResponse>.Failure("Localização imprecisa; aproxime-se do evento e tente novamente");
-
         var participacao = await _repositoryParticipacao.GetByCodigoIngressoAsync(request.CodigoIngresso);
         if (participacao is null)
             return Result<ParticipacaoResponse>.Failure("Ingresso inválido");
+        if (request.EventoId.HasValue && participacao.EventoId != request.EventoId.Value)
+            return Result<ParticipacaoResponse>.Failure("Ingresso não pertence ao evento informado");
         if (participacao.PresencaConfirmada)
             return Result<ParticipacaoResponse>.Success(Map(participacao));
 
         var evento = participacao.Evento;
-        if (!evento.Latitude.HasValue || !evento.Longitude.HasValue)
-            return Result<ParticipacaoResponse>.Failure("Evento sem localização configurada para check-in");
-
         var agora = DateTime.UtcNow;
         var inicio = evento.DataEvento.ToUniversalTime().AddMinutes(-evento.ToleranciaCheckInMinutos);
         var fim = evento.DataEvento.ToUniversalTime().AddMinutes(evento.ToleranciaCheckInMinutos);
         if (agora < inicio || agora > fim)
             return Result<ParticipacaoResponse>.Failure("Check-in fora da janela permitida");
 
-        var distancia = CalcularDistanciaMetros(
-            request.Latitude, request.Longitude, evento.Latitude.Value, evento.Longitude.Value);
-        if (distancia > evento.RaioCheckInMetros)
-            return Result<ParticipacaoResponse>.Failure($"Fora do raio permitido ({Math.Round(distancia)} m)");
+        if (request.Latitude.HasValue || request.Longitude.HasValue || request.PrecisaoMetros.HasValue)
+        {
+            if (!request.Latitude.HasValue || !request.Longitude.HasValue || !request.PrecisaoMetros.HasValue)
+                return Result<ParticipacaoResponse>.Failure("Localização incompleta para validação");
+            if (request.PrecisaoMetros.Value <= 0 || request.PrecisaoMetros.Value > 50)
+                return Result<ParticipacaoResponse>.Failure("Localização imprecisa; aproxime-se do evento e tente novamente");
+            if (!evento.Latitude.HasValue || !evento.Longitude.HasValue)
+                return Result<ParticipacaoResponse>.Failure("Evento sem localização configurada para check-in por localização");
 
-        participacao.ConfirmarPresenca(distancia, request.PrecisaoMetros, operadorId);
+            var distancia = CalcularDistanciaMetros(
+                request.Latitude.Value, request.Longitude.Value, evento.Latitude.Value, evento.Longitude.Value);
+            if (distancia > evento.RaioCheckInMetros)
+                return Result<ParticipacaoResponse>.Failure($"Fora do raio permitido ({Math.Round(distancia)} m)");
+
+            participacao.ConfirmarPresenca(distancia, request.PrecisaoMetros.Value, operadorId);
+        }
+        else
+        {
+            participacao.ConfirmarPresencaPorCodigo(operadorId);
+        }
+
         await _repositoryParticipacao.Update(participacao);
         await _repositoryParticipacao.SaveChangesAsync();
+
+        if (_certificadoAutomaticoService is not null)
+        {
+            var certificado = await _certificadoAutomaticoService.ProcessarAposCheckInAsync(participacao.Id);
+            if (certificado.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Presença confirmada para participação {ParticipacaoId}, mas a automação do certificado falhou: {Erros}",
+                    participacao.Id,
+                    string.Join("; ", certificado.Errors));
+            }
+        }
+
         return Result<ParticipacaoResponse>.Success(Map(participacao));
     }
 
@@ -72,6 +106,8 @@ public class ParticipacaoService : IParticipacaoService
         EventoId = participacao.EventoId,
         PresencaGarantida = participacao.PresencaConfirmada,
         CertificadoEmitido = participacao.CertificadoEmitido,
+        CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
+        ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail,
         DataConfirmacao = participacao.DataConfirmacao
     };
 
@@ -90,7 +126,19 @@ public class ParticipacaoService : IParticipacaoService
 
     async Task<Result<ParticipacaoResponse>> IParticipacaoService.EmitirCertificadoAsync(int alunoId, int eventoId)
     {
-        throw new NotImplementedException();
+        var participacao = await _repositoryParticipacao.GetByAlunoIdAndEventoIdAsync(alunoId, eventoId);
+        if (participacao is null)
+            return Result<ParticipacaoResponse>.Failure("Inscrição não encontrada para este evento.");
+        if (!participacao.PresencaConfirmada)
+            return Result<ParticipacaoResponse>.Failure("Aluno sem presença confirmada.");
+        if (participacao.CertificadoEmitido)
+            return Result<ParticipacaoResponse>.Success(Map(participacao));
+
+        participacao.EmitirCertificado(Guid.NewGuid().ToString("N"));
+        await _repositoryParticipacao.Update(participacao);
+        await _repositoryParticipacao.SaveChangesAsync();
+
+        return Result<ParticipacaoResponse>.Success(Map(participacao));
     }
 
     async Task<Result<ParticipacaoResponse>> IParticipacaoService.GarantirPresencaAsync(int alunoId, int eventoId)
@@ -121,6 +169,8 @@ public class ParticipacaoService : IParticipacaoService
             EventoId = participacao.EventoId,
             PresencaGarantida = participacao.PresencaConfirmada,
             CertificadoEmitido = participacao.CertificadoEmitido,
+            CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
+            ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail,
             DataConfirmacao = participacao.DataConfirmacao
         };
 
@@ -141,14 +191,23 @@ public class ParticipacaoService : IParticipacaoService
             return Result<ParticipacaoResponse>.Failure("Evento não encontrado");
         }
         var agora = DateTime.UtcNow;
-        if (evento.InicioInscricoes.HasValue && agora < evento.InicioInscricoes.Value.ToUniversalTime())
-            return Result<ParticipacaoResponse>.Failure("As inscrições ainda não começaram");
-        if (evento.FimInscricoes.HasValue && agora > evento.FimInscricoes.Value.ToUniversalTime())
-            return Result<ParticipacaoResponse>.Failure("As inscrições foram encerradas");
-        if (evento.PublicoPermitido == Domain.Enuns.PublicoPermitido.SomenteInternos && aluno.TipoParticipante != Domain.Enuns.TipoParticipante.Interno)
-            return Result<ParticipacaoResponse>.Failure("Evento exclusivo para participantes internos");
-        if (evento.PublicoPermitido == Domain.Enuns.PublicoPermitido.SomenteExternos && aluno.TipoParticipante != Domain.Enuns.TipoParticipante.Externo)
-            return Result<ParticipacaoResponse>.Failure("Evento exclusivo para participantes externos");
+        if (!EventoRules.InscricoesAbertas(evento, agora, out var erroInscricao))
+            return Result<ParticipacaoResponse>.Failure(erroInscricao!);
+        if (!EventoRules.PodeParticipar(evento, aluno))
+        {
+            if (evento.PublicoPermitido == PublicoPermitido.AlunosDaInstituicao &&
+                aluno.TipoParticipante == TipoParticipante.Interno &&
+                evento.InstituicaoId.HasValue &&
+                aluno.InstituicaoId != evento.InstituicaoId)
+            {
+                var nomeInstituicao = evento.Instituicao?.Nome ??
+                                      evento.Instituicao?.NomeAbreviado ??
+                                      "instituição organizadora";
+                return Result<ParticipacaoResponse>.Failure($"Este evento é exclusivo para alunos da {nomeInstituicao}.");
+            }
+
+            return Result<ParticipacaoResponse>.Failure("Participante sem permissão para este evento");
+        }
         if (await _repositoryParticipacao.CountByEventoIdAsync(eventoId) >= evento.Capacidade)
             return Result<ParticipacaoResponse>.Failure("Evento lotado");
         if (await _repositoryParticipacao.ExistsAsync(alunoId, eventoId))
@@ -166,7 +225,9 @@ public class ParticipacaoService : IParticipacaoService
             DataConfirmacao = participacao.DataConfirmacao,
             EventoId = participacao.EventoId,
             PresencaGarantida = participacao.PresencaConfirmada,
-            CertificadoEmitido = participacao.CertificadoEmitido
+            CertificadoEmitido = participacao.CertificadoEmitido,
+            CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
+            ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail
         });
 
     }

@@ -6,9 +6,26 @@ import { events as fallbackEvents } from "../data/events";
 const FALLBACK_API_ORIGIN =
   Platform.OS === "android" ? "http://10.0.2.2:5227" : "http://localhost:5227";
 
+function normalizeApiOrigin(value) {
+  const configuredOrigin = value?.replace(/\/api\/?$/, "").replace(/\/$/, "");
+
+  if (!configuredOrigin) return "";
+
+  if (
+    Platform.OS === "android" &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(configuredOrigin)
+  ) {
+    return configuredOrigin.replace(
+      /\/\/(localhost|127\.0\.0\.1)/i,
+      "//10.0.2.2"
+    );
+  }
+
+  return configuredOrigin;
+}
+
 export const API_ORIGIN =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/api\/?$/, "").replace(/\/$/, "") ||
-  FALLBACK_API_ORIGIN;
+  normalizeApiOrigin(process.env.EXPO_PUBLIC_API_URL) || FALLBACK_API_ORIGIN;
 
 export const API_URL = `${API_ORIGIN}/api`;
 
@@ -122,10 +139,8 @@ async function buildStudentCreateForm(data) {
   formData.append("Email", data.email.trim());
   formData.append("Senha", data.senha);
   formData.append("DataNascimento", data.dataNascimento);
-  formData.append("TipoParticipante", data.tipoParticipante || "Externo");
-  if (data.tipoParticipante === "Interno" && data.instituicaoId) {
-    formData.append("InstituicaoId", data.instituicaoId);
-  }
+  formData.append("TipoParticipante", "Interno");
+  formData.append("InstituicaoId", data.instituicaoId);
   appendPhoto(formData, photo);
 
   return formData;
@@ -187,6 +202,30 @@ function formatCategory(value) {
   return labels[normalized] || String(value || "Evento");
 }
 
+function normalizeAudience(value) {
+  const normalized = String(value || "PublicoGeral").toLowerCase();
+  const map = {
+    alunosdainstituicao: "AlunosDaInstituicao",
+    todosalunosfatec: "TodosAlunosFatec",
+    publicogeral: "PublicoGeral",
+  };
+
+  return map[normalized] || String(value || "PublicoGeral");
+}
+
+function formatAudience(value, institutionName) {
+  const normalized = normalizeAudience(value);
+  const labels = {
+    AlunosDaInstituicao: institutionName
+      ? `Somente alunos da ${institutionName}`
+      : "Somente alunos desta instituição",
+    TodosAlunosFatec: "Todos os alunos FATEC",
+    PublicoGeral: "Público geral",
+  };
+
+  return labels[normalized] || normalized;
+}
+
 function formatDateParts(value) {
   const date = new Date(value);
 
@@ -224,6 +263,17 @@ export function mapApiEvent(event, index = 0) {
   const fallback = fallbackEvents[index % fallbackEvents.length];
   const dates = formatDateParts(event.dataEvento ?? event.DataEvento);
   const title = event.nome ?? event.Nome ?? fallback.title;
+  const local = event.local ?? event.Local ?? "";
+  const institutionName =
+    event.instituicaoNome ??
+    event.InstituicaoNome ??
+    "Instituição não informada";
+  const publicoPermitido =
+    normalizeAudience(
+      event.publicoPermitido ??
+      event.PublicoPermitido ??
+      "PublicoGeral"
+    );
   const certificate =
     event.certificado ??
     event.Certificado ??
@@ -241,7 +291,8 @@ export function mapApiEvent(event, index = 0) {
     title,
     description: event.descricao ?? event.Descricao ?? "",
     place: event.responsavel ?? event.Responsavel ?? fallback.place,
-    location: event.local ?? event.Local ?? fallback.location,
+    location: local || fallback.location,
+    local,
     category,
     filterTags: [category],
     image: imageUri ? { uri: imageUri, cache: "force-cache" } : fallback.image,
@@ -249,6 +300,11 @@ export function mapApiEvent(event, index = 0) {
     isFree: true,
     vacancies: event.capacidade ?? event.Capacidade ?? 0,
     organizer: event.responsavel ?? event.Responsavel ?? fallback.organizer,
+    institutionId: event.instituicaoId ?? event.InstituicaoId ?? null,
+    institutionName,
+    publicoPermitido,
+    audience: publicoPermitido,
+    audienceLabel: formatAudience(publicoPermitido, institutionName),
     hasCertificate:
       typeof explicitHasCertificate === "boolean"
         ? explicitHasCertificate
@@ -256,6 +312,23 @@ export function mapApiEvent(event, index = 0) {
     certificate,
     apiEvent: event,
     ...dates,
+  };
+}
+
+function normalizeInstitution(institution) {
+  const id = institution.id ?? institution.Id ?? null;
+
+  return {
+    id,
+    codigo: institution.codigo ?? institution.Codigo ?? "",
+    nome:
+      institution.nome ??
+      institution.Nome ??
+      institution.nomeAbreviado ??
+      institution.NomeAbreviado ??
+      "",
+    cidade: institution.cidade ?? institution.Cidade ?? "",
+    estado: institution.estado ?? institution.Estado ?? "",
   };
 }
 
@@ -300,6 +373,9 @@ export const studentsApi = {
   getById(id) {
     return apiFetch(`/Aluno/${id}`);
   },
+  getMe(token) {
+    return apiFetch("/Aluno/me", { token });
+  },
   async update(id, data, token) {
     return apiFetch(`/Aluno/${id}`, {
       method: "PATCH",
@@ -311,9 +387,21 @@ export const studentsApi = {
 };
 
 export const eventsApi = {
-  async list() {
-    const result = await apiFetch("/Evento");
-    return Array.isArray(result) ? result.map(mapApiEvent) : [];
+  async list(token, filters = {}) {
+    const query = new URLSearchParams({
+      Page: "1",
+      PageSize: "50",
+    });
+
+    if (filters.instituicaoId) {
+      query.set("InstituicaoId", filters.instituicaoId);
+    }
+
+    const result = await apiFetch(`/Evento?${query.toString()}`, { token });
+    const items = Array.isArray(result)
+      ? result
+      : result?.items ?? result?.Items ?? [];
+    return Array.isArray(items) ? items.map(mapApiEvent) : [];
   },
   register(eventId, token) {
     return apiFetch(`/Evento/${eventId}/inscrever-se`, {
@@ -326,6 +414,19 @@ export const eventsApi = {
   },
   confirmAttendance(eventId, token) {
     throw new Error("A presença deve ser validada por um operador credenciado.");
+  },
+};
+
+export const institutionsApi = {
+  async listPublic() {
+    const result = await apiFetch("/Instituicao/ativas");
+    const items = Array.isArray(result)
+      ? result
+      : result?.items ?? result?.Items ?? [];
+
+    return Array.isArray(items)
+      ? items.map(normalizeInstitution).filter((institution) => institution.id)
+      : [];
   },
 };
 

@@ -33,6 +33,9 @@ function buildResponsibleBody(payload) {
   if (payload.id) {
     const formData = new FormData();
     formData.append('Nome', payload.nome || payload.name || '');
+    if (payload.instituicaoId || payload.institutionId) {
+      formData.append('InstituicaoId', payload.instituicaoId || payload.institutionId);
+    }
 
     if (payload.fotoPerfil instanceof File) {
       formData.append('FotoPerfil', payload.fotoPerfil);
@@ -43,6 +46,9 @@ function buildResponsibleBody(payload) {
 
   const formData = new FormData();
   formData.append('Nome', payload.nome || payload.name || '');
+  if (payload.instituicaoId || payload.institutionId) {
+    formData.append('InstituicaoId', payload.instituicaoId || payload.institutionId);
+  }
 
   if (payload.fotoPerfil instanceof File) {
     formData.append('FotoPerfil', payload.fotoPerfil);

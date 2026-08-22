@@ -8,6 +8,7 @@ import EventRow from "../components/EventRow";
 import Invite from "../components/Invite";
 import MiniEvent from "../components/MiniEvent";
 import Screen from "../components/Screen";
+import SelectField from "../components/SelectField";
 import ThemeButton from "../components/ThemeButton";
 import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
@@ -23,12 +24,22 @@ export default function HomeScreen({ theme, navigation, route, toggleTheme }) {
     eventsLoading,
     filteredEvents,
     selectedCategory,
+    selectedInstitutionId,
+    setSelectedInstitutionId,
+    institutionFilters,
     setSelectedCategory,
     setSearchTerm,
   } = useEvents();
 
   const nextEvents = filteredEvents.slice(0, 2);
   const allEvents = filteredEvents.slice(2);
+  const institutionOptions = [
+    { value: "", label: "Todas as instituições" },
+    ...institutionFilters.map((institution) => ({
+      value: String(institution.id),
+      label: institution.nome,
+    })),
+  ];
 
   return (
     <Screen theme={theme} bg={isLight ? LIGHT_BG : BLACK}>
@@ -89,8 +100,8 @@ export default function HomeScreen({ theme, navigation, route, toggleTheme }) {
                   {
                     backgroundColor: active
                       ? isLight
-                        ? BLACK // modo claro
-                        : ORANGE // modo escuro
+                        ? BLACK
+                        : ORANGE
                       : "transparent",
 
                     borderColor: isLight ? BLACK : ORANGE,
@@ -111,6 +122,22 @@ export default function HomeScreen({ theme, navigation, route, toggleTheme }) {
             );
           })}
         </ScrollView>
+
+        {institutionFilters.length > 0 ? (
+          <View style={styles.homeFilterSelect}>
+            <Text style={[styles.authLabel, { color: theme.text }]}>
+              Instituição
+            </Text>
+            <SelectField
+              modalTitle="Selecione a instituição"
+              onChange={setSelectedInstitutionId}
+              options={institutionOptions}
+              placeholder="Todas as instituições"
+              value={selectedInstitutionId}
+              variant={isLight ? "orange" : "dark"}
+            />
+          </View>
+        ) : null}
         <View style={styles.homeSection}>
           <Text style={[styles.homeSectionTitle, { color: theme.text }]}>
             Próximos eventos

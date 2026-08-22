@@ -23,7 +23,7 @@ export function AuthProvider({ children }) {
           localStorage.removeItem("authToken");
           localStorage.removeItem("authUser");
           setError(
-            "Acesso negado: apenas usuários da secretaria podem usar este sistema",
+            "Acesso negado: apenas usuários administrativos podem usar este sistema",
           );
           setIsLoading(false);
           return;
@@ -44,7 +44,7 @@ export function AuthProvider({ children }) {
   // Fazer login
   const login = (userData, authToken) => {
     if (!isUserSecretary(userData)) {
-      setError("Acesso negado: apenas usuários da secretaria podem usar este sistema");
+      setError("Acesso negado: apenas usuários administrativos podem usar este sistema");
       return false;
     }
 

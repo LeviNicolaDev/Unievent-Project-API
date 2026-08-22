@@ -1,14 +1,17 @@
 import { CalendarDays, Clock, Heart, MapPin, Tag } from 'lucide-react';
 import { AdminHeader } from '../components/navigation/AdminHeader.jsx';
+import { useAuth } from '../contexts/AuthContext.jsx';
 import { useLanguage } from '../hooks/useLanguage.js';
 import evento from '../assets/images/evento.png';
 
 export function EventPreviewPage() {
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const backTo = user?.roleUsuario === 'Secretaria' ? '/instituicao/eventos' : '/eventos';
 
   return (
     <>
-      <AdminHeader title={t('previewTitle')} backTo="/eventos" />
+      <AdminHeader title={t('previewTitle')} backTo={backTo} />
       <section className="preview-wrapper">
         <article className="phone-preview">
           <div className="phone-preview-top"><span>‹</span><Heart size={22} /></div>

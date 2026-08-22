@@ -13,6 +13,9 @@ public class EventoUpdateValidator : AbstractValidator<EventoUpdate>
         RuleFor(e => e.Descricao)
             .NotEmpty().WithMessage("O campo 'Descrição' é obrigatório.")
             .MaximumLength(1000).WithMessage("O campo 'Descrição' deve conter no máximo 1000 caracteres.").When(e => e.Descricao != null);
+        RuleFor(e => e.Local)
+            .MaximumLength(200).WithMessage("O campo 'Local' deve conter no máximo 200 caracteres.")
+            .When(e => e.Local != null);
         RuleFor(e => e.DataEvento)
             .NotEmpty().WithMessage("O campo 'Data' é obrigatório.")
             .GreaterThan(DateTime.Now).WithMessage("A data do evento deve ser futura.").When(e => e.DataEvento.HasValue);

@@ -20,5 +20,8 @@ public class UsuarioSecretariaUpdateValidator : AbstractValidator<UsuarioSecreta
         .MinimumLength(6).WithMessage("A senha deve conter no minimo 6 caracteres").When(s => !string.IsNullOrWhiteSpace(s.Senha));
         RuleFor(s => s.Role)
         .IsInEnum().WithMessage("O cargo deve ser preenchido").When(s => s.Role != null);
+        RuleFor(s => s.Role)
+        .Equal(Unievent.Domain.Enuns.Role.Secretaria).WithMessage("UsuarioSecretaria deve usar o perfil Secretaria")
+        .When(s => s.Role != null);
     }
 }

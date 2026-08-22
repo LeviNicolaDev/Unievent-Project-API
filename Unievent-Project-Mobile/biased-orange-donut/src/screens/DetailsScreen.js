@@ -7,6 +7,7 @@ import EventImage from "../components/EventImage";
 import Screen from "../components/Screen";
 import ThemeButton from "../components/ThemeButton";
 import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
+import { useAuth } from "../context/AuthContext";
 import { useEvents } from "../context/EventContext";
 import { styles } from "../styles/globalStyles";
 
@@ -18,6 +19,7 @@ export default function DetailsScreen({
 }) {
   const isLight = theme.mode === "light";
   const [registering, setRegistering] = useState(false);
+  const { student } = useAuth();
   const {
     events,
     getEventById,
@@ -29,10 +31,24 @@ export default function DetailsScreen({
   const event = getEventById(route.params?.eventId) || events[0];
   const favorite = isFavorite(event.id);
   const registered = isRegistered(event.id);
+  const isInstitutionOnly = event.publicoPermitido === "AlunosDaInstituicao";
+  const isDifferentInstitution =
+    isInstitutionOnly &&
+    event.institutionId &&
+    student?.instituicaoId &&
+    String(event.institutionId) !== String(student.instituicaoId);
+  const restrictionMessage = isDifferentInstitution
+    ? `Evento exclusivo para alunos da ${event.institutionName}.`
+    : "";
 
   async function handleTicketPress() {
     if (registered) {
       navigation.navigate("TicketQr", { eventId: event.id });
+      return;
+    }
+
+    if (isDifferentInstitution) {
+      Alert.alert("Inscrição indisponível", restrictionMessage);
       return;
     }
 
@@ -103,6 +119,19 @@ export default function DetailsScreen({
         </View>
 
         <Info icon="bookmark" text={event.category} isLight={isLight} />
+        <Info
+          icon="business-outline"
+          text={`Instituição: ${event.institutionName}`}
+          isLight={isLight}
+        />
+        {event.local ? (
+          <Info icon="location-outline" text={`Local: ${event.local}`} isLight={isLight} />
+        ) : null}
+        <Info
+          icon="people-outline"
+          text={`Público: ${event.audienceLabel || "Público geral"}`}
+          isLight={isLight}
+        />
 
         <Text style={[styles.organizerLabel, { color: theme.text }]}>
           Organizador
@@ -127,24 +156,31 @@ export default function DetailsScreen({
         </Text>
 
         <TouchableOpacity
-          disabled={registering}
+          disabled={registering || isDifferentInstitution}
           style={[
             styles.garantedButton,
             {
               backgroundColor: isLight ? BLACK : ORANGE,
-              opacity: registering ? 0.7 : 1,
+              opacity: registering || isDifferentInstitution ? 0.7 : 1,
             },
           ]}
           onPress={handleTicketPress}
         >
           <Text style={styles.garantedText}>
-            {registering
+            {isDifferentInstitution
+              ? "Inscrição indisponível"
+              : registering
               ? "Garantindo..."
               : registered
               ? "Ingresso garantido"
               : "Garantir ingresso"}
           </Text>
         </TouchableOpacity>
+        {restrictionMessage ? (
+          <Text style={[styles.aboutText, { color: theme.soft }]}>
+            {restrictionMessage}
+          </Text>
+        ) : null}
       </ScrollView>
       <BottomNav navigation={navigation} routeName={route.name} theme={theme} />
     </Screen>

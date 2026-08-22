@@ -40,6 +40,7 @@ public class EventoServiceTest
             {
                 Nome = "Evento de Teste",
                 Descricao = "Descrição do evento de teste",
+                Local = "Laboratório 03",
                 DataEvento = DateTime.Now.AddDays(10),
                 Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
@@ -62,6 +63,7 @@ public class EventoServiceTest
             var result = await _service.CriarEvento(request);
             //Assert
             result.IsSuccess.Should().BeTrue();
+            result.Value!.Local.Should().Be("Laboratório 03");
             _validatorRequest.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoByResponsavel(request.ResponsavelEventoId), Times.Once);
             _repository.Verify(r => r.CriarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Once);
@@ -181,6 +183,7 @@ public class EventoServiceTest
 
                 Nome = "Evento de Teste Atualizado",
                 Descricao = "Descrição do evento de teste atualizado",
+                Local = "Auditório central",
                 DataEvento = DateTime.Now.AddDays(15),
                 Categoria = Domain.Enuns.Categoria.Palestra,
                 ResponsavelEventoId = 1,
@@ -224,6 +227,7 @@ public class EventoServiceTest
             var result = await _service.AtualizarEvento(1, request);
             //Assert
             result.IsSuccess.Should().BeTrue();
+            result.Value!.Local.Should().Be("Auditório central");
             _validatorUpdate.Verify(v => v.ValidateAsync(request, It.IsAny<CancellationToken>()), Times.Once);
             _repository.Verify(r => r.ListarEventoById(1), Times.Once);
             _repository.Verify(r => r.AtualizarEvento(It.IsAny<Domain.Entities.Evento>()), Times.Once);
@@ -471,4 +475,3 @@ public class EventoServiceTest
     }
 
 }
-

@@ -9,5 +9,7 @@ public class UsuarioSecretariaRequest
     public string Senha { get; set; }
     public string EmailUsuario { get; set; }
     public string Chave { get; set; }
+    public int? InstituicaoId { get; set; }
+    public StatusUsuarioSecretaria? Status { get; set; }
 
 }

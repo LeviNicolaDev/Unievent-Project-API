@@ -42,6 +42,10 @@ function parseJson(text) {
 }
 
 function getErrorMessage(errorData, status) {
+  if (typeof errorData === 'string' && errorData.trim()) {
+    return errorData;
+  }
+
   if (Array.isArray(errorData)) {
     return errorData.join('\n');
   }

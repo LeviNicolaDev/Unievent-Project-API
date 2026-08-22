@@ -5,6 +5,7 @@ import { FormField } from "../components/forms/FormField.jsx";
 import { AdminHeader } from "../components/navigation/AdminHeader.jsx";
 import { Button } from "../components/ui/Button.jsx";
 import { Modal } from "../components/ui/Modal.jsx";
+import { useAuth } from "../contexts/AuthContext.jsx";
 import { useLanguage } from "../hooks/useLanguage.js";
 import {
   getCertificateById,
@@ -21,6 +22,7 @@ const initialForm = {
 
 export function CertificateFormPage({ mode = "create" }) {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const { id } = useParams();
   const [form, setForm] = useState(initialForm);
   const [events, setEvents] = useState([]);
@@ -29,6 +31,7 @@ export function CertificateFormPage({ mode = "create" }) {
   const [isLoading, setIsLoading] = useState(mode === "edit");
   const navigate = useNavigate();
   const isEdit = mode === "edit";
+  const routePrefix = user?.roleUsuario === "Secretaria" ? "/instituicao/certificados" : "/certificados";
 
   const selectedEvent = events.find((e) => e.id === Number(form.eventId));
   useEffect(() => {
@@ -92,7 +95,7 @@ export function CertificateFormPage({ mode = "create" }) {
   if (isLoading) {
     return (
       <>
-        <AdminHeader title={isEdit ? t("edit") : t("createCertificate")} backTo="/certificados" />
+        <AdminHeader title={isEdit ? t("edit") : t("createCertificate")} backTo={routePrefix} />
         <main className="certificate-editor-page" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
           <p>{t("loading") || "Carregando..."}</p>
         </main>
@@ -102,7 +105,7 @@ export function CertificateFormPage({ mode = "create" }) {
 
   return (
     <>
-      <AdminHeader title={isEdit ? t("edit") : t("createCertificate")} backTo="/certificados" />
+      <AdminHeader title={isEdit ? t("edit") : t("createCertificate")} backTo={routePrefix} />
 
       <main className="certificate-editor-page">
         <section className="certificate-editor-hero">
@@ -210,8 +213,8 @@ export function CertificateFormPage({ mode = "create" }) {
         }
         image={getAssetUrl("emoteAcess.png")}
         confirmText={t("ok")}
-        onClose={() => navigate("/certificados")}
-        onConfirm={() => navigate("/certificados")}
+        onClose={() => navigate(routePrefix)}
+        onConfirm={() => navigate(routePrefix)}
       />
     </>
   );

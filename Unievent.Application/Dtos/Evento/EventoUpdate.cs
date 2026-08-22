@@ -7,6 +7,7 @@ public record EventoUpdate
 {
     public string? Nome { get; set; }
     public string? Descricao { get; set; }
+    public string? Local { get; set; }
     public Categoria? Categoria { get; set; }
     public DateTime? DataEvento { get; set; }
     public int? Capacidade { get; set; }
@@ -14,7 +15,6 @@ public record EventoUpdate
 
     public int? ResponsavelEventoId { get; set; }
     public int? InstituicaoId { get; set; }
-    public int? EnderecoId { get; set; }
     public VisibilidadeEvento? Visibilidade { get; set; }
     public PublicoPermitido? PublicoPermitido { get; set; }
     public DateTime? InicioInscricoes { get; set; }

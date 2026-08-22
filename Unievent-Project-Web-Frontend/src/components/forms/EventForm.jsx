@@ -13,10 +13,9 @@ const initialForm = {
   date: "",
   time: "",
   visibility: "Publico",
-  audience: "Todos",
-  latitude: "",
-  longitude: "",
-  checkInRadius: "150",
+  audience: "PublicoGeral",
+  institutionId: "",
+  local: "",
 };
 
 const uploadPlaceholder = getAssetUrl("upload.png");
@@ -65,7 +64,7 @@ function findResponsibleId(event, responsiblePeople) {
   return match ? String(match.id) : "";
 }
 
-export function EventForm({ event, responsiblePeople, submitLabel, onSubmit }) {
+export function EventForm({ event, institutions = [], responsiblePeople, showInstitutionSelect = false, submitLabel, onSubmit }) {
   const { t } = useLanguage();
   const [form, setForm] = useState(() => ({
     ...initialForm,
@@ -138,6 +137,14 @@ export function EventForm({ event, responsiblePeople, submitLabel, onSubmit }) {
               required
             />
           </FormField>
+          <FormField label="Local dentro da instituição">
+            <input
+              value={form.local || ""}
+              onChange={(event) => updateField("local", event.target.value)}
+              placeholder="Ex: Laboratório 03 - 4º andar"
+              maxLength={200}
+            />
+          </FormField>
           <FormField label={t("capacity")}>
             <input
               type="number"
@@ -167,6 +174,23 @@ export function EventForm({ event, responsiblePeople, submitLabel, onSubmit }) {
               ))}
             </select>
           </FormField>
+          {showInstitutionSelect ? (
+            <FormField label="Instituição">
+              <select
+                value={form.institutionId || form.instituicaoId || ""}
+                onChange={(event) => updateField("institutionId", event.target.value)}
+                required
+                disabled={institutions.length === 0}
+              >
+                <option value="">{institutions.length === 0 ? "Nenhuma instituição cadastrada" : "Selecione a instituição"}</option>
+                {institutions.map((institution) => (
+                  <option key={institution.id || institution.Id} value={institution.id || institution.Id}>
+                    {institution.nome || institution.Nome || institution.nomeAbreviado || institution.NomeAbreviado || `Instituição #${institution.id || institution.Id}`}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+          ) : null}
           <FormField label={t("image")}>
             <span
               className={`upload-box ${isUploadPlaceholder ? "upload-box--placeholder" : ""}`.trim()}
@@ -218,21 +242,10 @@ export function EventForm({ event, responsiblePeople, submitLabel, onSubmit }) {
             </FormField>
             <FormField label="Público permitido">
               <select value={form.audience} onChange={(event) => updateField("audience", event.target.value)}>
-                <option value="Todos">Todos</option>
-                <option value="SomenteInternos">Somente internos</option>
-                <option value="SomenteExternos">Somente externos</option>
+                <option value="AlunosDaInstituicao">Somente alunos da instituição</option>
+                <option value="TodosAlunosFatec">Todos os alunos FATEC</option>
+                <option value="PublicoGeral">Público geral</option>
               </select>
-            </FormField>
-          </div>
-          <div className="inline-fields">
-            <FormField label="Latitude do check-in">
-              <input type="number" step="any" value={form.latitude} onChange={(event) => updateField("latitude", event.target.value)} />
-            </FormField>
-            <FormField label="Longitude do check-in">
-              <input type="number" step="any" value={form.longitude} onChange={(event) => updateField("longitude", event.target.value)} />
-            </FormField>
-            <FormField label="Raio (metros)">
-              <input type="number" min="25" max="5000" value={form.checkInRadius} onChange={(event) => updateField("checkInRadius", event.target.value)} />
             </FormField>
           </div>
         </div>

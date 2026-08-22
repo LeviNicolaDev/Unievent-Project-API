@@ -8,6 +8,7 @@ using Scalar.AspNetCore;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unievent.Api.BackgroundServices;
 using Unievent.Api.Configurations.DependencyInjection;
 using Unievent.Application.Configurations.Email;
 using Unievent.Application.Interfaces.Auth;
@@ -85,6 +86,11 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 
+if (builder.Configuration.GetValue("Automacoes:Ativas", false))
+{
+    builder.Services.AddHostedService<EventosAutomationWorker>();
+}
+
 // ✅ Com security scheme
 builder.Services.AddOpenApi(options =>
 {
@@ -108,6 +114,13 @@ builder.Services.AddOpenApi(options =>
 
 
 var app = builder.Build();
+
+if (builder.Configuration.GetValue("Database:MigrateOnStartup", false))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 
 // Configure the HTTP request pipeline.

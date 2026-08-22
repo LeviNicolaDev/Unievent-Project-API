@@ -2,6 +2,7 @@
   "expo": {
     "name": "biased-orange-donut",
     "slug": "snack-61183160-f95a-463a-a6c6-8d4ecfe80230",
+    "scheme": "unievent",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

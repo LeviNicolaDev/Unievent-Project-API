@@ -69,7 +69,7 @@ public class CertificadoServiceTest
         }
 
         [Fact]
-        public async Task Deve_Falhar_Criar_Certificado_Quando_Id_Aluno_Nao_Existir()
+        public async Task Deve_Falhar_Criar_Certificado_Quando_Evento_Nao_For_Encontrado()
         {
             // Arrange
             var request = new CertificadoRequest
@@ -83,9 +83,9 @@ public class CertificadoServiceTest
             var result = await _service.CriarCertificado(request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Errors.Should().Contain("Aluno não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
 
-            _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
+            _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId), Times.Once);
 
         }
 
@@ -160,8 +160,18 @@ public class CertificadoServiceTest
                 Id = 1,
                 Texto = "Certificado de participação",
                 DataCertifcado = DateTime.Now.AddDays(-1),
-
-                EventoId = 1
+                EventoId = 1,
+                Evento = new Domain.Entities.Evento
+                {
+                    Id = 1,
+                    Nome = "Evento Teste",
+                    ResponsavelEventoId = 1,
+                    Capacidade = 40,
+                    Categoria = Domain.Enuns.Categoria.Palestra,
+                    DataEvento = DateTime.Now.AddDays(10),
+                    Descricao = "Descrição do evento",
+                    Thumbnail = new List<string> { "thumbnail.jpg" },
+                }
             });
 
             _eventoRepositoryMock.Setup(e => e.ListarEventoById(request.EventoId.Value)).ReturnsAsync(new Domain.Entities.Evento
@@ -238,7 +248,7 @@ public class CertificadoServiceTest
         }
 
         [Fact]
-        public async Task Deve_Falhar_Atualizar_Certificado_Quando_Id_Aluno_Nao_Existir()
+        public async Task Deve_Falhar_Atualizar_Certificado_Quando_Evento_Nao_For_Encontrado()
         {
             // Arrange
             var request = new CertificadoUpdate
@@ -262,10 +272,10 @@ public class CertificadoServiceTest
             var result = await _service.AtualizarCertificado(1, request);
             // Assert
             result.IsSuccess.Should().BeFalse();
-            result.Errors.Should().Contain("Aluno não encontrado");
+            result.Errors.Should().Contain("Evento não encontrado");
             _repositoryMock.Verify(r => r.ListarCertificadoById(1), Times.Once);
 
-            _eventoRepositoryMock.Verify(e => e.ListarEventoById(It.IsAny<int>()), Times.Never);
+            _eventoRepositoryMock.Verify(e => e.ListarEventoById(request.EventoId.Value), Times.Once);
         }
 
         [Fact]

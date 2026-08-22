@@ -23,6 +23,8 @@ public class Aluno : EntidadeBase
     public required string Nome { get; set; }
     public required string Senha { get; set; }
     public required string Email { get; set; }
+    public bool EmailConfirmado { get; set; }
+    public string? ChaveConfirmacaoEmail { get; set; }
     public required string FotoPerfil { get; set; }
     public bool IsAtivo { get; set; }
     public Role Role { get; set; }

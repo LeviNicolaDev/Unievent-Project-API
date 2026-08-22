@@ -14,7 +14,7 @@ import {
   categoryFilters as defaultCategoryFilters,
   events as fallbackEvents,
 } from "../data/events";
-import { certificatesApi, eventsApi } from "../services/api";
+import { certificatesApi, eventsApi, institutionsApi } from "../services/api";
 
 const EventContext = createContext(null);
 
@@ -81,6 +81,8 @@ export function EventProvider({ children }) {
   const [attendedIds, setAttendedIds] = useState([]);
   const [certificateIds, setCertificateIds] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedInstitutionId, setSelectedInstitutionId] = useState("");
+  const [institutionFilters, setInstitutionFilters] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
@@ -98,13 +100,22 @@ export function EventProvider({ children }) {
       setEventsError(null);
 
       try {
-        const [apiEvents, apiCertificates] = await Promise.all([
-          eventsApi.list(),
+        if (!token) {
+          setEventItems(fallbackEvents);
+          return;
+        }
+
+        const [apiEvents, apiCertificates, apiInstitutions] = await Promise.all([
+          eventsApi.list(token, { instituicaoId: selectedInstitutionId }),
           certificatesApi.list().catch(() => []),
+          institutionsApi.listPublic().catch(() => []),
         ]);
 
-        if (isMounted && apiEvents.length > 0) {
+        if (isMounted) {
           setEventItems(attachCertificatesToEvents(apiEvents, apiCertificates));
+        }
+        if (isMounted) {
+          setInstitutionFilters(apiInstitutions);
         }
       } catch (error) {
         if (isMounted) {
@@ -123,7 +134,7 @@ export function EventProvider({ children }) {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [selectedInstitutionId, token]);
 
   useEffect(() => {
     let isMounted = true;
@@ -374,13 +385,11 @@ export function EventProvider({ children }) {
 
     try {
       const [apiEvents, apiCertificates] = await Promise.all([
-        eventsApi.list(),
+        eventsApi.list(token, { instituicaoId: selectedInstitutionId }),
         certificatesApi.list().catch(() => []),
       ]);
       setEventItems(
-        apiEvents.length > 0
-          ? attachCertificatesToEvents(apiEvents, apiCertificates)
-          : fallbackEvents
+        attachCertificatesToEvents(apiEvents, apiCertificates)
       );
     } catch (error) {
       setEventsError(error.message);
@@ -388,7 +397,7 @@ export function EventProvider({ children }) {
     } finally {
       setEventsLoading(false);
     }
-  }, []);
+  }, [selectedInstitutionId, token]);
 
   const value = useMemo(
     () => ({
@@ -398,6 +407,9 @@ export function EventProvider({ children }) {
       eventsLoading,
       selectedCategory,
       setSelectedCategory,
+      selectedInstitutionId,
+      setSelectedInstitutionId,
+      institutionFilters,
       searchTerm,
       setSearchTerm,
       filteredEvents,
@@ -435,10 +447,12 @@ export function EventProvider({ children }) {
       eventItems,
       eventsError,
       eventsLoading,
+      institutionFilters,
       registeredEvents,
       registeredIds,
       refreshEvents,
       searchTerm,
+      selectedInstitutionId,
       selectedCategory,
       toggleFavorite,
       registerForEvent,

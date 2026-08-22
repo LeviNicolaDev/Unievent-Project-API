@@ -2,6 +2,7 @@ import { Image, Text, TouchableOpacity, View } from "react-native";
 import { useState } from "react";
 import LogoPng from "../../assets/Logo.png";
 import LogoPretaPng from "../../assets/LogoPreta.png";
+import AuthHeader from "../components/AuthHeader";
 import AuthInput from "../components/AuthInput";
 import Screen from "../components/Screen";
 import ThemeButton from "../components/ThemeButton";
@@ -12,6 +13,7 @@ import { styles } from "../styles/globalStyles";
 export default function SignInScreen({ theme, navigation, toggleTheme }) {
   const isLight = theme.mode === "light";
   const logo = isLight ? LogoPretaPng : LogoPng;
+  const canGoBack = navigation.canGoBack();
   const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -55,17 +57,18 @@ export default function SignInScreen({ theme, navigation, toggleTheme }) {
             { backgroundColor: isLight ? BLACK : ORANGE },
           ]}
         >
-          <View style={styles.row}>
-            <Text style={styles.authTitleWhite}>Login</Text>
-            <ThemeButton theme={theme} toggleTheme={toggleTheme} />
-          </View>
+          <AuthHeader
+            title="Login"
+            onBack={canGoBack ? () => navigation.goBack() : null}
+            right={<ThemeButton theme={theme} toggleTheme={toggleTheme} />}
+          />
 
           <Text style={styles.authLabel}>E-mail</Text>
           <AuthInput
             icon="mail-outline"
             keyboardType="email-address"
             onChangeText={setEmail}
-            placeholder="email@gmail.com.br"
+            placeholder="email@fatec.sp.gov.br"
             theme={isLight ? darkInputTheme : orangeInputTheme}
             value={email}
           />

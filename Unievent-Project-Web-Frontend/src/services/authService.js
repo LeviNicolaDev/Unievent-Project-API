@@ -1,7 +1,9 @@
 import { request } from "./apiClient.js";
 
+const USER_UNIEVENT_TYPE = "UsuarioUnievent";
 const USER_SECRETARY_TYPE = "UsuarioSecretaria";
-const USER_SECRETARY_ROLES = ["Admin", "Secretaria"];
+const ADMINISTRATIVE_USER_TYPES = [USER_UNIEVENT_TYPE, USER_SECRETARY_TYPE];
+const ADMINISTRATIVE_ROLES = ["Admin", "Secretaria"];
 const ROLE_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 const EMAIL_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
 const ID_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
@@ -37,13 +39,20 @@ function createUserFromToken(token, fallbackEmail) {
   const roleUsuario = Array.isArray(roleClaim) ? roleClaim[0] : roleClaim;
   const emailUsuario = claims[EMAIL_CLAIM] || claims.email || fallbackEmail;
   const id = claims[ID_CLAIM] || claims.nameid || claims.sub;
+  const instituicaoId = claims.instituicao_id ? Number(claims.instituicao_id) : null;
+  const tipoUsuario =
+    claims.tipo_usuario ||
+    (roleUsuario === "Admin" && !instituicaoId ? USER_UNIEVENT_TYPE : USER_SECRETARY_TYPE);
+  const statusUsuario = claims.status_usuario || claims.statusUsuario || null;
 
   return {
     id: id ? Number(id) : null,
     email: emailUsuario,
     emailUsuario,
     roleUsuario,
-    tipoUsuario: USER_SECRETARY_TYPE,
+    instituicaoId,
+    tipoUsuario,
+    statusUsuario,
   };
 }
 
@@ -66,8 +75,8 @@ export async function loginAdmin(email, password) {
 
   const user = createUserFromToken(token, email);
 
-  if (!isUserSecretary(user)) {
-    throw new Error("Apenas usuários da secretaria podem acessar este sistema");
+  if (!isAdministrativeUser(user)) {
+    throw new Error("Apenas usuários administrativos podem acessar este sistema");
   }
 
   return {
@@ -92,12 +101,16 @@ export function getStoredUser() {
 }
 
 export function isUserAdmin(user) {
-  return isUserSecretary(user);
+  return isAdministrativeUser(user);
 }
 
 export function isUserSecretary(user) {
+  return isAdministrativeUser(user);
+}
+
+export function isAdministrativeUser(user) {
   return (
-    user?.tipoUsuario === USER_SECRETARY_TYPE &&
-    USER_SECRETARY_ROLES.includes(user?.roleUsuario)
+    ADMINISTRATIVE_USER_TYPES.includes(user?.tipoUsuario) &&
+    ADMINISTRATIVE_ROLES.includes(user?.roleUsuario)
   );
 }

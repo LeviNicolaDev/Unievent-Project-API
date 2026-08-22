@@ -6,4 +6,5 @@ public class ResponsavelEventoRequest
 {
     public string Nome { get; set; }
     public IFormFile FotoPerfil { get; set; }
+    public int? InstituicaoId { get; set; }
 }

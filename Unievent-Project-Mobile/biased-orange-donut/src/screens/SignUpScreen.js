@@ -1,16 +1,21 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import AuthHeader from "../components/AuthHeader";
 import AuthInput from "../components/AuthInput";
 import Logo from "../components/Logo";
 import Screen from "../components/Screen";
+import SelectField from "../components/SelectField";
+import ThemeButton from "../components/ThemeButton";
 import { BLACK, ORANGE } from "../constants/theme";
 import { useAuth } from "../context/AuthContext";
+import { institutionsApi } from "../services/api";
 import { styles } from "../styles/globalStyles";
+import { normalizeBrazilianDateInput } from "../utils/dateFormat";
 import { pickProfilePhoto } from "../utils/photoPicker";
 
 export default function SignUpScreen({ theme, navigation, toggleTheme }) {
   const isLight = theme.mode === "light";
-  const { signIn, signUp } = useAuth();
+  const { signUp } = useAuth();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -19,25 +24,57 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
   const [fotoPerfil, setFotoPerfil] = useState(null);
   const [fotoNome, setFotoNome] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tipoParticipante, setTipoParticipante] = useState("Externo");
   const [instituicaoId, setInstituicaoId] = useState("");
+  const [institutions, setInstitutions] = useState([]);
+  const [institutionsLoading, setInstitutionsLoading] = useState(true);
+  const [institutionsError, setInstitutionsError] = useState("");
+  const institutionOptions = useMemo(
+    () =>
+      institutions.map((institution) => ({
+        value: String(institution.id),
+        label: institution.nome,
+      })),
+    [institutions]
+  );
 
-  function normalizeBirthDate(value) {
-    const trimmed = value.trim();
-    const digitsDate = trimmed.match(/^(\d{2})(\d{2})(\d{4})$/);
-    const brDate = trimmed.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-
-    if (digitsDate) {
-      return `${digitsDate[3]}-${digitsDate[2]}-${digitsDate[1]}`;
+  function goToLogin() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
     }
 
-    if (brDate) {
-      return `${brDate[3]}-${brDate[2]}-${brDate[1]}`;
-    }
-
-    return trimmed;
+    navigation.replace("SignIn");
   }
+
+  useEffect(() => {
+    let isMounted = true;
+
+    setInstitutionsLoading(true);
+    setInstitutionsError("");
+
+    institutionsApi.listPublic()
+      .then((items) => {
+        if (isMounted) setInstitutions(items);
+      })
+      .catch((loadError) => {
+        if (isMounted) {
+          setInstitutions([]);
+          setInstitutionsError(
+            loadError.message ||
+              "Não foi possível carregar as instituições. Verifique se a API está ativa."
+          );
+        }
+      })
+      .finally(() => {
+        if (isMounted) setInstitutionsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function handleSignUp() {
     if (
@@ -46,9 +83,16 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
       !dataNascimento.trim() ||
       !senha ||
       !fotoPerfil ||
-      (tipoParticipante === "Interno" && !instituicaoId.trim())
+      !instituicaoId
     ) {
-      setError("Preencha nome, e-mail, data, senha e foto de perfil.");
+      setError(
+        "Preencha nome, e-mail Fatec, instituição, data, senha e foto de perfil."
+      );
+      return;
+    }
+
+    if (!email.trim().toLowerCase().endsWith("@fatec.sp.gov.br")) {
+      setError("Use seu e-mail institucional @fatec.sp.gov.br.");
       return;
     }
 
@@ -59,20 +103,29 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
 
     setLoading(true);
     setError("");
+    setSuccess("");
 
     try {
-      const birthDate = normalizeBirthDate(dataNascimento);
+      const birthDate = normalizeBrazilianDateInput(dataNascimento);
       await signUp({
         nome,
         email,
         senha,
         dataNascimento: birthDate,
         fotoPerfil,
-        tipoParticipante,
         instituicaoId,
       });
-      await signIn({ email, senha });
-      navigation.replace("Home");
+      setSuccess(
+        "Cadastro criado. Enviamos um e-mail de confirmação para seu endereço institucional. Confirme o e-mail antes de fazer login."
+      );
+      setNome("");
+      setEmail("");
+      setDataNascimento("");
+      setSenha("");
+      setConfirmacaoSenha("");
+      setFotoPerfil(null);
+      setFotoNome("");
+      setInstituicaoId("");
     } catch (signUpError) {
       setError(signUpError.message || "Não foi possível criar sua conta.");
     } finally {
@@ -82,6 +135,7 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
 
   async function handlePickPhoto() {
     setError("");
+    setSuccess("");
 
     try {
       const photo = await pickProfilePhoto();
@@ -117,9 +171,11 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
           ]}
           contentContainerStyle={styles.authBottomSignupContent}
         >
-          <View style={styles.row}>
-            <Text style={styles.authTitleWhite}>Cadastro</Text>
-          </View>
+          <AuthHeader
+            title="Cadastro"
+            onBack={goToLogin}
+            right={<ThemeButton theme={theme} toggleTheme={toggleTheme} />}
+          />
 
           <Text style={styles.authLabel}>Nome</Text>
           <AuthInput
@@ -141,30 +197,35 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
             value={email}
           />
 
-          <Text style={styles.authLabel}>Tipo de participante</Text>
-          <View style={styles.row}>
-            {['Externo', 'Interno'].map((tipo) => (
-              <TouchableOpacity
-                key={tipo}
-                onPress={() => setTipoParticipante(tipo)}
-                style={[styles.authPhotoButton, { opacity: tipoParticipante === tipo ? 1 : 0.55, flex: 1 }]}
-              >
-                <Text style={styles.authPhotoButtonText}>{tipo}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <Text style={styles.authLabel}>Instituição Fatec</Text>
+          <SelectField
+            disabled={institutionsLoading || institutionOptions.length === 0}
+            modalTitle="Selecione sua FATEC"
+            onChange={setInstituicaoId}
+            options={institutionOptions}
+            placeholder={
+              institutionsLoading
+                ? "Carregando instituições..."
+                : "Selecione sua FATEC"
+            }
+            value={instituicaoId}
+          />
 
-          {tipoParticipante === "Interno" ? <>
-            <Text style={styles.authLabel}>Código da instituição</Text>
-            <AuthInput
-              icon="business"
-              keyboardType="numeric"
-              onChangeText={setInstituicaoId}
-              placeholder="ID da instituição"
-              theme={signupInputTheme}
-              value={instituicaoId}
-            />
-          </> : null}
+          {institutionsLoading ? (
+            <Text style={styles.authMiniWhite}>Carregando instituições...</Text>
+          ) : null}
+
+          {!institutionsLoading && institutionsError ? (
+            <Text style={styles.authMiniWhite}>{institutionsError}</Text>
+          ) : null}
+
+          {!institutionsLoading &&
+          !institutionsError &&
+          institutions.length === 0 ? (
+            <Text style={styles.authMiniWhite}>
+              Nenhuma instituição ativa cadastrada disponível no momento.
+            </Text>
+          ) : null}
 
           <Text style={styles.authLabel}>Data de nascimento</Text>
           <AuthInput
@@ -226,6 +287,15 @@ export default function SignUpScreen({ theme, navigation, toggleTheme }) {
           </TouchableOpacity>
 
           {error ? <Text style={styles.authErrorText}>{error}</Text> : null}
+          {success ? <Text style={styles.authErrorText}>{success}</Text> : null}
+
+          <TouchableOpacity
+            style={styles.authSwitchRow}
+            onPress={goToLogin}
+          >
+            <Text style={styles.authMiniWhite}>Já possui uma conta?</Text>
+            <Text style={styles.authSwitchLink}> Entrar</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity style={styles.termsRow}>
             <View style={styles.termsBox} />

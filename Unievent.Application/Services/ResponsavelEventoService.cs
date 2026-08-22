@@ -48,6 +48,10 @@ namespace Unievent.Application.Services
                     var imagem = await SalvarImagem(responsavel.FotoPerfil);
                     responsavelAntigo.FotoPerfil = imagem;
                 }
+                if (responsavel.InstituicaoId.HasValue)
+                {
+                    responsavelAntigo.InstituicaoId = responsavel.InstituicaoId;
+                }
                 await _repository.AtualizarResponsavelEvento(responsavelAntigo);
                 await _repository.SaveChangesAsync();
                 _logger.LogInformation("Responsável do evento com ID {ResponsavelId} atualizado com sucesso", id);
@@ -55,7 +59,8 @@ namespace Unievent.Application.Services
                 {
                     Id = id,
                     Nome = responsavelAntigo.Nome,
-                    FotoPerfil = responsavelAntigo.FotoPerfil
+                    FotoPerfil = responsavelAntigo.FotoPerfil,
+                    InstituicaoId = responsavelAntigo.InstituicaoId
                 });
             }
             catch (Exception ex)
@@ -81,7 +86,8 @@ namespace Unievent.Application.Services
                 var responsavelNovo = new ResponsavelEvento
                 {
                     Nome = responsavel.Nome,
-                    FotoPerfil = imagem
+                    FotoPerfil = imagem,
+                    InstituicaoId = responsavel.InstituicaoId
                 };
                 await _repository.CriarResponsavelEvento(responsavelNovo);
                 await _repository.SaveChangesAsync();
@@ -90,7 +96,8 @@ namespace Unievent.Application.Services
                 {
                     Id = responsavelNovo.Id,
                     Nome = responsavelNovo.Nome,
-                    FotoPerfil = responsavelNovo.FotoPerfil
+                    FotoPerfil = responsavelNovo.FotoPerfil,
+                    InstituicaoId = responsavelNovo.InstituicaoId
                 });
             }
             catch (Exception ex)
@@ -124,7 +131,8 @@ namespace Unievent.Application.Services
                 {
                     Id = l.Id,
                     Nome = l.Nome,
-                    FotoPerfil = l.FotoPerfil
+                    FotoPerfil = l.FotoPerfil,
+                    InstituicaoId = l.InstituicaoId
                 }));
             }
             catch (Exception ex)
@@ -153,7 +161,8 @@ namespace Unievent.Application.Services
 
                     Id = responsavel.Id,
                     Nome = responsavel.Nome,
-                    FotoPerfil = responsavel.FotoPerfil
+                    FotoPerfil = responsavel.FotoPerfil,
+                    InstituicaoId = responsavel.InstituicaoId
                 });
             }
             catch (Exception ex)

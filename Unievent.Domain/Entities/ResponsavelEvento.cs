@@ -10,5 +10,7 @@
         }
         public required string Nome { get; set; }
         public required string FotoPerfil { get; set; }
+        public int? InstituicaoId { get; set; }
+        public Instituicao? Instituicao { get; set; }
     }
 }

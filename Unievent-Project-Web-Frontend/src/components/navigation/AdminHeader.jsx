@@ -1,8 +1,10 @@
 import {
   ArrowLeft,
   Award,
+  Building2,
   CalendarDays,
   Home,
+  IdCard,
   LogOut,
   Moon,
   Sun,
@@ -16,16 +18,27 @@ import { useTheme } from "../../hooks/useTheme.js";
 
 const adminLinks = [
   { to: "/home", labelKey: "navHome", icon: Home },
+  { to: "/instituicoes", labelKey: "navInstitutions", icon: Building2, globalOnly: true },
+  { to: "/secretarias", labelKey: "navSecretarias", icon: IdCard, globalOnly: true },
   { to: "/eventos", labelKey: "navEvents", icon: CalendarDays },
   { to: "/responsaveis", labelKey: "navPeople", icon: UsersRound },
   { to: "/certificados", labelKey: "navCertificates", icon: Award },
 ];
 
+const secretariaLinks = [
+  { to: "/instituicao/dashboard", labelKey: "navHome", icon: Home },
+  { to: "/instituicao/eventos", labelKey: "navEvents", icon: CalendarDays },
+  { to: "/instituicao/responsaveis", labelKey: "navPeople", icon: UsersRound },
+  { to: "/instituicao/certificados", labelKey: "navCertificates", icon: Award },
+];
+
 export function AdminHeader({ title, backTo = "/home", greeting, actions }) {
   const { language, setLanguage, t } = useLanguage();
   const { isLight, setTheme } = useTheme();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const isGlobalAdmin = user?.roleUsuario === "Admin" && !user?.instituicaoId;
+  const links = isGlobalAdmin ? adminLinks : secretariaLinks;
 
   function handleLogout() {
     logout();
@@ -40,7 +53,7 @@ export function AdminHeader({ title, backTo = "/home", greeting, actions }) {
       </div>
 
       <nav className="admin-nav" aria-label={t("navigationAdmin")}>
-        {adminLinks.map(({ to, labelKey, icon: Icon }) => (
+        {links.filter((link) => !link.globalOnly || isGlobalAdmin).map(({ to, labelKey, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}

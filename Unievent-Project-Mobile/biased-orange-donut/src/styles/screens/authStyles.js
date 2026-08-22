@@ -38,6 +38,32 @@ export const authStyles = {
   authBottomSignupContent: {
     paddingBottom: 28,
   },
+  authHeader: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  authHeaderBack: {
+    width: 44,
+    height: 44,
+    alignItems: "flex-start",
+    justifyContent: "center",
+  },
+  authHeaderTitle: {
+    flex: 1,
+    color: "#FFFFFF",
+    fontSize: 23,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  authHeaderRight: {
+    width: 44,
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
   signUpButton: {
     height: 55,
     borderColor: "#FFFFFF",
@@ -128,6 +154,18 @@ export const authStyles = {
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "900",
+  },
+  authSwitchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 18,
+  },
+  authSwitchLink: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    textDecorationLine: "underline",
   },
 
   authErrorText: {

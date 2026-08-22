@@ -80,7 +80,9 @@ export default function TicketQrScreen({ theme, navigation, route }) {
           <Text style={styles.qrInfo}>
             {event.fullDate || event.date} • {event.displayTime || event.time}
           </Text>
-          <Text style={styles.qrInfo}>{event.location || event.place}</Text>
+          <Text style={styles.qrInfo}>
+            {event.local || event.location || event.place}
+          </Text>
 
           <View style={styles.qrBox}>
             {ticketCode ? <QRCode

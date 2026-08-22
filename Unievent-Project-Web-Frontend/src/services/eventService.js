@@ -43,7 +43,9 @@ function combineDateTime(date, time) {
 }
 
 function normalizeCategory(value) {
-  const normalizedValue = String(value || "").trim().toLowerCase();
+  const normalizedValue = String(value || "")
+    .trim()
+    .toLowerCase();
   return CATEGORY_BY_NORMALIZED_NAME[normalizedValue] || value || "";
 }
 
@@ -52,8 +54,11 @@ export function normalizeEvent(event) {
     return null;
   }
 
-  const dataEvento = event.dataEvento || event.DataEvento || event.date || event.data;
-  const thumbnail = toArray(event.thumbnail || event.Thumbnail || event.image || event.imagem)
+  const dataEvento =
+    event.dataEvento || event.DataEvento || event.date || event.data;
+  const thumbnail = toArray(
+    event.thumbnail || event.Thumbnail || event.image || event.imagem,
+  )
     .map(getApiAssetUrl)
     .filter(Boolean);
   const responsavelEventoId =
@@ -70,9 +75,26 @@ export function normalizeEvent(event) {
     event.nomeResponsavel ||
     "";
   const nome = event.nome || event.Nome || event.title || event.titulo || "";
-  const descricao = event.descricao || event.Descricao || event.description || "";
-  const categoria = normalizeCategory(event.categoria || event.Categoria || event.category);
-  const capacidade = event.capacidade || event.Capacidade || event.capacity || "";
+  const descricao =
+    event.descricao || event.Descricao || event.description || "";
+  const local = event.local || event.Local || "";
+  const categoria = normalizeCategory(
+    event.categoria || event.Categoria || event.category,
+  );
+  const capacidade =
+    event.capacidade || event.Capacidade || event.capacity || "";
+  const instituicaoId =
+    event.instituicaoId ||
+    event.InstituicaoId ||
+    event.institutionId ||
+    "";
+
+  const instituicaoNome =
+    event.instituicaoNome ||
+    event.InstituicaoNome ||
+    event.institutionName ||
+    event.nomeInstituicao ||
+    "";
 
   return {
     ...event,
@@ -81,6 +103,7 @@ export function normalizeEvent(event) {
     titulo: nome,
     descricao,
     description: descricao,
+    local,
     categoria,
     category: categoria,
     dataEvento,
@@ -88,19 +111,36 @@ export function normalizeEvent(event) {
     time: event.time || event.hora || toTimeInput(dataEvento),
     capacidade,
     capacity: capacidade,
+    vagasDisponiveis: event.vagasDisponiveis ?? event.VagasDisponiveis ?? null,
     thumbnail,
     image: thumbnail[0] || "",
     responsavelEventoId,
     idResponsavelEvento: responsavelEventoId,
     responsible: responsavelEventoId ? String(responsavelEventoId) : "",
     responsibleName: responsavelNome,
-    responsavel: responsavelNome || (responsavelEventoId ? `#${responsavelEventoId}` : ""),
+    responsavel:
+      responsavelNome || (responsavelEventoId ? `#${responsavelEventoId}` : ""),
+
+    instituicaoId,
+    institutionId: instituicaoId ? String(instituicaoId) : "",
+    instituicaoNome,
+    institutionName: instituicaoNome,
+    cidade: event.cidade || event.Cidade || "",
+    estado: event.estado || event.Estado || "",
     visibility: event.visibilidade || event.Visibilidade || "Publico",
-    audience: event.publicoPermitido || event.PublicoPermitido || "Todos",
-    latitude: event.latitude ?? event.Latitude ?? "",
-    longitude: event.longitude ?? event.Longitude ?? "",
-    checkInRadius: event.raioCheckInMetros ?? event.RaioCheckInMetros ?? 150,
+    audience: event.publicoPermitido || event.PublicoPermitido || "PublicoGeral",
   };
+}
+
+function buildQuery(params = {}) {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      query.set(key, value);
+    }
+  });
+  const text = query.toString();
+  return text ? `?${text}` : "";
 }
 
 function appendIfPresent(formData, key, value) {
@@ -123,20 +163,45 @@ function buildEventFormData(payload) {
     payload.responsavelEventoId ||
     payload.idResponsavelEvento ||
     payload.responsibleId;
-  const imageFiles = toArray(payload.imageFile || payload.thumbnailFiles || payload.thumbnailFile);
+  const imageFiles = toArray(
+    payload.imageFile || payload.thumbnailFiles || payload.thumbnailFile,
+  );
 
-  appendIfPresent(formData, "Nome", payload.title || payload.nome || payload.titulo);
-  appendIfPresent(formData, "Descricao", payload.description || payload.descricao);
+  appendIfPresent(
+    formData,
+    "Nome",
+    payload.title || payload.nome || payload.titulo,
+  );
+  appendIfPresent(
+    formData,
+    "Descricao",
+    payload.description || payload.descricao,
+  );
+  appendIfPresent(formData, "Local", payload.local);
   appendIfPresent(formData, "Categoria", payload.category || payload.categoria);
   appendIfPresent(formData, "DataEvento", dataEvento);
-  appendIfPresent(formData, "Capacidade", payload.capacity || payload.capacidade);
+  appendIfPresent(
+    formData,
+    "Capacidade",
+    payload.capacity || payload.capacidade,
+  );
   appendIfPresent(formData, "ResponsavelEventoId", responsavelEventoId);
-  appendIfPresent(formData, "Visibilidade", payload.visibility || payload.visibilidade);
-  appendIfPresent(formData, "PublicoPermitido", payload.audience || payload.publicoPermitido);
-  appendIfPresent(formData, "Latitude", payload.latitude);
-  appendIfPresent(formData, "Longitude", payload.longitude);
-  appendIfPresent(formData, "RaioCheckInMetros", payload.checkInRadius || payload.raioCheckInMetros);
+  appendIfPresent(
+    formData,
+    "InstituicaoId",
+    payload.institutionId || payload.instituicaoId,
+  );
 
+  appendIfPresent(
+    formData,
+    "Visibilidade",
+    payload.visibility || payload.visibilidade,
+  );
+  appendIfPresent(
+    formData,
+    "PublicoPermitido",
+    payload.audience || payload.publicoPermitido,
+  );
   imageFiles.forEach((file) => {
     if (file instanceof File) {
       formData.append("Thumbnail", file);
@@ -159,10 +224,39 @@ export async function listEvents() {
   }
 }
 
-export async function getEventById(id) {
+export async function searchEvents(filters = {}) {
+  try {
+    const response = await request(`/Evento${buildQuery(filters)}`, {
+      method: "GET",
+      skipAuth: true,
+    });
+    const data = unwrapResponse(response);
+
+    if (Array.isArray(data)) {
+      return {
+        items: data.map(normalizeEvent),
+        page: 1,
+        pageSize: data.length,
+        totalItems: data.length,
+        totalPages: data.length > 0 ? 1 : 0,
+      };
+    }
+
+    return {
+      ...data,
+      items: Array.isArray(data?.items) ? data.items.map(normalizeEvent) : [],
+    };
+  } catch (error) {
+    console.error("Erro ao buscar eventos:", error);
+    throw error;
+  }
+}
+
+export async function getEventById(id, options = {}) {
   try {
     const response = await request(`/Evento/${id}`, {
       method: "GET",
+      skipAuth: options.skipAuth,
     });
     return normalizeEvent(unwrapResponse(response));
   } catch (error) {
