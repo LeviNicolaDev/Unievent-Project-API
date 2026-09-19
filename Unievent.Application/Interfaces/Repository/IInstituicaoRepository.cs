@@ -9,6 +9,5 @@ public interface IInstituicaoRepository
     public Task<bool> DeletarInstituicao(Instituicao instituicao);
     public Task<IEnumerable<Instituicao>> ListarInstituicoes();
     public Task<Instituicao> ListarInstituicaoById(int id);
-    public Task<Instituicao> ListarInstituicaoByEmail(string email);
     public Task SaveChangesAsync();
 }

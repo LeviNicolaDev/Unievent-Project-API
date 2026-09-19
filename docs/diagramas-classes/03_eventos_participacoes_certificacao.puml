@@ -1,0 +1,114 @@
+@startuml
+!include _tema.puml
+title UniEvent - Classes de eventos, inscrições e certificação
+left to right direction
+
+class EventoController {
+  +CriarEvento(request) : Task<IActionResult>
+  +AtualizarEvento(id, update) : Task<IActionResult>
+  +ListarEventos(filtros) : Task<IActionResult>
+  +ListarEventoById(id) : Task<IActionResult>
+  +DeletarEvento(id) : Task<IActionResult>
+  +InscreverEvento(id) : Task<ActionResult>
+  +ObterIngresso(id) : Task<ActionResult>
+  +ListarMeusIngressos() : Task<ActionResult>
+  +ValidarCheckIn(request) : Task<ActionResult>
+}
+
+interface IEventoService {
+  +CriarEvento(request)
+  +AtualizarEvento(id, update)
+  +DeletarEvento(id)
+  +ListarEventos()
+  +ListarEventoById(id)
+  +ListarEventosDisponiveis(tipo)
+}
+
+class EventoService
+interface IParticipacaoService {
+  +InscreverAsync(alunoId, eventoId)
+  +EmitirCertificadoAsync(alunoId, eventoId)
+  +ObterIngressoAsync(alunoId, eventoId)
+  +ListarIngressosAsync(alunoId)
+  +ValidarCheckInAsync(operadorId, request)
+}
+class ParticipacaoService
+
+interface IEventoRepository {
+  +CriarEvento(evento)
+  +AtualizarEvento(evento)
+  +ListarEventos()
+  +ListarEventoById(id)
+  +DeletarEvento(evento)
+}
+interface IParticipacaoRepository {
+  +AddAsync(participacao)
+  +GetByAlunoIdAndEventoIdAsync(alunoId, eventoId)
+  +GetByCodigoIngressoAsync(codigo)
+  +ListByAlunoIdAsync(alunoId)
+  +TryAddWithinCapacityAsync(participacao, capacidade)
+  +TryConfirmarPresencaAsync(participacao)
+}
+
+class EventoRepository
+class ParticipacaoRepository
+
+class Evento {
+  +Id : int
+  +Capacidade : int
+  +DataEvento : DateTime
+  +PublicoPermitido : PublicoPermitido
+  +InicioInscricoes : DateTime?
+  +FimInscricoes : DateTime?
+  +RaioCheckInMetros : int
+  +ToleranciaCheckInMinutos : int
+}
+
+class Participacao {
+  +AlunoId : int
+  +EventoId : int
+  +PresencaConfirmada : bool
+  +StatusInscricao : StatusInscricao
+  +CodigoIngresso : string
+  +ConfirmarPresenca()
+  +ConfirmarPresencaPorCodigo(operadorId)
+  +CancelarInscricao()
+  +EmitirCertificado(codigo)
+}
+
+interface ICertificadoAutomaticoService {
+  +ProcessarAposCheckInAsync(participacaoId)
+}
+class CertificadoAutomaticoService
+interface ICertificadoPdfGenerator {
+  +Gerar(dados) : CertificadoPdfArquivo
+}
+class CertificadoPdfGenerator
+interface IEmailService {
+  +SendWithAttachmentAsync(...)
+  +SendAsync(...)
+}
+class EmailService
+class AppDbContext
+
+EventoController --> IEventoService
+EventoController --> IParticipacaoService
+EventoService ..|> IEventoService
+ParticipacaoService ..|> IParticipacaoService
+EventoService --> IEventoRepository
+ParticipacaoService --> IEventoRepository
+ParticipacaoService --> IParticipacaoRepository
+ParticipacaoService --> ICertificadoAutomaticoService
+EventoRepository ..|> IEventoRepository
+ParticipacaoRepository ..|> IParticipacaoRepository
+EventoRepository --> AppDbContext
+ParticipacaoRepository --> AppDbContext
+Evento "1" <-- "0..*" Participacao
+CertificadoAutomaticoService ..|> ICertificadoAutomaticoService
+CertificadoAutomaticoService --> AppDbContext
+CertificadoAutomaticoService --> ICertificadoPdfGenerator
+CertificadoAutomaticoService --> IEmailService
+CertificadoPdfGenerator ..|> ICertificadoPdfGenerator
+EmailService ..|> IEmailService
+@enduml
+

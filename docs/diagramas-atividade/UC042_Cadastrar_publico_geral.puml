@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC042 - Cadastrar participante do Público Geral
+|Público Geral|
+start
+:Informa nome, e-mail, senha e confirmação;
+|Gestão de participantes|
+if (Dados atendem às regras de cadastro?) then (Sim)
+  if (E-mail está disponível?) then (Sim)
+    :Registra participante externo ativo;
+    |Público Geral|
+    :Recebe confirmação e pode solicitar acesso;
+  else (Não - exceção)
+    :Informa que o e-mail já está cadastrado;
+  endif
+else (Não - exceção)
+  :Informa os dados que precisam de correção;
+endif
+stop
+@enduml
+

@@ -3,6 +3,7 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+node_modules
 # User-specific files
 *.rsuser
 *.suo
@@ -362,7 +363,11 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 
-Unievent.Infra/Migrations/
+# Migrations fazem parte do histórico versionado do banco.
+
+# Playwright
+**/test-results/
+**/playwright-report/
 
 #ENV
 .env

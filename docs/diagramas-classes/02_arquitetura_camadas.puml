@@ -1,0 +1,117 @@
+@startuml
+!include _tema.puml
+title UniEvent - Visão de classes por camada
+top to bottom direction
+
+class "Controllers HTTP\n(Unievent.Api)" as Controllers <<API>> {
+  AuthController
+  AlunoController
+  EventoController
+  InstituicaoController
+  UsuarioSecretariaController
+  ResponsavelEventoController
+  CertificadoController
+  DashboardController
+  AutomacoesController
+  PreferenciasController
+  RecomendacoesController
+}
+
+class "Contratos de serviço\n(Unievent.Application)" as ServiceContracts <<interfaces>> {
+  IAlunoService
+  IEventoService
+  IParticipacaoService
+  IInstituicaoService
+  IUsuarioSecretariaService
+  IResponsavelEventoService
+  ICertificadoService
+  IEmailService
+  IAutomacaoEventosService
+  ICertificadoAutomaticoService
+  ICertificadoPdfGenerator
+}
+
+class "Serviços de aplicação" as ApplicationServices <<application>> {
+  AuthService
+  AlunoService
+  EventoService
+  ParticipacaoService
+  InstituicaoService
+  UsuarioSecretariaService
+  ResponsavelEventoService
+  CertificadoService
+  EmailService
+}
+
+class "Contratos de repositório\n(Unievent.Application)" as RepositoryContracts <<interfaces>> {
+  IAlunoRepository
+  IEventoRepository
+  IParticipacaoRepository
+  IInstituicaoRepository
+  IUsuarioSecretariaRepository
+  IUsuarioUnieventRepository
+  IResponsavelEventoRepository
+  ICertificadoRepository
+}
+
+class "Serviços de infraestrutura\n(Unievent.Infra)" as InfraServices <<infrastructure>> {
+  AutomacaoEventosService
+  CertificadoAutomaticoService
+  CertificadoPdfGenerator
+  JwtTokenGenerator
+}
+
+class "Repositórios EF Core\n(Unievent.Infra)" as Repositories <<infrastructure>> {
+  AlunoRepository
+  EventoRepository
+  ParticipacaoRepository
+  InstituicaoRepository
+  UsuarioSecretariaRepository
+  UsuarioUnieventRepository
+  ResponsavelEventoRepository
+  CertificadoRepository
+}
+
+class AppDbContext <<EF Core>> {
+  +Aluno : DbSet
+  +Evento : DbSet
+  +Participacao : DbSet
+  +Instituicao : DbSet
+  +UsuarioSecretaria : DbSet
+  +UsuarioUnievent : DbSet
+  +ResponsavelEvento : DbSet
+  +Certificado : DbSet
+  +PreferenciaNotificacao : DbSet
+  +NotificacaoEvento : DbSet
+}
+
+class "Entidades e regras\n(Unievent.Domain)" as Domain <<domain>> {
+  Aluno
+  Evento
+  Participacao
+  Instituicao
+  UsuarioSecretaria
+  UsuarioUnievent
+  ResponsavelEvento
+  Certificado
+  PreferenciaNotificacao
+  NotificacaoEvento
+}
+
+Controllers --> ServiceContracts : usa
+Controllers --> ApplicationServices : AuthService
+Controllers --> AppDbContext : consultas específicas
+ApplicationServices ..> ServiceContracts : implementa
+ApplicationServices --> RepositoryContracts : depende
+ApplicationServices --> Domain : aplica regras
+InfraServices ..> ServiceContracts : implementa
+InfraServices --> AppDbContext : processa dados
+Repositories ..> RepositoryContracts : implementa
+Repositories --> AppDbContext : persiste
+AppDbContext o-- Domain : mapeia
+
+note right of Controllers
+  Os diagramas 03 e 04 detalham as
+  dependências classe a classe.
+end note
+@enduml

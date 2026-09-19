@@ -36,7 +36,7 @@ public class UsuarioSecretariaServiceTest
     {
 
         [Theory]
-        [InlineData("Ryan", Role.Admin, "ryan@fatec.sp.gov.br", "te", "senha123")]
+        [InlineData("Ryan", Role.Secretaria, "ryan@fatec.sp.gov.br", "te", "senha123")]
         [InlineData("Maria", Role.Secretaria, "maria@fatec.sp.gov.br", "ab", "outraSenha")]
         public async Task Criar_Usuario_Quando_Dados_Validos_Retorna_Sucesso(
         string nome, Role role, string email, string chave, string senha)
@@ -70,8 +70,44 @@ public class UsuarioSecretariaServiceTest
             result.Value.RoleUsuario.Should().Be(role.ToString());
             result.Value.EmailUsuario.Should().Be(email);
             result.Value.Chave.Should().Be(chave);
+            result.Value.Status.Should().Be(StatusUsuarioSecretaria.Ativo.ToString());
             _repositoryMock.Verify(r =>
                 r.CriarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task Criar_Usuario_Quando_Status_Pendente_Deve_Retornar_Cadastro_Pendente()
+        {
+            // Arrange
+            var request = new UsuarioSecretariaRequest
+            {
+                NomeUsuario = "Secretaria Fatec",
+                RoleUsuario = Role.Secretaria,
+                EmailUsuario = "secretaria@fatec.sp.gov.br",
+                Chave = "chave-pendente",
+                Senha = "senha123",
+                InstituicaoId = 1,
+                Status = StatusUsuarioSecretaria.Pendente
+            };
+            _requestValidator.Setup(v => v.ValidateAsync(It.IsAny<UsuarioSecretariaRequest>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FluentValidation.Results.ValidationResult());
+
+            _repositoryMock.Setup(r => r.ListarUsuarioSecretariaByEmail(It.IsAny<string>()))
+                .ReturnsAsync((UsuarioSecretaria)null);
+
+            _repositoryMock
+                .Setup(r => r.CriarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()))
+                .ReturnsAsync((UsuarioSecretaria u) => u);
+
+            _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
+
+            // Act
+            var result = await _service.CriarUsuarioSecretaria(request);
+
+            // Assert
+            result.IsSuccess.Should().BeTrue();
+            result.Value.Status.Should().Be(StatusUsuarioSecretaria.Pendente.ToString());
+            result.Value.InstituicaoId.Should().Be(1);
         }
         [Fact]
         public async Task Deve_Falhar_Quando_Validator_Retorna_Erro()
@@ -322,6 +358,41 @@ public class UsuarioSecretariaServiceTest
                 _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Never);
 
 
+            }
+        }
+
+        public class AlterarStatusUsuario : UsuarioSecretariaServiceTest
+        {
+            [Fact]
+            public async Task Deve_Aprovar_Usuario_Pendente_Quando_Id_Valido()
+            {
+                // Arrange
+                var usuario = new UsuarioSecretaria
+                {
+                    Id = 1,
+                    NomeUsuario = "Secretaria Fatec",
+                    RoleUsuario = Role.Secretaria,
+                    EmailUsuario = "secretaria@fatec.sp.gov.br",
+                    Senha = "senhavalida",
+                    Chave = "abc",
+                    IsAtivo = true,
+                    Status = StatusUsuarioSecretaria.Pendente,
+                    InstituicaoId = 1
+                };
+
+                _repositoryMock.Setup(r => r.ListarUsuarioSecretariaById(It.IsAny<int>())).ReturnsAsync(usuario);
+                _repositoryMock.Setup(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>())).ReturnsAsync((UsuarioSecretaria u) => u);
+                _repositoryMock.Setup(r => r.SaveChangesAsync()).Returns(Task.FromResult(true));
+
+                // Act
+                var result = await _service.AlterarStatusUsuarioSecretaria(1, StatusUsuarioSecretaria.Ativo);
+
+                // Assert
+                result.IsSuccess.Should().BeTrue();
+                result.Value.Status.Should().Be(StatusUsuarioSecretaria.Ativo.ToString());
+                result.Value.IsAtivo.Should().BeTrue();
+                _repositoryMock.Verify(r => r.AtualizarUsuarioSecretaria(It.IsAny<UsuarioSecretaria>()), Times.Once);
+                _repositoryMock.Verify(r => r.SaveChangesAsync(), Times.Once);
             }
         }
 

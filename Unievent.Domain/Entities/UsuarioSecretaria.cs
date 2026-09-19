@@ -20,10 +20,14 @@ namespace Unievent.Domain.Entities
         public required string NomeUsuario { get; set; }
         public required Role RoleUsuario { get; set; }
         public required string EmailUsuario { get; set; }
-        public string Chave { get; set; }
+        public string Chave { get; set; } = string.Empty;
+        public bool EmailConfirmado { get; set; }
         public string Senha { get; set; }
         public int TentativasLogin { get; set; } = default;
         public bool IsAtivo { get; set; }
+        public StatusUsuarioSecretaria Status { get; set; } = StatusUsuarioSecretaria.Pendente;
+        public int? InstituicaoId { get; set; }
+        public Instituicao? Instituicao { get; set; }
 
     }
 }

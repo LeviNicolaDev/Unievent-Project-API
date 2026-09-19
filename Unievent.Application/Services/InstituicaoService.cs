@@ -13,15 +13,13 @@ namespace Unievent.Application.Services;
 public class InstituicaoService : IInstituicaoService
 {
     private readonly IInstituicaoRepository _repository;
-    private readonly IEnderecoRepository _repositoryEndereco;
     private readonly IValidator<InstituicaoRequest> _requestValidator;
     private readonly IValidator<InstituicaoUpdate> _updateValidator;
     private readonly ILogger<InstituicaoService> _logger;
-    public InstituicaoService(IInstituicaoRepository repository, IEnderecoRepository repositoryEndereco, ILogger<InstituicaoService> logger,
+    public InstituicaoService(IInstituicaoRepository repository, ILogger<InstituicaoService> logger,
     IValidator<InstituicaoRequest> requestValidator, IValidator<InstituicaoUpdate> updateValidator)
     {
         _repository = repository;
-        _repositoryEndereco = repositoryEndereco;
         _logger = logger;
         _requestValidator = requestValidator;
         _updateValidator = updateValidator;
@@ -37,7 +35,6 @@ public class InstituicaoService : IInstituicaoService
                 return Result<InstituicaoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
             _logger.LogInformation("Iniciando atualização da instituição com ID {InstituicaoId}", id);
-            var emailExistente = await _repository.ListarInstituicaoByEmail(update.EmailLogin);
             var instituicao = await _repository.ListarInstituicaoById(id);
             if (instituicao is null)
             {
@@ -45,16 +42,19 @@ public class InstituicaoService : IInstituicaoService
                 return Result<InstituicaoResponse>.Failure("Instituição não encontrada");
             }
 
-            if (update.EnderecoId.HasValue)
-            {
-                var endereco = await _repositoryEndereco.ListarEnderecoById(update.EnderecoId.Value);
-                if (endereco is null)
-                {
-                    _logger.LogWarning("Endereço com ID {EnderecoId} não encontrado para ser associado à instituição", update.EnderecoId.Value);
-                    return Result<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
-                }
-                instituicao.EnderecoId = endereco.Id;
-            }
+            if (update.Nome is not null) instituicao.Nome = update.Nome;
+            if (update.NomeAbreviado is not null) instituicao.NomeAbreviado = update.NomeAbreviado;
+            if (update.Codigo is not null) instituicao.Codigo = update.Codigo;
+            if (update.Rua is not null) instituicao.Rua = update.Rua;
+            if (update.Numero is not null) instituicao.Numero = update.Numero;
+            if (update.Bairro is not null) instituicao.Bairro = update.Bairro;
+            if (update.Cidade is not null) instituicao.Cidade = update.Cidade;
+            if (update.Estado is not null) instituicao.Estado = update.Estado;
+            if (update.Cep is not null) instituicao.Cep = update.Cep;
+            if (update.Telefone is not null) instituicao.Telefone = update.Telefone;
+            if (update.Site is not null) instituicao.Site = update.Site;
+            if (update.IsAtivo.HasValue) instituicao.IsAtivo = update.IsAtivo.Value;
+            instituicao.AtualizadoEmUtc = DateTime.UtcNow;
 
             if (update.FotoPerfil != null)
             {
@@ -63,27 +63,11 @@ public class InstituicaoService : IInstituicaoService
                 instituicao.FotoPerfil = imagem;
             }
 
-            if (!string.IsNullOrWhiteSpace(update.SenhaLogin))
-            {
-                var senha = BCrypt.Net.BCrypt.HashPassword(update.SenhaLogin);
-                instituicao.SenhaLogin = senha;
-            }
-
-            if (!string.IsNullOrWhiteSpace(update.EmailLogin) && emailExistente == null)
-            {
-                instituicao.EmailLogin = update.EmailLogin;
-            }
-            else if (!string.IsNullOrWhiteSpace(update.EmailLogin) && emailExistente != null)
-            {
-                _logger.LogWarning("Email {EmailLogin} já cadastrado para outra instituição", update.EmailLogin);
-                return Result<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
-            }
-
             if (!string.IsNullOrWhiteSpace(update.Cnpj) && Cnpj.TryParse(update.Cnpj, out var cnpj))
             {
                 instituicao.Cnpj = cnpj.ToString();
             }
-            else
+            else if (!string.IsNullOrWhiteSpace(update.Cnpj))
             {
                 _logger.LogWarning("CNPJ {Cnpj} inválido para atualização", update.Cnpj);
                 return Result<InstituicaoResponse>.Failure("Digite um CNPJ válido");
@@ -91,14 +75,7 @@ public class InstituicaoService : IInstituicaoService
             await _repository.AtualizarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Instituição com ID {InstituicaoId} atualizada com sucesso", id);
-            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
-            {
-                Id = id,
-                Cnpj = instituicao.Cnpj,
-                EmailLogin = instituicao.EmailLogin,
-                FotoPerfil = instituicao.FotoPerfil,
-                EnderecoId = instituicao.EnderecoId
-            });
+            return Result<InstituicaoResponse>.Success(MapearResponse(instituicao));
         }
         catch (Exception ex)
         {
@@ -131,53 +108,42 @@ public class InstituicaoService : IInstituicaoService
             var validationResult = await _requestValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
-                _logger.LogInformation("Dados invalidos para criação da instituição com email {EmailLogin}", request.EmailLogin);
+                _logger.LogInformation("Dados invalidos para criação da instituição");
                 return Result<InstituicaoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
             }
-            _logger.LogInformation("Iniciando criação de nova instituição com email {EmailLogin}", request.EmailLogin);
+            _logger.LogInformation("Iniciando criação de nova instituição");
             if (!Cnpj.TryParse(request.Cnpj, out var cnpj))
             {
                 _logger.LogWarning("CNPJ {Cnpj} inválido para criação", request.Cnpj);
                 return Result<InstituicaoResponse>.Failure("Digite um CNPJ válido");
             }
-            var endereco = await _repositoryEndereco.ListarEnderecoById(request.EnderecoId);
-            if (endereco is null)
-            {
-                _logger.LogWarning("Endereço com ID {EnderecoId} não encontrado para ser associado à instituição", request.EnderecoId);
-                return Result<InstituicaoResponse>.Failure("Endereço não encontrado para ser associado à instituição");
-            }
-            var emailExistente = await _repository.ListarInstituicaoByEmail(request.EmailLogin);
-            if (emailExistente != null)
-            {
-                _logger.LogWarning("Email {EmailLogin} já cadastrado para outra instituição", request.EmailLogin);
-                return Result<InstituicaoResponse>.Failure("Email já cadastrado para outra instituição");
-            }
             var cnpjValido = cnpj.ToString();
             var imagem = await SalvarImagem(request.FotoPerfil);
-            var senha = BCrypt.Net.BCrypt.HashPassword(request.SenhaLogin);
             var instituicao = new Instituicao
             {
+                Nome = request.Nome,
+                NomeAbreviado = request.NomeAbreviado,
+                Codigo = request.Codigo,
                 Cnpj = cnpjValido,
-                EmailLogin = request.EmailLogin,
-                EnderecoId = endereco.Id,
+                Rua = request.Rua,
+                Numero = request.Numero,
+                Bairro = request.Bairro,
+                Cidade = request.Cidade,
+                Estado = request.Estado,
+                Cep = request.Cep,
                 FotoPerfil = imagem,
-                SenhaLogin = senha
+                Telefone = request.Telefone,
+                Site = request.Site,
+                IsAtivo = true
             };
             await _repository.CriarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
-            _logger.LogInformation("Instituição criada com sucesso com email {EmailLogin}", request.EmailLogin);
-            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
-            {
-                Id = instituicao.Id,
-                Cnpj = instituicao.Cnpj,
-                EmailLogin = instituicao.EmailLogin,
-                FotoPerfil = instituicao.FotoPerfil,
-                EnderecoId = instituicao.EnderecoId
-            });
+            _logger.LogInformation("Instituição criada com sucesso");
+            return Result<InstituicaoResponse>.Success(MapearResponse(instituicao));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Erro ao criar instituição com email {EmailLogin}", request.EmailLogin);
+            _logger.LogError(ex, "Erro ao criar instituição");
             return Result<InstituicaoResponse>.Failure("Erro ao criar instituição");
         }
 
@@ -193,9 +159,11 @@ public class InstituicaoService : IInstituicaoService
                 _logger.LogWarning("Instituição com ID {InstituicaoId} não encontrada para deleção", id);
                 return Result<bool>.Failure("Instituição não encontrada");
             }
-            await _repository.DeletarInstituicao(instituicao);
+            instituicao.IsAtivo = false;
+            instituicao.AtualizadoEmUtc = DateTime.UtcNow;
+            await _repository.AtualizarInstituicao(instituicao);
             await _repository.SaveChangesAsync();
-            _logger.LogInformation("Instituição com ID {InstituicaoId} deletada com sucesso", id);
+            _logger.LogInformation("Instituição com ID {InstituicaoId} desativada com sucesso", id);
             return Result<bool>.Success(true);
         }
         catch (Exception ex)
@@ -217,15 +185,7 @@ public class InstituicaoService : IInstituicaoService
                 return Result<InstituicaoResponse>.Failure("Instituição não encontrada");
             }
             _logger.LogInformation("Instituição com ID {InstituicaoId} encontrada com sucesso", id);
-            return Result<InstituicaoResponse>.Success(new InstituicaoResponse
-            {
-                Id = id,
-                Cnpj = instituicao.Cnpj,
-                EmailLogin = instituicao.EmailLogin,
-                FotoPerfil = instituicao.FotoPerfil,
-
-                EnderecoId = instituicao.EnderecoId
-            });
+            return Result<InstituicaoResponse>.Success(MapearResponse(instituicao));
         }
         catch (Exception ex)
         {
@@ -242,19 +202,48 @@ public class InstituicaoService : IInstituicaoService
             var instituicoes = await _repository.ListarInstituicoes();
             _logger.LogInformation("Instituições listadas com sucesso {InstituicoesCount}", instituicoes.Count());
 
-            return Result<IEnumerable<InstituicaoResponse>>.Success(instituicoes.Select(instituicao => new InstituicaoResponse
-            {
-                Id = instituicao.Id,
-                Cnpj = instituicao.Cnpj,
-                EmailLogin = instituicao.EmailLogin,
-                FotoPerfil = instituicao.FotoPerfil,
-                EnderecoId = instituicao.EnderecoId
-            }));
+            return Result<IEnumerable<InstituicaoResponse>>.Success(instituicoes.Select(MapearResponse));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Erro ao listar instituições");
             return Result<IEnumerable<InstituicaoResponse>>.Failure("Erro ao listar instituições");
         }
+    }
+
+    async Task<Result<InstituicaoResponse>> IInstituicaoService.AlterarStatusInstituicao(int id, bool ativo)
+    {
+        var instituicao = await _repository.ListarInstituicaoById(id);
+        if (instituicao is null)
+            return Result<InstituicaoResponse>.Failure("Instituição não encontrada");
+
+        instituicao.IsAtivo = ativo;
+        instituicao.AtualizadoEmUtc = DateTime.UtcNow;
+        await _repository.AtualizarInstituicao(instituicao);
+        await _repository.SaveChangesAsync();
+
+        return Result<InstituicaoResponse>.Success(MapearResponse(instituicao));
+    }
+
+    private static InstituicaoResponse MapearResponse(Instituicao instituicao)
+    {
+        return new InstituicaoResponse
+        {
+            Id = instituicao.Id,
+            Nome = instituicao.Nome,
+            NomeAbreviado = instituicao.NomeAbreviado,
+            Codigo = instituicao.Codigo,
+            Cnpj = instituicao.Cnpj,
+            FotoPerfil = instituicao.FotoPerfil,
+            Rua = instituicao.Rua,
+            Numero = instituicao.Numero,
+            Bairro = instituicao.Bairro,
+            Cidade = instituicao.Cidade,
+            Estado = instituicao.Estado,
+            Cep = instituicao.Cep,
+            Telefone = instituicao.Telefone,
+            Site = instituicao.Site,
+            IsAtivo = instituicao.IsAtivo
+        };
     }
 }

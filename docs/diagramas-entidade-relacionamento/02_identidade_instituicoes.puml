@@ -1,0 +1,104 @@
+@startuml
+!include _tema.puml
+title UniEvent - Identidade e instituições
+left to right direction
+
+entity "Instituicao" as Instituicao {
+  * Id : int <<PK, identity>>
+  --
+  Nome : nvarchar(160)
+  NomeAbreviado : nvarchar(40)
+  Codigo : nvarchar(60) <<UQ>>
+  * FotoPerfil : nvarchar(max)
+  * Cnpj : nvarchar(18) <<UQ>>
+  * Rua : nvarchar(200)
+  * Cidade : nvarchar(100)
+  * Bairro : nvarchar(100)
+  * Estado : nvarchar(50)
+  * Cep : nvarchar(8)
+  * Numero : nvarchar(20)
+  Telefone : nvarchar(30)
+  Site : nvarchar(200)
+  * IsAtivo : bit
+  * CriadoEmUtc : datetime2
+  * AtualizadoEmUtc : datetime2
+}
+
+entity "Aluno" as Aluno {
+  * Id : int <<PK, identity>>
+  --
+  * Nome : nvarchar(max)
+  * Email : nvarchar(max) <<UQ>>
+  * Senha : nvarchar(max)
+  * EmailConfirmado : bit
+  ChaveConfirmacaoEmail : nvarchar(300) <<UQ>>
+  * FotoPerfil : nvarchar(max)
+  * IsAtivo : bit
+  * Role : int
+  * DataNascimento : datetime2
+  * TipoParticipante : nvarchar(max)
+  InstituicaoId : int <<FK>>
+}
+
+entity "UsuarioSecretaria" as Secretaria {
+  * Id : int <<PK, identity>>
+  --
+  * NomeUsuario : nvarchar(max)
+  * EmailUsuario : nvarchar(max) <<UQ>>
+  * Senha : nvarchar(max)
+  * Chave : nvarchar(300) <<UQ>>
+  * EmailConfirmado : bit
+  * RoleUsuario : nvarchar(max)
+  * Status : nvarchar(max)
+  * TentativasLogin : int
+  * IsAtivo : bit
+  InstituicaoId : int <<FK>>
+}
+
+entity "UsuarioUnievent" as Admin {
+  * Id : int <<PK, identity>>
+  --
+  * NomeUsuario : nvarchar(max)
+  * EmailUsuario : nvarchar(max) <<UQ>>
+  * Senha : nvarchar(max)
+  * Chave : nvarchar(300) <<UQ>>
+  * RoleUsuario : nvarchar(max)
+  * TentativasLogin : int
+  * IsAtivo : bit
+  * CriadoEmUtc : datetime2
+}
+
+entity "ResponsavelEvento" as Responsavel {
+  * Id : int <<PK, identity>>
+  --
+  * Nome : nvarchar(max)
+  * FotoPerfil : nvarchar(max)
+  InstituicaoId : int <<FK>>
+}
+
+entity "Evento" as Evento {
+  * Id : int <<PK, identity>>
+  --
+  InstituicaoId : int <<FK>>
+  * ResponsavelEventoId : int <<FK>>
+  * Nome : nvarchar(max)
+  * DataEvento : datetime2
+}
+
+Instituicao "0..1" -- "0..*" Aluno : FK opcional / RESTRICT
+Instituicao "0..1" -- "0..*" Secretaria : FK opcional / RESTRICT
+Instituicao "0..1" -- "0..*" Responsavel : FK opcional / RESTRICT
+Instituicao "0..1" -- "0..*" Evento : FK opcional / RESTRICT
+Responsavel ||--o{ Evento : FK obrigatória / CASCADE
+
+note right of Admin
+  Usuário administrativo global.
+  Não possui InstituicaoId.
+end note
+
+note bottom of Instituicao
+  Há filtro global por IsAtivo.
+  Aluno, UsuarioSecretaria e UsuarioUnievent
+  também possuem filtro global de ativos.
+end note
+@enduml

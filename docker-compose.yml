@@ -1,25 +1,83 @@
 services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: unievent-db
     volumes:
       - sql_data:/var/opt/mssql
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=${PASSWORD_DB}
     ports:
-      - "1434:1433"
+      - "${SQLSERVER_HOST_PORT:-1433}:1433"
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: unievent-api
     depends_on:
-      - db
-    image: ysouzay/api-unievent:latest
+      db:
+        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=Unievent;User Id=sa;Password=${PASSWORD_DB};TrustServerCertificate=True;
-      - emailPassword=${PASSWORD_EMAIL}
+      - EmailSettings__Host=${EmailSettings__Host:-smtp.gmail.com}
+      - EmailSettings__Port=${EmailSettings__Port:-587}
+      - EmailSettings__Email=${EmailSettings__Email}
+      - EmailSettings__Password=${EmailSettings__Password}
+      - EmailSettings__EnableSsl=${EmailSettings__EnableSsl:-true}
+      - EmailSettings__BaseUrl=http://localhost:${WEB_HOST_PORT:-5173}
+      - EmailSettings__ConfirmationBaseUrl=http://localhost:${API_HOST_PORT:-5227}
+      - EmailSettings__WebLoginUrl=http://localhost:${WEB_HOST_PORT:-5173}/login
+      - EmailSettings__MobileLoginDeepLink=unievent://login
       - Jwt__Key=${Jwt__Key}
       - Jwt__Issuer=${Jwt__Issuer}
       - Jwt__Audience=${Jwt__Audience}
+      - Database__MigrateOnStartup=true
+      - Automacoes__Ativas=true
+      - Automacoes__IntervaloMinutos=30
+      - Certificacao__MaxTentativas=${Certificacao__MaxTentativas:-5}
+      - Certificacao__RetryMinutos=${Certificacao__RetryMinutos:-5}
+      - Certificacao__ReservaMinutos=${Certificacao__ReservaMinutos:-10}
     ports:
-      - "5000:8080"
+      - "${API_HOST_PORT:-5227}:8080"
+
+  web:
+    build:
+      context: ./Unievent-Project-Web-Frontend
+      dockerfile: Dockerfile
+    container_name: unievent-web
+    depends_on:
+      - api
+    environment:
+      - VITE_API_PROXY_TARGET=http://api:8080
+    ports:
+      - "${WEB_HOST_PORT:-5173}:5173"
+
+  mobile:
+    build:
+      context: ./Unievent-Project-Mobile/biased-orange-donut
+      dockerfile: Dockerfile
+    container_name: unievent-mobile
+    depends_on:
+      - api
+    environment:
+      - EXPO_PUBLIC_API_URL=http://localhost:${API_HOST_PORT:-5227}
+      - REACT_NATIVE_PACKAGER_HOSTNAME=localhost
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    ports:
+      - "${MOBILE_HOST_PORT:-8081}:8081"
+      - "${EXPO_HOST_PORT:-19000}:19000"
+      - "${EXPO_DEVTOOLS_HOST_PORT:-19001}:19001"
+      - "${EXPO_TUNNEL_HOST_PORT:-19002}:19002"
+
 volumes:
   sql_data:

@@ -1,0 +1,33 @@
+@startuml
+!include _tema.puml
+title UC046 - Consultar e baixar o próprio certificado
+
+actor "Aluno / Público Geral" as Participante
+participant "Web ou aplicativo mobile" as Cliente
+participant "CertificadoController" as Api
+database "SQL Server" as DB
+
+Participante -> Cliente : Abre Meus certificados
+Cliente -> Api : GET /api/Certificado/meus\nBearer JWT Aluno
+Api -> Api : Obtém AlunoId do JWT
+Api -> DB : Lista somente participações do titular
+DB --> Api : Presença, emissão, envio e disponibilidade do PDF
+Api --> Cliente : 200 certificados
+Cliente --> Participante : Exibe situação de cada evento
+
+Participante -> Cliente : Solicita baixar certificado
+Cliente -> Api : GET /api/Certificado/eventos/{eventoId}/pdf
+Api -> DB : Busca PDF por AlunoId + EventoId\ncom presença e emissão confirmadas
+alt PDF ainda indisponível ou não pertence ao usuário
+  DB --> Api : Nenhum arquivo elegível
+  Api --> Cliente : 404
+  Cliente --> Participante : Informa indisponibilidade
+else PDF disponível
+  DB --> Api : Bytes e nome do arquivo
+  Api -> Api : Define Content-Type application/pdf\ne Cache-Control private, no-store
+  Api --> Cliente : 200 arquivo PDF
+  Cliente -> Cliente : Cria download/compartilhamento local
+  Cliente --> Participante : Entrega certificado
+end
+@enduml
+

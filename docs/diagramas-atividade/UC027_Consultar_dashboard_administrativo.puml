@@ -1,0 +1,23 @@
+@startuml
+!include _tema.puml
+title UC027 - Consultar indicadores gerais do UniEvent
+|Admin UniEvent|
+start
+:Solicita visão geral da operação;
+|Gestão UniEvent|
+if (Administrador está autorizado?) then (Sim)
+  :Consolida instituições, usuários, eventos,
+  inscrições, presenças e certificados;
+  if (Há movimentação registrada?) then (Sim)
+    :Apresenta indicadores e taxa de comparecimento;
+  else (Não - exceção)
+    :Apresenta indicadores zerados;
+  endif
+  |Admin UniEvent|
+  :Analisa a situação do negócio;
+else (Não - exceção)
+  :Nega acesso aos indicadores globais;
+endif
+stop
+@enduml
+

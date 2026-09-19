@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC018 - Acessar a gestão administrativa ou institucional
+|Administrador ou Secretaria|
+start
+:Informa e-mail e senha;
+|Controle de acesso|
+if (Credenciais são válidas?) then (Sim)
+  if (Conta está ativa e aprovada?) then (Sim)
+    :Identifica o papel e o âmbito de atuação;
+    |Administrador ou Secretaria|
+    :Acessa a gestão correspondente às suas atribuições;
+  else (Não - exceção)
+    :Informa situação pendente, recusada, bloqueada ou inativa;
+  endif
+else (Não - exceção)
+  :Informa credenciais inválidas;
+endif
+stop
+@enduml
+

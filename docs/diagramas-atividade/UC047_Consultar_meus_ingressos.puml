@@ -1,0 +1,29 @@
+@startuml
+!include _tema.puml
+title UC047 - Consultar Meus Ingressos
+|Público Geral|
+start
+:Solicita consultar seus ingressos;
+|Gestão de inscrições|
+if (Participante está identificado?) then (Sim)
+  if (Há participações pertencentes ao participante?) then (Sim)
+    :Organiza próximos eventos e histórico;
+    :Apresenta situação da inscrição e da presença;
+    |Público Geral|
+    :Seleciona um ingresso;
+    |Gestão de inscrições|
+    if (Inscrição está ativa?) then (Sim)
+      :Apresenta o ingresso e seu código;
+    else (Não - exceção)
+      :Mantém o item no histórico sem código utilizável;
+    endif
+  else (Não - exceção)
+    :Informa que ainda não há ingressos;
+    |Público Geral|
+    :Pode explorar eventos disponíveis;
+  endif
+else (Não - exceção)
+  :Solicita identificação antes da consulta;
+endif
+stop
+@enduml

@@ -24,9 +24,12 @@ public class InstituicaoValidatorTest
         var request = new InstituicaoRequest
         {
             Cnpj= "16203686000158",
-            EmailLogin="teste@fatec.sp.gov.br",
-            EnderecoId=1,
-            SenhaLogin="teste123",
+            Rua = "Rua Carlos Barattino",
+            Numero = "908",
+            Bairro = "Vila Romanopolis",
+            Cidade = "Sao Paulo",
+            Estado = "SP",
+            Cep = "12345678",
            FotoPerfil = new FormFile(stream, 0, stream.Length, "FotoPerfil", "foto.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -47,9 +50,12 @@ public class InstituicaoValidatorTest
         var request = new InstituicaoUpdate
         {
             Cnpj= "162036860001587643677463678324s",
-            EmailLogin="teste@fatec.sp.gov.br",
-            EnderecoId=1,
-            SenhaLogin="teste123",
+            Rua = "Rua Carlos Barattino",
+            Numero = "908",
+            Bairro = "Vila Romanopolis",
+            Cidade = "Sao Paulo",
+            Estado = "SP",
+            Cep = "12345678",
             FotoPerfil = new FormFile(stream, 0, stream.Length, "FotoPerfil", "foto.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -71,9 +77,12 @@ public class InstituicaoValidatorTest
         var request = new InstituicaoUpdate
         {
             Cnpj= "16203686000158",
-            EmailLogin="teste@fatec.sp.gov.br",
-            EnderecoId=1,
-            SenhaLogin="teste123",
+            Rua = "Rua Carlos Barattino",
+            Numero = "908",
+            Bairro = "Vila Romanopolis",
+            Cidade = "Sao Paulo",
+            Estado = "SP",
+            Cep = "12345678",
              FotoPerfil = new FormFile(stream, 0, stream.Length, "FotoPerfil", "foto.jpg")
             {
                 Headers = new HeaderDictionary(),
@@ -94,9 +103,12 @@ public class InstituicaoValidatorTest
         var request = new InstituicaoRequest
         {
             Cnpj= "162036860001587643784536853487634",
-            EmailLogin="teste@gmail.com",
-            EnderecoId=1,
-            SenhaLogin="teste123",
+            Rua = "Rua Carlos Barattino",
+            Numero = "908",
+            Bairro = "Vila Romanopolis",
+            Cidade = "Sao Paulo",
+            Estado = "SP",
+            Cep = "12345678",
              FotoPerfil = new FormFile(stream, 0, stream.Length, "FotoPerfil", "foto.jpg")
             {
                 Headers = new HeaderDictionary(),

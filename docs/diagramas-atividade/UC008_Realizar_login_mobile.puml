@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC008 - Acessar a área do aluno
+|Aluno Fatec|
+start
+:Informa e-mail e senha;
+|Controle de acesso|
+if (Credenciais correspondem a uma conta?) then (Sim)
+  if (E-mail confirmado e conta ativa?) then (Sim)
+    :Autoriza o acesso como aluno institucional;
+    |Aluno Fatec|
+    :Acessa sua área de eventos;
+  else (Não - exceção)
+    :Informa pendência de confirmação ou conta inativa;
+  endif
+else (Não - exceção)
+  :Informa credenciais inválidas;
+endif
+stop
+@enduml
+

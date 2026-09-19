@@ -1,0 +1,53 @@
+@startuml
+!include _tema.puml
+title UC012-UC015 - Inscrição e ingresso digital no mobile
+
+actor "Aluno Fatec" as Aluno
+participant "Aplicativo mobile" as Mobile
+participant "EventoController" as Api
+participant "ParticipacaoService" as Service
+database "SQL Server" as DB
+
+Aluno -> Mobile : Solicita inscrição no evento
+Mobile -> Api : POST /api/Evento/{id}/inscrever-se\nBearer JWT
+Api -> Api : Obtém AlunoId do token
+Api -> Service : InscreverAsync(alunoId, eventoId)
+Service -> DB : Busca aluno, evento, vagas e inscrição anterior
+Service -> Service : Valida público, prazo e capacidade
+alt Inscrição recusada
+  Service --> Api : Erros da regra
+  Api --> Mobile : 400 motivo
+  Mobile --> Aluno : Exibe impedimento
+else Inscrição aceita
+  Service -> DB : Cria/reativa participação e código único
+  DB --> Service : Participação ativa
+  Service --> Api : ParticipacaoResponse
+  Api --> Mobile : 200 inscrição confirmada
+  Mobile --> Aluno : Disponibiliza ingresso
+end
+
+Aluno -> Mobile : Abre Meus eventos
+Mobile -> Api : GET /api/Evento/meus-ingressos
+Api -> Service : ListarIngressosAsync(alunoId)
+Service -> DB : Lista participações do titular
+DB --> Service : Ingressos e eventos
+Service --> Api : IngressoResponse[]
+Api --> Mobile : 200 ingressos
+Mobile --> Aluno : Exibe próximos e histórico
+
+Aluno -> Mobile : Seleciona um ingresso
+Mobile -> Api : GET /api/Evento/{eventoId}/ingresso
+Api -> Service : ObterIngressoAsync(alunoId, eventoId)
+Service -> DB : Busca participação do titular
+alt Inscrição ativa
+  DB --> Service : Código do ingresso
+  Service --> Api : IngressoResponse
+  Api --> Mobile : 200 ingresso
+  Mobile -> Mobile : Gera QR Code do CodigoIngresso
+  Mobile --> Aluno : Exibe ingresso e QR Code
+else Ingresso inexistente/cancelado
+  Api --> Mobile : 404
+  Mobile --> Aluno : Informa indisponibilidade
+end
+@enduml
+

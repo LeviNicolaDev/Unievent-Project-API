@@ -1,0 +1,18 @@
+@startuml
+!include _tema.puml
+title UC004 - Consultar detalhes de evento público
+|Visitante|
+start
+:Escolhe um evento;
+|UniEvent|
+if (Evento existe e continua público?) then (Sim)
+  :Apresenta descrição, data, horário, local,
+  instituição, categoria, vagas e público permitido;
+  |Visitante|
+  :Avalia interesse em participar;
+else (Não - exceção)
+  :Informa que o evento não está mais disponível;
+endif
+stop
+@enduml
+

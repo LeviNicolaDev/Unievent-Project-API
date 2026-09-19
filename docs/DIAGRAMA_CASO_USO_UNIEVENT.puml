@@ -1,0 +1,131 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam shadowing false
+
+title UniEvent - Diagrama de Casos de Uso
+
+actor "Público Web" as Visitante
+actor "Público Geral\nautenticado" as PublicoGeral
+actor "Aluno FATEC\n(Mobile)" as Aluno
+actor "Usuário Secretaria\n(Web)" as Secretaria
+actor "Operador de\nCheck-in" as Operador
+actor "Admin UniEvent\n(Web)" as Admin
+actor "Gerador de PDF" as PDF
+actor "Serviço de E-mail" as Email
+actor "Automação de Eventos" as Automacao
+
+rectangle "UniEvent" {
+  package "Acesso e participação" {
+    usecase "Acessar landing page" as UC_Landing
+    usecase "Descobrir eventos públicos" as UC_Descobrir
+    usecase "Ver detalhes do evento" as UC_Detalhe
+    usecase "Cadastrar participante" as UC_Cadastro
+    usecase "Confirmar e-mail" as UC_ConfirmarEmail
+    usecase "Realizar login" as UC_Login
+    usecase "Inscrever-se em evento" as UC_Inscrever
+    usecase "Visualizar ingresso e QR Code" as UC_Ingresso
+    usecase "Consultar Meus Ingressos" as UC_MeusIngressos
+    usecase "Consultar meus eventos" as UC_MeusEventos
+    usecase "Consultar e baixar\ncertificado próprio" as UC_BaixarCertificado
+  }
+
+  package "Gestão institucional" {
+    usecase "Consultar dashboard" as UC_Dashboard
+    usecase "Gerenciar eventos" as UC_GerenciarEventos
+    usecase "Gerenciar responsáveis" as UC_Responsaveis
+    usecase "Configurar template\nde certificado" as UC_Template
+    usecase "Validar usuário, role\ne instituição" as UC_AutorizarCheckIn
+    usecase "Validar check-in" as UC_CheckIn
+    usecase "Validar código, inscrição\ne janela de horário" as UC_ValidarIngresso
+  }
+
+  package "Certificação" {
+    usecase "Emitir certificado\nautomaticamente" as UC_Emitir
+    usecase "Reservar processamento\nidempotente" as UC_Reservar
+    usecase "Gerar e persistir PDF" as UC_GerarPDF
+    usecase "Enviar PDF anexado\npor e-mail" as UC_Enviar
+    usecase "Registrar resultado\ne retry seguro" as UC_Resultado
+  }
+
+  package "Administração global" {
+    usecase "Gerenciar instituições" as UC_Instituicoes
+    usecase "Gerenciar usuários secretaria" as UC_Secretarias
+    usecase "Consultar dashboard global" as UC_DashboardGlobal
+    usecase "Executar automações\nmanualmente" as UC_AutomacaoManual
+  }
+}
+
+Visitante --> UC_Landing
+Visitante --> UC_Descobrir
+Visitante --> UC_Detalhe
+Visitante --> UC_Cadastro
+
+PublicoGeral --> UC_Login
+PublicoGeral --> UC_Descobrir
+PublicoGeral --> UC_Detalhe
+PublicoGeral --> UC_Inscrever
+PublicoGeral --> UC_Ingresso
+PublicoGeral --> UC_MeusIngressos
+PublicoGeral --> UC_MeusEventos
+PublicoGeral --> UC_BaixarCertificado
+
+Aluno --> UC_Cadastro
+Aluno --> UC_ConfirmarEmail
+Aluno --> UC_Login
+Aluno --> UC_Descobrir
+Aluno --> UC_Detalhe
+Aluno --> UC_Inscrever
+Aluno --> UC_Ingresso
+Aluno --> UC_MeusEventos
+Aluno --> UC_BaixarCertificado
+
+Secretaria --> UC_Login
+Secretaria --> UC_Dashboard
+Secretaria --> UC_GerenciarEventos
+Secretaria --> UC_Responsaveis
+Secretaria --> UC_Template
+Secretaria --> UC_CheckIn
+Operador --> UC_CheckIn
+
+Admin --> UC_Login
+Admin --> UC_Instituicoes
+Admin --> UC_Secretarias
+Admin --> UC_DashboardGlobal
+Admin --> UC_AutomacaoManual
+Admin --> UC_CheckIn
+
+UC_Cadastro ..> UC_ConfirmarEmail : <<extend>>
+UC_MeusIngressos ..> UC_Ingresso : <<include>>
+UC_CheckIn ..> UC_AutorizarCheckIn : <<include>>
+UC_CheckIn ..> UC_ValidarIngresso : <<include>>
+UC_Emitir ..> UC_CheckIn : <<extend>>\n[evento possui template]
+UC_Emitir ..> UC_Reservar : <<include>>
+UC_Emitir ..> UC_GerarPDF : <<include>>
+UC_Emitir ..> UC_Enviar : <<include>>
+UC_Enviar ..> UC_Resultado : <<include>>
+UC_AutomacaoManual ..> UC_Emitir : <<include>>
+Automacao --> UC_Emitir
+Automacao --> UC_Resultado
+PDF <-- UC_GerarPDF
+Email <-- UC_Enviar
+
+note right of UC_CheckIn
+  A Secretaria é o ator principal.
+  O backend confirma usuário ativo,
+  role atual e instituição do evento.
+end note
+
+note right of UC_Emitir
+  Somente após presença confirmada.
+  Atende Aluno FATEC e Público Geral.
+  Repetições não criam nova entrega.
+end note
+
+note bottom of UC_Resultado
+  Falha não desfaz a presença.
+  Resultado SMTP incerto não recebe retry automático.
+end note
+
+@enduml

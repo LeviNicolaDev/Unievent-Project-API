@@ -14,6 +14,9 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
         RuleFor(e => e.Descricao)
             .NotEmpty().WithMessage("O campo 'Descrição' é obrigatório.")
             .MaximumLength(1000).WithMessage("O campo 'Descrição' deve conter no máximo 1000 caracteres.");
+        RuleFor(e => e.Local)
+            .MaximumLength(200).WithMessage("O campo 'Local' deve conter no máximo 200 caracteres.")
+            .When(e => !string.IsNullOrWhiteSpace(e.Local));
         RuleFor(e => e.DataEvento)
             .NotEmpty().WithMessage("O campo 'Data' é obrigatório.")
             .GreaterThan(DateTime.Now).WithMessage("A data do evento deve ser futura.");
@@ -26,6 +29,15 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
             .GreaterThanOrEqualTo(1).WithMessage("A capacidade do evento deve ser um valor positivo.");
         RuleFor(e => e.Thumbnail)
             .NotEmpty().WithMessage("O campo 'Thumbnail' é obrigatório.");
+        RuleFor(e => e.Visibilidade).IsInEnum();
+        RuleFor(e => e.PublicoPermitido).IsInEnum();
+        RuleFor(e => e.FimInscricoes)
+            .GreaterThan(e => e.InicioInscricoes)
+            .When(e => e.InicioInscricoes.HasValue && e.FimInscricoes.HasValue)
+            .WithMessage("O fim das inscrições deve ser posterior ao início.");
+        RuleFor(e => e.RaioCheckInMetros).InclusiveBetween(25, 5000);
+        RuleFor(e => e.Latitude).InclusiveBetween(-90, 90).When(e => e.Latitude.HasValue);
+        RuleFor(e => e.Longitude).InclusiveBetween(-180, 180).When(e => e.Longitude.HasValue);
 
     }
 }

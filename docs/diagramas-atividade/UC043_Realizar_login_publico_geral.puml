@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC043 - Acessar a área do Público Geral
+|Público Geral|
+start
+:Informa e-mail e senha;
+|Controle de acesso|
+if (Credenciais são válidas?) then (Sim)
+  if (Conta pertence a participante externo ativo?) then (Sim)
+    :Autoriza o acesso à área pública autenticada;
+    |Público Geral|
+    :Consulta eventos e seus ingressos;
+  else (Não - exceção)
+    :Recusa conta interna, inativa ou inadequada ao canal;
+  endif
+else (Não - exceção)
+  :Informa credenciais inválidas;
+endif
+stop
+@enduml
+

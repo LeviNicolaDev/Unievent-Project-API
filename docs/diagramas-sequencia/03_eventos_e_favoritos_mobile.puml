@@ -1,0 +1,49 @@
+@startuml
+!include _tema.puml
+title UC009-UC011 - Eventos disponíveis, detalhes e favoritos no mobile
+
+actor "Aluno Fatec" as Aluno
+participant "Aplicativo mobile" as Mobile
+participant "EventContext" as Context
+participant "EventoController" as Api
+participant "EventoService" as Service
+database "SQL Server" as DB
+
+Aluno -> Mobile : Abre a tela inicial
+Mobile -> Api : GET /api/Evento\nAuthorization: Bearer JWT
+Api -> Service : ListarEventosDisponiveis(tipo participante)
+Service -> DB : Consulta eventos e aplica público permitido
+DB --> Service : Eventos compatíveis
+Service --> Api : EventoResponse[]
+Api --> Mobile : 200 eventos + vagas
+alt Existem eventos
+  Mobile --> Aluno : Exibe lista disponível
+else Lista vazia
+  Mobile --> Aluno : Exibe estado sem eventos
+end
+
+Aluno -> Mobile : Seleciona um evento
+Mobile -> Api : GET /api/Evento/{id}
+Api -> Service : ListarEventoById(id)
+Service -> DB : Consulta dados relacionados
+alt Evento disponível para o perfil
+  DB --> Service : Evento
+  Service --> Api : EventoResponse
+  Api --> Mobile : 200 detalhes
+  Mobile --> Aluno : Exibe informações e ações
+else Evento indisponível
+  Api --> Mobile : 403 ou 404
+  Mobile --> Aluno : Informa indisponibilidade
+end
+
+Aluno -> Mobile : Toca em Favoritar
+Mobile -> Context : toggleFavorite(eventoId)
+Context -> Context : Atualiza favoritos em memória
+Context --> Mobile : Novo estado
+Mobile --> Aluno : Atualiza ícone e lista de favoritos
+note over Mobile,Context
+  O código atual mantém favoritos no estado local
+  do aplicativo e não chama um endpoint da API.
+end note
+@enduml
+

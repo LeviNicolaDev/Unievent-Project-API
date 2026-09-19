@@ -1,0 +1,18 @@
+@startuml
+!include _tema.puml
+title UC002 - Descobrir eventos públicos
+|Visitante|
+start
+:Solicita conhecer os eventos abertos;
+|UniEvent|
+:Considera somente eventos publicados e disponíveis;
+if (Há eventos públicos?) then (Sim)
+  :Apresenta eventos com data, categoria e instituição;
+  |Visitante|
+  :Analisa as opções disponíveis;
+else (Não - exceção)
+  :Informa que não há eventos públicos no momento;
+endif
+stop
+@enduml
+

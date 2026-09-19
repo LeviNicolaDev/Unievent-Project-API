@@ -1,0 +1,19 @@
+@startuml
+!include _tema.puml
+title UC009 - Consultar eventos disponíveis para o aluno
+|Aluno Fatec|
+start
+:Solicita eventos disponíveis;
+|Gestão de eventos|
+:Considera instituição, perfil do participante,
+visibilidade, período e disponibilidade;
+if (Há eventos compatíveis?) then (Sim)
+  :Apresenta as oportunidades elegíveis;
+  |Aluno Fatec|
+  :Consulta as opções;
+else (Não - exceção)
+  :Informa que não há eventos compatíveis no momento;
+endif
+stop
+@enduml
+

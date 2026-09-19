@@ -53,22 +53,12 @@ public class CertificadoService : ICertificadoService
             {
                 certificado.DataCertifcado = update.DataCertifcado.Value;
             }
-            if (update.AlunoId.HasValue)
-            {
-                var aluno = await _alunoRepository.ListarAlunoById(update.AlunoId.Value);
 
-                if (aluno == null)
-                {
-                    _logger.LogWarning("Aluno com ID {AlunoId} não encontrado...", update.AlunoId);
-                    return Result<CertificadoResponse>.Failure("Aluno não encontrado");
-                }
-
-                certificado.AlunoId = update.AlunoId.Value;
-            }
+            Evento? eventoAtualizado = null;
             if (update.EventoId.HasValue)
             {
-                var evento = await _eventoRepository.ListarEventoById(update.EventoId.Value);
-                if (evento == null)
+                eventoAtualizado = await _eventoRepository.ListarEventoById(update.EventoId.Value);
+                if (eventoAtualizado == null)
                 {
                     _logger.LogWarning("Evento com ID {EventoId} não encontrado para atualização do certificado com ID {CertificadoId}", update.EventoId, id);
                     return Result<CertificadoResponse>.Failure("Evento não encontrado");
@@ -83,8 +73,8 @@ public class CertificadoService : ICertificadoService
             {
                 Id = id,
                 DataCertifcado = certificado.DataCertifcado,
-                AlunoId = certificado.AlunoId,
                 EventoId = certificado.EventoId,
+                NomeEvento = eventoAtualizado?.Nome ?? certificado.Evento?.Nome ?? string.Empty,
                 Texto = certificado.Texto
             });
         }
@@ -103,16 +93,8 @@ public class CertificadoService : ICertificadoService
             var validationResult = await _requestValidator.ValidateAsync(request);
             if (!validationResult.IsValid)
             {
-                _logger.LogWarning("Dados inválidos para criação do certificado para aluno ID {AlunoId} e evento ID {EventoId}", request.AlunoId, request.EventoId);
+                _logger.LogWarning("Dados inválidos para criação do certificado com evento ID {EventoId}", request.EventoId);
                 return Result<CertificadoResponse>.Failure(validationResult.Errors.Select(e => e.ErrorMessage).ToList());
-            }
-            _logger.LogInformation("Iniciando criação de certificado para aluno ID {AlunoId} e evento ID {EventoId}", request.AlunoId, request.EventoId);
-
-            var aluno = await _alunoRepository.ListarAlunoById(request.AlunoId);
-            if (aluno is null)
-            {
-                _logger.LogWarning("Aluno com ID {AlunoId} não encontrado para criação do certificado", request.AlunoId);
-                return Result<CertificadoResponse>.Failure("Aluno não encontrado");
             }
             var evento = await _eventoRepository.ListarEventoById(request.EventoId);
             if (evento is null)
@@ -124,7 +106,6 @@ public class CertificadoService : ICertificadoService
             var certificado = new Certificado
             {
                 DataCertifcado = request.DataCertifcado,
-                AlunoId = request.AlunoId,
                 EventoId = request.EventoId,
                 Texto = request.Texto
             };
@@ -135,8 +116,8 @@ public class CertificadoService : ICertificadoService
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
-                AlunoId = certificado.AlunoId,
                 EventoId = certificado.EventoId,
+                NomeEvento = evento.Nome,
                 Texto = certificado.Texto
             });
         }
@@ -186,9 +167,9 @@ public class CertificadoService : ICertificadoService
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
-                AlunoId = certificado.AlunoId,
                 EventoId = certificado.EventoId,
-                Texto = certificado.Texto
+                Texto = certificado.Texto,
+                NomeEvento = certificado.Evento?.Nome ?? string.Empty
             });
         }
         catch (Exception ex)
@@ -209,9 +190,9 @@ public class CertificadoService : ICertificadoService
             {
                 Id = certificado.Id,
                 DataCertifcado = certificado.DataCertifcado,
-                AlunoId = certificado.AlunoId,
                 EventoId = certificado.EventoId,
-                Texto = certificado.Texto
+                Texto = certificado.Texto,
+                NomeEvento = certificado.Evento?.Nome ?? string.Empty
             }));
 
         }

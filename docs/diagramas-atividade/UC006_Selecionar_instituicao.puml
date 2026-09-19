@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC006 - Selecionar instituição
+|Aluno Fatec|
+start
+:Solicita escolher sua instituição;
+|Gestão institucional|
+if (Há instituições aptas ao vínculo?) then (Sim)
+  :Apresenta as instituições disponíveis;
+  |Aluno Fatec|
+  :Seleciona a instituição em que estuda;
+  |Gestão de participantes|
+  :Associa a escolha ao pedido de cadastro;
+else (Não - exceção)
+  :Informa ausência de instituição disponível;
+  |Aluno Fatec|
+  :Interrompe o cadastro institucional;
+endif
+stop
+@enduml
+

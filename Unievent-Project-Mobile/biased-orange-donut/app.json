@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "biased-orange-donut",
+    "slug": "snack-61183160-f95a-463a-a6c6-8d4ecfe80230",
+    "scheme": "unievent",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "package": "com.ryanlevi.unieventapp"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O UniEvent precisa acessar sua galeria para selecionar sua foto de perfil."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "527a329d-803d-455c-bfe4-0f76216aac11"
+      }
+    }
+  }
+}

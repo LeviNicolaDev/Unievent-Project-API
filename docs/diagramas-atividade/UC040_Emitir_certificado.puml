@@ -1,0 +1,26 @@
+@startuml
+!include _tema.puml
+title UC040 - Emitir certificado automaticamente
+|Gestão de certificação|
+start
+:Recebe uma participação com presença confirmada;
+if (Evento oferece certificado?) then (Sim)
+  if (Certificado já foi emitido ou está em emissão?) then (Sim - exceção)
+    :Mantém a emissão existente sem duplicidade;
+  else (Não)
+    :Reúne participante, evento, instituição e texto oficial;
+    :Gera o documento de certificado;
+    if (Documento foi gerado corretamente?) then (Sim)
+      :Registra emissão, data e código de validação;
+      :Encaminha o certificado para entrega;
+    else (Não - exceção)
+      :Registra a pendência de emissão para tratamento;
+      :Preserva a presença confirmada;
+    endif
+  endif
+else (Não - exceção)
+  :Encerra o processo mantendo somente a presença;
+endif
+stop
+@enduml
+

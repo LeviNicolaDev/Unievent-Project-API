@@ -1,0 +1,18 @@
+skinparam shadowing false
+skinparam handwritten false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #1F4E79
+skinparam ActorBorderColor #1F4E79
+skinparam ActorFontColor #111111
+skinparam ParticipantBorderColor #1F4E79
+skinparam ParticipantBackgroundColor #FFF8DC
+skinparam ParticipantFontColor #111111
+skinparam DatabaseBorderColor #1F4E79
+skinparam DatabaseBackgroundColor #EAF3F8
+skinparam NoteBorderColor #E86A1C
+skinparam NoteBackgroundColor #FFF3E8
+skinparam SequenceLifeLineBorderColor #1F4E79
+skinparam SequenceGroupBorderColor #1F4E79
+skinparam SequenceGroupHeaderFontColor #111111
+hide footbox
+

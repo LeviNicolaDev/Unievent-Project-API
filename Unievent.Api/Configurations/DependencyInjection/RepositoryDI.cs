@@ -9,10 +9,10 @@ namespace Unievent.Api.Configurations.DependencyInjection
         {
             services.AddScoped<IAlunoRepository, AlunoRepository>();
             services.AddScoped<ICertificadoRepository, CertificadoRepository>();
-            services.AddScoped<IEnderecoRepository, EnderecoRepository>();
             services.AddScoped<IEventoRepository, EventoRepository>();
             services.AddScoped<IInstituicaoRepository, InstituicaoRepository>();
             services.AddScoped<IResponsavelEventoRepository, ResponsavelEventoRepository>();
+            services.AddScoped<IUsuarioUnieventRepository, UsuarioUnieventRepository>();
             services.AddScoped<IUsuarioSecretariaRepository, UsuarioSecretariaRepository>();
             services.AddScoped<IParticipacaoRepository, ParticipacaoRepository>();
 

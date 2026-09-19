@@ -13,4 +13,5 @@ public interface IEventoService
     public Task<Result<IList<EventoResponse>>> ListarEventosByCategoria(Categoria categoria);
     public Task<Result<EventoResponse>> ListarEventosByResponsavel(int responsavelId);
     public Task<Result<EventoResponse>> ListarEventoById(int id);
+    public Task<Result<IEnumerable<EventoResponse>>> ListarEventosDisponiveis(TipoParticipante? tipoParticipante);
 }

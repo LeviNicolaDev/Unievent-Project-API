@@ -1,0 +1,51 @@
+@startuml
+!include _tema.puml
+title UC016-UC017 - Perfil e preferências do participante
+
+actor "Aluno" as Aluno
+participant "Aplicativo mobile" as Mobile
+participant "AlunoController" as AlunoApi
+participant "PreferenciasController" as PreferenciasApi
+participant "AlunoService" as Service
+database "SQL Server" as DB
+
+Aluno -> Mobile : Abre Perfil
+Mobile -> AlunoApi : GET /api/Aluno/me\nBearer JWT
+AlunoApi -> DB : Busca o titular e sua instituição
+DB --> AlunoApi : AlunoResponse
+AlunoApi --> Mobile : 200 perfil
+Mobile --> Aluno : Exibe dados atuais
+
+opt Atualizar perfil
+  Aluno -> Mobile : Altera dados/foto
+  Mobile -> AlunoApi : PATCH /api/Aluno/{id} (multipart)
+  AlunoApi -> AlunoApi : Confere titular pelo JWT
+  AlunoApi -> Service : AtualizarAluno(id, update)
+  Service -> DB : Valida e persiste alterações
+  alt Dados válidos
+    DB --> Service : Perfil atualizado
+    Service --> AlunoApi : AlunoResponse
+    AlunoApi --> Mobile : 200 perfil
+  else Dados inválidos
+    Service --> AlunoApi : Falha
+    AlunoApi --> Mobile : 400 erros
+  end
+end
+
+Aluno -> Mobile : Abre Configurações
+Mobile -> PreferenciasApi : GET /api/me/preferencias
+PreferenciasApi -> DB : Busca preferências por AlunoId
+DB --> PreferenciasApi : Preferências ou padrão
+PreferenciasApi --> Mobile : 200 configuração
+Aluno -> Mobile : Ajusta alertas, categorias e localização
+Mobile -> PreferenciasApi : PUT /api/me/preferencias
+PreferenciasApi -> PreferenciasApi : Valida raio e coordenadas
+alt Configuração válida
+  PreferenciasApi -> DB : Cria ou atualiza preferências
+  PreferenciasApi --> Mobile : 200 preferências salvas
+else Configuração inválida
+  PreferenciasApi --> Mobile : 400 motivo
+end
+Mobile --> Aluno : Apresenta o resultado
+@enduml
+

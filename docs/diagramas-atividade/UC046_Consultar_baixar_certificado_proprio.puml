@@ -1,0 +1,25 @@
+@startuml
+!include _tema.puml
+title UC046 - Consultar e obter certificado próprio
+|Participante|
+start
+:Consulta a situação dos seus certificados;
+|Gestão de certificação|
+if (Há participação pertencente ao solicitante?) then (Sim)
+  if (Presença foi confirmada?) then (Sim)
+    if (Certificado foi emitido e está disponível?) then (Sim)
+      :Disponibiliza o documento oficial;
+      |Participante|
+      :Obtém seu certificado;
+    else (Não - exceção)
+      :Informa que a emissão ainda não está disponível;
+    endif
+  else (Não - exceção)
+    :Informa que não há presença confirmada;
+  endif
+else (Não - exceção)
+  :Não apresenta dados de participação de terceiros;
+endif
+stop
+@enduml
+

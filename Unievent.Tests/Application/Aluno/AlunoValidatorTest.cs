@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Unievent.Application.Dtos.Aluno;
 using Unievent.Application.Validators.Aluno;
+using Unievent.Domain.Enuns;
 using Xunit;
 
 namespace Unievent.Tests.Application.Aluno;
@@ -26,6 +27,8 @@ public class AlunoValidatorTest
             Email = "ryan@email.com",
             DataNascimento = new DateTime(2000, 1, 1),
             Senha = "senha123",
+            TipoParticipante = TipoParticipante.Interno,
+            InstituicaoId = 1,
             FotoPerfil = new FormFile(null, 0, 0, null, "foto.jpg")
         };
         // Act
@@ -72,7 +75,44 @@ public class AlunoValidatorTest
         result.IsValid.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task Deve_Falhar_Quando_Aluno_Interno_Nao_Informar_Instituicao()
+    {
+        var request = new AlunoRequest
+        {
+            Nome = "Ryan",
+            Email = "ryan@fatec.sp.gov.br",
+            DataNascimento = new DateTime(2000, 1, 1),
+            Senha = "senha123",
+            TipoParticipante = TipoParticipante.Interno,
+            FotoPerfil = new FormFile(null, 0, 0, null, "foto.jpg")
+        };
 
+        var result = await _validatorRequest.ValidateAsync(request);
+
+        result.IsValid.Should().BeFalse();
+        result.Errors.Select(error => error.ErrorMessage)
+            .Should().Contain("A instituição é obrigatória para participantes internos");
+    }
+
+    [Fact]
+    public async Task Deve_Passar_Quando_Aluno_Interno_Informar_Instituicao()
+    {
+        var request = new AlunoRequest
+        {
+            Nome = "Ryan",
+            Email = "ryan@fatec.sp.gov.br",
+            DataNascimento = new DateTime(2000, 1, 1),
+            Senha = "senha123",
+            TipoParticipante = TipoParticipante.Interno,
+            InstituicaoId = 1,
+            FotoPerfil = new FormFile(null, 0, 0, null, "foto.jpg")
+        };
+
+        var result = await _validatorRequest.ValidateAsync(request);
+
+        result.IsValid.Should().BeTrue();
+    }
 
     [Fact]
     public async Task Deve_Falhar_Quando_Senha_For_Menor_Que_6_Caracteres_No_Update()

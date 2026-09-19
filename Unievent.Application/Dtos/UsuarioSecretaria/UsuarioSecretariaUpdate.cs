@@ -8,6 +8,8 @@ public class UsuarioSecretariaUpdate
     public string? EmailUsuario { get; set; }
     public Role? Role { get; set; }
     public string? Senha { get; set; }
+    public int? InstituicaoId { get; set; }
+    public StatusUsuarioSecretaria? Status { get; set; }
 
 
 }

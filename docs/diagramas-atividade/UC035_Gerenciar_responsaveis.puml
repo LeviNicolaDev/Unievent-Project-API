@@ -1,0 +1,26 @@
+@startuml
+!include _tema.puml
+title UC035 - Gerenciar responsáveis por eventos
+|Secretaria ou Admin|
+start
+:Consulta responsáveis da instituição;
+:Escolhe cadastrar, editar ou remover;
+|Gestão institucional|
+if (Responsável pertence ao âmbito permitido?) then (Sim)
+  if (Dados são válidos?) then (Sim)
+    if (Remoção possui evento vinculado?) then (Sim - exceção)
+      :Preserva o responsável e informa os vínculos;
+    else (Não)
+      :Registra a alteração solicitada;
+      |Secretaria ou Admin|
+      :Recebe confirmação;
+    endif
+  else (Não - exceção)
+    :Informa os dados que precisam de correção;
+  endif
+else (Não - exceção)
+  :Nega alteração fora do âmbito institucional;
+endif
+stop
+@enduml
+

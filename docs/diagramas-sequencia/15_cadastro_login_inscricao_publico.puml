@@ -1,0 +1,57 @@
+@startuml
+!include _tema.puml
+title UC042-UC044 - Cadastro, login e inscrição do Público Geral
+
+actor "Público Geral" as Publico
+participant "Web pública\nReact" as Web
+participant "AuthController" as AuthApi
+participant "EventoController" as EventoApi
+participant "AuthService" as AuthService
+participant "ParticipacaoService" as Participacao
+database "SQL Server" as DB
+
+Publico -> Web : Abre Criar conta e informa os dados
+Web -> AuthApi : POST /api/Auth/cadastro-publico
+AuthApi -> AuthService : CadastrarPublicoGeral(request)
+AuthService -> DB : Verifica e-mail em todos os tipos de usuário
+alt Dados inválidos ou e-mail existente
+  AuthService --> AuthApi : Falha
+  AuthApi --> Web : 400 erros
+  Web --> Publico : Solicita correção
+else Cadastro válido
+  AuthService -> DB : Salva Aluno Externo, ativo e confirmado
+  AuthService --> AuthApi : AlunoResponse
+  AuthApi --> Web : 200 conta criada
+  Web --> Publico : Direciona ao login
+end
+
+Publico -> Web : Informa e-mail e senha
+Web -> AuthApi : POST /api/Auth/login-publico
+AuthApi -> AuthService : LoginPublicoGeral(request)
+AuthService -> DB : Busca Aluno Externo e valida senha
+alt Autenticação inválida
+  AuthApi --> Web : 401
+  Web --> Publico : Exibe o motivo
+else Autenticação válida
+  AuthService -> AuthService : Gera JWT Aluno/Externo
+  AuthService --> AuthApi : Token
+  AuthApi --> Web : 200 JWT
+  Web -> Web : Persiste sessão pública
+end
+
+Publico -> Web : Abre evento público e solicita inscrição
+Web -> EventoApi : POST /api/Evento/{id}/inscrever-se\nBearer JWT
+EventoApi -> Participacao : InscreverAsync(alunoId, eventoId)
+Participacao -> DB : Valida evento, público Externo, prazo e vagas
+alt Inscrição permitida
+  Participacao -> DB : Cria participação e código de ingresso
+  Participacao --> EventoApi : ParticipacaoResponse
+  EventoApi --> Web : 200
+  Web --> Publico : Confirma inscrição e acesso ao ingresso
+else Inscrição impedida
+  Participacao --> EventoApi : Regras violadas
+  EventoApi --> Web : 400
+  Web --> Publico : Exibe o motivo
+end
+@enduml
+

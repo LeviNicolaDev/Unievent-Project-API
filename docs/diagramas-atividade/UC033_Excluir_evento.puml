@@ -1,0 +1,27 @@
+@startuml
+!include _tema.puml
+title UC033 - Excluir evento
+|Secretaria ou Admin|
+start
+:Seleciona evento e solicita exclusão;
+|Gestão de eventos|
+if (Evento existe e está no âmbito permitido?) then (Sim)
+  :Solicita confirmação da decisão;
+  |Secretaria ou Admin|
+  if (Confirma a exclusão?) then (Sim)
+    |Gestão de eventos|
+    if (Há vínculos que impedem a exclusão?) then (Sim - exceção)
+      :Preserva o evento e informa os vínculos existentes;
+    else (Não)
+      :Retira o evento da operação;
+      :Confirma a exclusão;
+    endif
+  else (Não - exceção)
+    :Cancela a solicitação sem alterar o evento;
+  endif
+else (Não - exceção)
+  :Informa evento inexistente ou sem autorização;
+endif
+stop
+@enduml
+

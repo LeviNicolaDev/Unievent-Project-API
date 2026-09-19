@@ -8,6 +8,7 @@ using Scalar.AspNetCore;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Unievent.Api.BackgroundServices;
 using Unievent.Api.Configurations.DependencyInjection;
 using Unievent.Application.Configurations.Email;
 using Unievent.Application.Interfaces.Auth;
@@ -29,7 +30,7 @@ builder.Services.AddServices();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
 builder.Configuration.AddEnvironmentVariables();
-builder.Services.AddDbContext<AppDbContext>(options =>
+builder.Services.AddDbContextFactory<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddControllers()
@@ -37,6 +38,20 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
     });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy
+            .WithOrigins(
+                "http://localhost:5173" // Vite
+                , "http://localhost:8081"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<AlunoRequestValidator>();
@@ -64,12 +79,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.Configure<EmailSettings>(
     builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<Unievent.Application.Configurations.CertificacaoSettings>(
+    builder.Configuration.GetSection("Certificacao"));
 
 builder.Services.AddAuthorization();
 
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+
+if (builder.Configuration.GetValue("Automacoes:Ativas", false))
+{
+    builder.Services.AddHostedService<EventosAutomationWorker>();
+}
 
 // ✅ Com security scheme
 builder.Services.AddOpenApi(options =>
@@ -95,6 +117,12 @@ builder.Services.AddOpenApi(options =>
 
 var app = builder.Build();
 
+if (builder.Configuration.GetValue("Database:MigrateOnStartup", false))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -112,7 +140,10 @@ if (app.Environment.IsDevelopment())
  });
 }
 
+app.UseStaticFiles();
 app.UseHttpsRedirection();
+
+app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -121,3 +152,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+public partial class Program { }

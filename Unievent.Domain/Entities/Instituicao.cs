@@ -6,20 +6,27 @@ public class Instituicao : EntidadeBase
     {
 
     }
-    public Instituicao(int id, string emailLogin, string senhaLogin, string fotoPerfil, string cnpj, int idEndereco)
+    public Instituicao(int id, string fotoPerfil, string cnpj)
     {
         Id = id;
-        EmailLogin = emailLogin;
-        SenhaLogin = senhaLogin;
         FotoPerfil = fotoPerfil;
         Cnpj = cnpj;
-        EnderecoId = idEndereco;
     }
     public int Id { get; set; }
-    public required string EmailLogin { get; set; }
-    public required string SenhaLogin { get; set; }
+    public string? Nome { get; set; }
+    public string? NomeAbreviado { get; set; }
+    public string? Codigo { get; set; }
     public required string FotoPerfil { get; set; }
     public required string Cnpj { get; set; }
-    public required int EnderecoId { get; set; }
-    public Endereco Endereco { get; set; }
+    public required string Rua { get; set; }
+    public required string Cidade { get; set; }
+    public required string Bairro { get; set; }
+    public required string Estado { get; set; }
+    public required string Cep { get; set; }
+    public required string Numero { get; set; }
+    public string? Telefone { get; set; }
+    public string? Site { get; set; }
+    public bool IsAtivo { get; set; } = true;
+    public DateTime CriadoEmUtc { get; set; } = DateTime.UtcNow;
+    public DateTime AtualizadoEmUtc { get; set; } = DateTime.UtcNow;
 }

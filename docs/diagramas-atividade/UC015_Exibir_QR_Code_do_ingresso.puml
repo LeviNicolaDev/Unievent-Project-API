@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC015 - Apresentar código do ingresso
+|Participante|
+start
+:Abre um ingresso próprio;
+|Gestão de inscrições|
+if (Inscrição existe e está ativa?) then (Sim)
+  :Apresenta o código visual e a alternativa textual;
+  |Participante|
+  :Disponibiliza o ingresso para conferência no evento;
+else (Não - exceção)
+  :Informa que o código não pode ser utilizado;
+  |Participante|
+  :Consulta o motivo ou o histórico da inscrição;
+endif
+note right
+  A apresentação do código não confirma presença.
+end note
+stop
+@enduml
+

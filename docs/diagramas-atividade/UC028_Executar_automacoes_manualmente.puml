@@ -1,0 +1,25 @@
+@startuml
+!include _tema.puml
+title UC028 - Solicitar processamento de rotinas operacionais
+|Admin UniEvent|
+start
+:Solicita execução extraordinária das rotinas;
+|Operação UniEvent|
+if (Solicitação está autorizada?) then (Sim)
+  :Reavalia certificados pendentes elegíveis;
+  :Reavalia alertas de eventos próximos;
+  if (Processamento termina normalmente?) then (Sim)
+    :Consolida itens processados e ocorrências;
+    |Admin UniEvent|
+    :Recebe o resultado da execução;
+  else (Não - exceção)
+    :Registra a ocorrência operacional;
+    |Admin UniEvent|
+    :Recebe aviso de processamento incompleto;
+  endif
+else (Não - exceção)
+  :Recusa a solicitação;
+endif
+stop
+@enduml
+

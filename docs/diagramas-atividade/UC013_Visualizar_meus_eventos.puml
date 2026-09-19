@@ -1,0 +1,20 @@
+@startuml
+!include _tema.puml
+title UC013 - Consultar eventos inscritos
+|Aluno Fatec|
+start
+:Solicita consultar suas participações;
+|Gestão de inscrições|
+if (Há inscrições vinculadas ao aluno?) then (Sim)
+  :Organiza eventos futuros e histórico;
+  :Apresenta situação de cada participação;
+  |Aluno Fatec|
+  :Seleciona um evento ou ingresso;
+else (Não - exceção)
+  :Informa que o aluno ainda não possui inscrições;
+  |Aluno Fatec|
+  :Pode explorar eventos disponíveis;
+endif
+stop
+@enduml
+

@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC023 - Alterar situação da instituição
+|Admin UniEvent|
+start
+:Seleciona instituição e situação desejada;
+|Gestão institucional|
+if (Instituição existe?) then (Sim)
+  if (Alteração é permitida?) then (Sim)
+    :Ativa ou desativa a instituição;
+    :Aplica a nova situação aos acessos e vínculos futuros;
+    |Admin UniEvent|
+    :Recebe confirmação;
+  else (Não - exceção)
+    :Informa a regra que impede a alteração;
+  endif
+else (Não - exceção)
+  :Informa instituição não encontrada;
+endif
+stop
+@enduml
+

@@ -17,12 +17,14 @@ public class AlunoService : IAlunoService
     private readonly ILogger<AlunoService> _logger;
     private readonly IValidator<AlunoRequest> _validatorRequest;
     private readonly IValidator<AlunoUpdate> _validatorUpdate;
-    public AlunoService(IAlunoRepository repository, ILogger<AlunoService> logger, IValidator<AlunoRequest> validatorRequest, IValidator<AlunoUpdate> validatorUpdate)
+    private readonly IEmailService? _emailService;
+    public AlunoService(IAlunoRepository repository, ILogger<AlunoService> logger, IValidator<AlunoRequest> validatorRequest, IValidator<AlunoUpdate> validatorUpdate, IEmailService? emailService = null)
     {
         _repository = repository;
         _logger = logger;
         _validatorRequest = validatorRequest;
         _validatorUpdate = validatorUpdate;
+        _emailService = emailService;
     }
     async Task<Result<AlunoResponse>> IAlunoService.AtualizarAluno(int id, AlunoUpdate update)
     {
@@ -70,10 +72,14 @@ public class AlunoService : IAlunoService
                 Id = id,
                 Nome = aluno.Nome,
                 Email = aluno.Email,
+                EmailConfirmado = aluno.EmailConfirmado,
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
-
-                DataNascimento = aluno.DataNascimento
+                Role = aluno.Role,
+                DataNascimento = aluno.DataNascimento,
+                TipoParticipante = aluno.TipoParticipante,
+                InstituicaoId = aluno.InstituicaoId,
+                InstituicaoNome = aluno.Instituicao?.Nome ?? aluno.Instituicao?.NomeAbreviado
             });
         }
         catch (Exception ex)
@@ -122,17 +128,30 @@ public class AlunoService : IAlunoService
                 return Result<AlunoResponse>.Failure("Email já cadastrado para outro aluno");
             }
             var imagem = await SalvarImagem(request.FotoPerfil);
+            var chaveConfirmacaoEmail = Guid.NewGuid().ToString("N");
 
             var aluno = new Aluno
             {
                 Nome = request.Nome,
                 Email = request.Email,
+                EmailConfirmado = false,
+                ChaveConfirmacaoEmail = chaveConfirmacaoEmail,
                 FotoPerfil = imagem,
                 DataNascimento = request.DataNascimento,
                 IsAtivo = true,
                 Role = Domain.Enuns.Role.Aluno,
-                Senha = senha
+                Senha = senha,
+                TipoParticipante = request.TipoParticipante,
+                InstituicaoId = request.TipoParticipante == Domain.Enuns.TipoParticipante.Interno ? request.InstituicaoId : null
             };
+            var emailConfirmacao = await EnviarEmailConfirmacaoConta(
+                aluno.Email,
+                aluno.Nome,
+                chaveConfirmacaoEmail);
+            if (emailConfirmacao.IsFailure)
+            {
+                return Result<AlunoResponse>.Failure(emailConfirmacao.Errors);
+            }
             await _repository.CriarAluno(aluno);
             await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno criado com sucesso com ID {AlunoId}", aluno.Id);
@@ -141,10 +160,14 @@ public class AlunoService : IAlunoService
                 Id = aluno.Id,
                 Nome = aluno.Nome,
                 Email = aluno.Email,
+                EmailConfirmado = aluno.EmailConfirmado,
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
                 Role = aluno.Role,
-                DataNascimento = aluno.DataNascimento
+                DataNascimento = aluno.DataNascimento,
+                TipoParticipante = aluno.TipoParticipante,
+                InstituicaoId = aluno.InstituicaoId,
+                InstituicaoNome = aluno.Instituicao?.Nome ?? aluno.Instituicao?.NomeAbreviado
             });
         }
         catch (Exception ex)
@@ -196,9 +219,14 @@ public class AlunoService : IAlunoService
                 Id = aluno.Id,
                 Nome = aluno.Nome,
                 Email = aluno.Email,
+                EmailConfirmado = aluno.EmailConfirmado,
                 FotoPerfil = aluno.FotoPerfil,
                 IsAtivo = aluno.IsAtivo,
-                DataNascimento = aluno.DataNascimento
+                Role = aluno.Role,
+                DataNascimento = aluno.DataNascimento,
+                TipoParticipante = aluno.TipoParticipante,
+                InstituicaoId = aluno.InstituicaoId,
+                InstituicaoNome = aluno.Instituicao?.Nome ?? aluno.Instituicao?.NomeAbreviado
 
             });
         }
@@ -221,9 +249,14 @@ public class AlunoService : IAlunoService
                 Id = a.Id,
                 Nome = a.Nome,
                 Email = a.Email,
+                EmailConfirmado = a.EmailConfirmado,
                 FotoPerfil = a.FotoPerfil,
                 IsAtivo = a.IsAtivo,
-                DataNascimento = a.DataNascimento
+                Role = a.Role,
+                DataNascimento = a.DataNascimento,
+                TipoParticipante = a.TipoParticipante,
+                InstituicaoId = a.InstituicaoId,
+                InstituicaoNome = a.Instituicao?.Nome ?? a.Instituicao?.NomeAbreviado
 
             }));
         }
@@ -233,5 +266,22 @@ public class AlunoService : IAlunoService
             return Result<IEnumerable<AlunoResponse>>.Failure("Erro ao listar alunos");
         }
 
+    }
+
+    private async Task<Result<bool>> EnviarEmailConfirmacaoConta(string email, string nome, string chave)
+    {
+        if (_emailService is null)
+        {
+            return Result<bool>.Success(true);
+        }
+
+        var envio = await _emailService.EnviarEmailConfirmacaoConta(email, nome, chave);
+        if (envio.IsFailure)
+        {
+            _logger.LogWarning("Não foi possível enviar e-mail de confirmação para {Email}", email);
+            return Result<bool>.Failure("Não foi possível enviar o e-mail de confirmação. Verifique o endereço institucional e tente novamente.");
+        }
+
+        return envio;
     }
 }

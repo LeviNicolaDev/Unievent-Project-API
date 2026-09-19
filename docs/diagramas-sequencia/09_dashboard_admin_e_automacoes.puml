@@ -1,0 +1,43 @@
+@startuml
+!include _tema.puml
+title UC027-UC028 - Dashboard administrativo e automações
+
+actor "Admin UniEvent" as Admin
+participant "Web administrativa" as Web
+participant "DashboardController" as DashboardApi
+participant "AutomacoesController" as AutomacoesApi
+participant "AutomacaoEventosService" as Automacao
+participant "CertificadoAutomaticoService" as Certificacao
+participant "Serviço SMTP" as SMTP
+database "SQL Server" as DB
+
+Admin -> Web : Acessa o dashboard
+Web -> DashboardApi : GET /api/admin/dashboard\nBearer JWT
+DashboardApi -> DashboardApi : Valida Admin global
+DashboardApi -> DB : Agrega instituições, usuários, eventos,\ninscrições, presenças e certificados
+DB --> DashboardApi : Métricas globais
+DashboardApi -> DashboardApi : Calcula taxa de comparecimento
+DashboardApi --> Web : 200 AdminDashboardResponse
+Web --> Admin : Exibe indicadores
+
+Admin -> Web : Solicita processar automações
+Web -> AutomacoesApi : POST /api/admin/automacoes/processar-eventos
+AutomacoesApi -> AutomacoesApi : Valida Admin global
+AutomacoesApi -> Automacao : ProcessarAsync()
+Automacao -> DB : Seleciona certificados elegíveis para retry
+loop Cada participação elegível
+  Automacao -> Certificacao : ProcessarAposCheckInAsync(id)
+  Certificacao -> DB : Reserva/consulta estado persistido
+  Certificacao -> SMTP : Envia quando seguro e necessário
+  Certificacao -> DB : Registra resultado
+end
+Automacao -> DB : Busca eventos próximos, alunos e preferências
+loop Cada recomendação ainda não enviada
+  Automacao -> SMTP : Envia alerta de evento
+  Automacao -> DB : Registra NotificacaoEvento
+end
+Automacao --> AutomacoesApi : Quantidades processadas e falhas
+AutomacoesApi --> Web : 200 resultado ou 400 falha
+Web --> Admin : Apresenta resumo da execução
+@enduml
+

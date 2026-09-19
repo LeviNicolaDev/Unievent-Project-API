@@ -1,0 +1,55 @@
+@startuml
+!include _tema.puml
+title UC040-UC041 - Emissão e envio automático do certificado
+
+participant "ParticipacaoService" as CheckIn
+participant "CertificadoAutomaticoService" as Certificacao
+participant "CertificadoPdfGenerator" as PDF
+participant "EmailService" as Email
+participant "Servidor SMTP" as SMTP
+actor "Participante" as Participante
+database "SQL Server" as DB
+
+CheckIn -> Certificacao : ProcessarAposCheckInAsync(participacaoId)
+Certificacao -> DB : Consulta presença, evento, aluno e template
+alt Evento sem template
+  DB --> Certificacao : Nenhum certificado configurado
+  Certificacao --> CheckIn : Processamento dispensado
+else Certificado já concluído ou reservado
+  DB --> Certificacao : Estado persistido
+  Certificacao --> CheckIn : Resultado idempotente
+else Certificado elegível
+  Certificacao -> DB : Reserva processamento atomicamente
+  Certificacao -> Certificacao : Define código estável e dados
+  Certificacao -> PDF : GerarAsync(CertificadoPdfDados)
+  alt Falha ao gerar PDF
+    PDF --> Certificacao : Erro
+    Certificacao -> DB : Registra falha sem desfazer presença
+    Certificacao --> CheckIn : Check-in preservado + erro
+  else PDF gerado
+    PDF --> Certificacao : Bytes PDF e nome do arquivo
+    Certificacao -> DB : Persiste PDF, código e data de emissão
+    Certificacao -> DB : Marca status Enviando
+    Certificacao -> Email : SendWithAttachmentAsync(PDF, Message-ID)
+    Email -> SMTP : Envia MIME com application/pdf
+    alt Envio confirmado
+      SMTP --> Participante : E-mail com certificado anexado
+      SMTP --> Email : Sucesso
+      Email --> Certificacao : Enviado
+      Certificacao -> DB : Registra Enviado e data
+    else Rejeição temporária
+      SMTP --> Email : Erro transitório
+      Email --> Certificacao : FalhaTemporaria
+      Certificacao -> DB : Agenda próxima tentativa
+    else Rejeição permanente
+      Email --> Certificacao : FalhaPermanente
+      Certificacao -> DB : Registra para análise
+    else Resultado incerto
+      Email --> Certificacao : Incerto
+      Certificacao -> DB : Registra sem retry automático
+    end
+    Certificacao --> CheckIn : Estado final da certificação
+  end
+end
+@enduml
+

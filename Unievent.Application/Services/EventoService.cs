@@ -5,6 +5,7 @@ using Unievent.Application.Common;
 using Unievent.Application.Dtos.Evento;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Interfaces.Services;
+using Unievent.Application.Rules;
 using Unievent.Domain.Entities;
 using Unievent.Domain.Enuns;
 
@@ -74,17 +75,29 @@ namespace Unievent.Application.Services
                         return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
                     }
 
-                    evento.DataEvento = update.DataEvento.Value.Date;
+                    evento.DataEvento = update.DataEvento.Value;
                 }
 
                 if (update.Capacidade.HasValue)
                     evento.Capacidade = update.Capacidade.Value;
+
+                if (update.Visibilidade.HasValue) evento.Visibilidade = update.Visibilidade.Value;
+                if (update.PublicoPermitido.HasValue) evento.PublicoPermitido = update.PublicoPermitido.Value;
+                if (update.InstituicaoId.HasValue) evento.InstituicaoId = update.InstituicaoId;
+                if (update.InicioInscricoes.HasValue) evento.InicioInscricoes = update.InicioInscricoes;
+                if (update.FimInscricoes.HasValue) evento.FimInscricoes = update.FimInscricoes;
+                if (update.Latitude.HasValue) evento.Latitude = update.Latitude;
+                if (update.Longitude.HasValue) evento.Longitude = update.Longitude;
+                if (update.RaioCheckInMetros.HasValue) evento.RaioCheckInMetros = update.RaioCheckInMetros.Value;
 
                 if (update.Categoria.HasValue)
                     evento.Categoria = update.Categoria.Value;
 
                 if (!string.IsNullOrWhiteSpace(update.Descricao))
                     evento.Descricao = update.Descricao;
+
+                if (update.Local != null)
+                    evento.Local = string.IsNullOrWhiteSpace(update.Local) ? null : update.Local;
 
                 if (!string.IsNullOrWhiteSpace(update.Nome))
                     evento.Nome = update.Nome;
@@ -112,9 +125,21 @@ namespace Unievent.Application.Services
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
                     Descricao = evento.Descricao,
+                    Local = evento.Local,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
-                    Nome = evento.Nome
+                    Nome = evento.Nome,
+                    InstituicaoId = evento.InstituicaoId,
+                    InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
+                    Cidade = evento.Instituicao?.Cidade,
+                    Estado = evento.Instituicao?.Estado,
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -166,9 +191,18 @@ namespace Unievent.Application.Services
                     Categoria = request.Categoria,
                     DataEvento = request.DataEvento,
                     Descricao = request.Descricao,
+                    Local = request.Local,
                     ResponsavelEventoId = request.ResponsavelEventoId,
                     Nome = request.Nome,
-                    Thumbnail = imagens
+                    Thumbnail = imagens,
+                    InstituicaoId = request.InstituicaoId,
+                    Visibilidade = request.Visibilidade,
+                    PublicoPermitido = request.PublicoPermitido,
+                    InicioInscricoes = request.InicioInscricoes,
+                    FimInscricoes = request.FimInscricoes,
+                    Latitude = request.Latitude,
+                    Longitude = request.Longitude,
+                    RaioCheckInMetros = request.RaioCheckInMetros
                 };
                 await _repository.CriarEvento(evento);
                 await _repository.SaveChangesAsync();
@@ -181,9 +215,21 @@ namespace Unievent.Application.Services
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
                     Descricao = evento.Descricao,
+                    Local = evento.Local,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
-                    Nome = evento.Nome
+                    Nome = evento.Nome,
+                    InstituicaoId = evento.InstituicaoId,
+                    InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
+                    Cidade = evento.Instituicao?.Cidade,
+                    Estado = evento.Instituicao?.Estado,
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -206,6 +252,37 @@ namespace Unievent.Application.Services
             await imagem.CopyToAsync(stream);
 
             return $"/imagens/{nomeArquivo}";
+        }
+
+        async Task<Result<IEnumerable<EventoResponse>>> IEventoService.ListarEventosDisponiveis(TipoParticipante? tipoParticipante)
+        {
+            var eventos = await _repository.ListarEventos();
+            var filtrados = eventos.Where(e => EventoRules.PodeVisualizar(e, tipoParticipante));
+
+            return Result<IEnumerable<EventoResponse>>.Success(filtrados.Select(e => new EventoResponse
+            {
+                Id = e.Id,
+                Nome = e.Nome,
+                Descricao = e.Descricao,
+                Categoria = e.Categoria,
+                Local = e.Local,
+                DataEvento = e.DataEvento,
+                Capacidade = e.Capacidade,
+                Thumbnail = e.Thumbnail.ToList(),
+                IdResponsavelEvento = e.ResponsavelEventoId,
+                Responsavel = e.ResponsavelEvento?.Nome ?? string.Empty,
+                InstituicaoId = e.InstituicaoId,
+                InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
+                Cidade = e.Instituicao?.Cidade,
+                Estado = e.Instituicao?.Estado,
+                Visibilidade = e.Visibilidade,
+                PublicoPermitido = e.PublicoPermitido,
+                InicioInscricoes = e.InicioInscricoes,
+                FimInscricoes = e.FimInscricoes,
+                Latitude = e.Latitude,
+                Longitude = e.Longitude,
+                RaioCheckInMetros = e.RaioCheckInMetros
+            }));
         }
 
         async Task<Result<bool>> IEventoService.DeletarEvento(int id)
@@ -250,9 +327,25 @@ namespace Unievent.Application.Services
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
                     Descricao = evento.Descricao,
+                    Local = evento.Local,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
-                    Nome = evento.Nome
+                    Nome = evento.Nome,
+                    Rua = evento.Instituicao?.Rua,
+                    Numero = evento.Instituicao?.Numero,
+                    Bairro = evento.Instituicao?.Bairro,
+                    Cep = evento.Instituicao?.Cep,
+                    InstituicaoId = evento.InstituicaoId,
+                    InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
+                    Cidade = evento.Instituicao?.Cidade,
+                    Estado = evento.Instituicao?.Estado,
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -276,9 +369,21 @@ namespace Unievent.Application.Services
                     Categoria = e.Categoria,
                     DataEvento = e.DataEvento,
                     Descricao = e.Descricao,
-                    IdResponsavelEvento = e.ResponsavelEventoId,
+                    Local = e.Local,
+                    Responsavel = e.ResponsavelEvento.Nome,
                     Nome = e.Nome,
-                    Thumbnail = e.Thumbnail.ToList()
+                    Thumbnail = e.Thumbnail.ToList(),
+                    InstituicaoId = e.InstituicaoId,
+                    InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
+                    Cidade = e.Instituicao?.Cidade,
+                    Estado = e.Instituicao?.Estado,
+                    Visibilidade = e.Visibilidade,
+                    PublicoPermitido = e.PublicoPermitido,
+                    InicioInscricoes = e.InicioInscricoes,
+                    FimInscricoes = e.FimInscricoes,
+                    Latitude = e.Latitude,
+                    Longitude = e.Longitude,
+                    RaioCheckInMetros = e.RaioCheckInMetros
                 }));
             }
             catch (Exception ex)
@@ -302,9 +407,21 @@ namespace Unievent.Application.Services
                     Categoria = e.Categoria,
                     DataEvento = e.DataEvento,
                     Descricao = e.Descricao,
+                    Local = e.Local,
                     IdResponsavelEvento = e.ResponsavelEventoId,
                     Nome = e.Nome,
-                    Thumbnail = e.Thumbnail.ToList()
+                    Thumbnail = e.Thumbnail.ToList(),
+                    InstituicaoId = e.InstituicaoId,
+                    InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
+                    Cidade = e.Instituicao?.Cidade,
+                    Estado = e.Instituicao?.Estado,
+                    Visibilidade = e.Visibilidade,
+                    PublicoPermitido = e.PublicoPermitido,
+                    InicioInscricoes = e.InicioInscricoes,
+                    FimInscricoes = e.FimInscricoes,
+                    Latitude = e.Latitude,
+                    Longitude = e.Longitude,
+                    RaioCheckInMetros = e.RaioCheckInMetros
                 }).ToList());
             }
             catch (Exception ex)
@@ -333,9 +450,21 @@ namespace Unievent.Application.Services
                     Categoria = evento.Categoria,
                     DataEvento = evento.DataEvento,
                     Descricao = evento.Descricao,
+                    Local = evento.Local,
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Nome = evento.Nome,
-                    Thumbnail = evento.Thumbnail.ToList()
+                    Thumbnail = evento.Thumbnail.ToList(),
+                    InstituicaoId = evento.InstituicaoId,
+                    InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
+                    Cidade = evento.Instituicao?.Cidade,
+                    Estado = evento.Instituicao?.Estado,
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)

@@ -1,0 +1,23 @@
+@startuml
+!include _tema.puml
+title UC029 - Consultar indicadores da instituição
+|Secretaria|
+start
+:Solicita indicadores institucionais;
+|Gestão institucional|
+if (Secretaria está ativa e vinculada a uma instituição?) then (Sim)
+  :Consolida somente eventos, inscrições, presenças
+  e certificados da instituição;
+  if (Há movimentação registrada?) then (Sim)
+    :Apresenta os indicadores institucionais;
+  else (Não - exceção)
+    :Apresenta indicadores zerados;
+  endif
+  |Secretaria|
+  :Analisa o desempenho da instituição;
+else (Não - exceção)
+  :Nega a consulta por ausência de vínculo ou situação inválida;
+endif
+stop
+@enduml
+

@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC007 - Confirmar e-mail do aluno
+|Serviço de comunicação|
+start
+:Entrega a solicitação de confirmação;
+|Aluno Fatec|
+:Aceita a solicitação recebida;
+|Gestão de participantes|
+if (Confirmação é válida e está vigente?) then (Sim)
+  :Confirma o e-mail e habilita a conta;
+  |Aluno Fatec|
+  :Recebe confirmação e pode solicitar acesso;
+else (Não - exceção)
+  :Informa confirmação inválida ou expirada;
+  |Aluno Fatec|
+  :Solicita nova orientação, quando disponível;
+endif
+stop
+@enduml
+

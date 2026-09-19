@@ -10,4 +10,6 @@ public record AlunoRequest
 
     public IFormFile FotoPerfil { get; set; }
     public DateTime DataNascimento { get; set; }
+    public Unievent.Domain.Enuns.TipoParticipante TipoParticipante { get; set; } = Unievent.Domain.Enuns.TipoParticipante.Externo;
+    public int? InstituicaoId { get; set; }
 }

@@ -1,0 +1,33 @@
+@startuml
+!include _tema.puml
+title UC037 - Validar presença no evento
+|Participante|
+start
+:Apresenta o ingresso;
+|Operador de check-in|
+:Lê ou informa o código apresentado;
+|Gestão de presença|
+if (Operador está ativo e autorizado para o evento?) then (Sim)
+  if (Ingresso pertence ao evento e está ativo?) then (Sim)
+    if (Atendimento ocorre no período permitido?) then (Sim)
+      if (Presença já foi confirmada?) then (Sim - exceção)
+        :Mantém a confirmação existente sem duplicidade;
+      else (Não)
+        :Confirma a presença do participante;
+        :Solicita certificação quando o evento oferecer certificado;
+      endif
+      |Operador de check-in|
+      :Recebe confirmação da presença;
+    else (Não - exceção)
+      :Recusa o check-in fora do período permitido;
+    endif
+  else (Não - exceção)
+    :Recusa código inválido, inscrição cancelada
+    ou ingresso de outro evento;
+  endif
+else (Não - exceção)
+  :Nega a operação por falta de autorização;
+endif
+stop
+@enduml
+

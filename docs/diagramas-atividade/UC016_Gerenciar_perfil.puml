@@ -1,0 +1,19 @@
+@startuml
+!include _tema.puml
+title UC016 - Gerenciar perfil do aluno
+|Aluno Fatec|
+start
+:Consulta seus dados cadastrais;
+:Altera as informações desejadas;
+|Gestão de participantes|
+if (Alterações são válidas?) then (Sim)
+  :Atualiza o cadastro do aluno;
+  |Aluno Fatec|
+  :Recebe a confirmação das alterações;
+else (Não - exceção)
+  :Mantém os dados anteriores;
+  :Informa os campos que precisam de correção;
+endif
+stop
+@enduml
+

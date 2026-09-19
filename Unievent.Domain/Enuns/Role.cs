@@ -4,7 +4,8 @@
     {
         Admin,
         Secretaria,
-        Aluno
+        Aluno,
+        OperadorCheckIn
 
     }
 }

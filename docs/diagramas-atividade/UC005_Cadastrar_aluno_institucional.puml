@@ -1,0 +1,24 @@
+@startuml
+!include _tema.puml
+title UC005 - Cadastrar aluno institucional
+|Aluno Fatec|
+start
+:Informa dados pessoais, e-mail institucional e senha;
+:Escolhe sua instituição;
+|Gestão de participantes|
+:Confere preenchimento, vínculo institucional e unicidade do e-mail;
+if (Cadastro atende às regras?) then (Sim)
+  :Registra a conta como pendente de confirmação;
+  |Serviço de comunicação|
+  :Envia orientação para confirmação do e-mail;
+  |Aluno Fatec|
+  :Recebe aviso de cadastro realizado;
+else (Não - exceção)
+  :Informa dados inválidos, instituição indisponível
+  ou e-mail já cadastrado;
+  |Aluno Fatec|
+  :Corrige os dados ou encerra o cadastro;
+endif
+stop
+@enduml
+

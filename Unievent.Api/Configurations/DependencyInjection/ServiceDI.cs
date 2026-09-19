@@ -1,5 +1,6 @@
 ﻿using Unievent.Application.Interfaces.Services;
 using Unievent.Application.Services;
+using Unievent.Infra.Services;
 
 namespace Unievent.Api.Configurations.DependencyInjection
 {
@@ -12,10 +13,12 @@ namespace Unievent.Api.Configurations.DependencyInjection
             services.AddScoped<IUsuarioSecretariaService, UsuarioSecretariaService>();
             services.AddScoped<IAlunoService, AlunoService>();
             services.AddScoped<IInstituicaoService, InstituicaoService>();
-            services.AddScoped<IEnderecoService, EnderecoService>();
             services.AddScoped<ICertificadoService, CertificadoService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<IParticipacaoService, ParticipacaoService>();
+            services.AddScoped<IAutomacaoEventosService, AutomacaoEventosService>();
+            services.AddScoped<ICertificadoAutomaticoService, CertificadoAutomaticoService>();
+            services.AddSingleton<ICertificadoPdfGenerator, CertificadoPdfGenerator>();
 
             return services;
         }

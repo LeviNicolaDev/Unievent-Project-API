@@ -7,4 +7,5 @@ public record CertificadoResponse
     public string Texto { get; set; }
     public int AlunoId { get; set; }
     public int EventoId { get; set; }
+    public string NomeEvento { get; set; }
 }

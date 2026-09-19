@@ -1,0 +1,23 @@
+@startuml
+!include _tema.puml
+title UC020 - Gerenciar instituições
+|Admin UniEvent|
+start
+:Solicita a relação de instituições;
+|Gestão institucional|
+if (Administrador está autorizado?) then (Sim)
+  if (Há instituições cadastradas?) then (Sim)
+    :Apresenta instituições e suas situações;
+  else (Não - exceção)
+    :Apresenta relação vazia e opção de cadastro;
+  endif
+  |Admin UniEvent|
+  :Escolhe cadastrar, editar ou alterar situação;
+  |Gestão institucional|
+  :Encaminha para o processo escolhido;
+else (Não - exceção)
+  :Nega a gestão institucional;
+endif
+stop
+@enduml
+

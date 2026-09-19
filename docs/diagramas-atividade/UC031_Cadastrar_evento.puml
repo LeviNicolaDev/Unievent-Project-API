@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC031 - Cadastrar evento
+|Secretaria ou Admin|
+start
+:Informa proposta, data, local, capacidade,
+público permitido, responsável e período de inscrição;
+|Gestão de eventos|
+if (Instituição e responsável estão no âmbito permitido?) then (Sim)
+  if (Dados e datas são consistentes?) then (Sim)
+    :Registra o evento vinculado à instituição;
+    |Secretaria ou Admin|
+    :Recebe confirmação do cadastro;
+  else (Não - exceção)
+    :Informa campos, datas ou capacidade que precisam de correção;
+  endif
+else (Não - exceção)
+  :Recusa vínculo institucional ou responsável incompatível;
+endif
+stop
+@enduml
+
