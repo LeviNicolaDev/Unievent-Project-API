@@ -1,7 +1,0 @@
-node_modules/
-dist/
-.expo/
-web-build/
-npm-debug.log
-.env
-.env.*
