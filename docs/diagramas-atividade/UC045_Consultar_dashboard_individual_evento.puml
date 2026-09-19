@@ -1,0 +1,23 @@
+@startuml
+!include _tema.puml
+title UC045 - Consultar indicadores de um evento
+|Secretaria|
+start
+:Seleciona um evento para análise;
+|Gestão institucional|
+if (Evento existe e pertence à instituição?) then (Sim)
+  :Consolida capacidade, inscrições, vagas,
+  presenças, ausências e certificados;
+  if (Há movimentação no evento?) then (Sim)
+    :Apresenta indicadores e percentuais;
+  else (Não - exceção)
+    :Apresenta indicadores zerados e dados do evento;
+  endif
+  |Secretaria|
+  :Analisa o desempenho do evento;
+else (Não - exceção)
+  :Nega consulta de evento inexistente ou de outra instituição;
+endif
+stop
+@enduml
+

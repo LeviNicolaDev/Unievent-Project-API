@@ -1,0 +1,116 @@
+@startuml
+!include _tema.puml
+title UniEvent - Modelo entidade-relacionamento geral
+left to right direction
+
+entity "Instituicao" as Instituicao {
+  * Id : int <<PK>>
+  --
+  * Cnpj : string <<UQ>>
+  Codigo : string <<UQ>>
+  Nome : string
+  * IsAtivo : bool
+}
+
+entity "Aluno" as Aluno {
+  * Id : int <<PK>>
+  --
+  * Email : string <<UQ>>
+  * TipoParticipante : enum
+  InstituicaoId : int <<FK>>
+  * IsAtivo : bool
+}
+
+entity "UsuarioSecretaria" as Secretaria {
+  * Id : int <<PK>>
+  --
+  * EmailUsuario : string <<UQ>>
+  InstituicaoId : int <<FK>>
+  * Status : enum
+  * IsAtivo : bool
+}
+
+entity "UsuarioUnievent" as Admin {
+  * Id : int <<PK>>
+  --
+  * EmailUsuario : string <<UQ>>
+  * RoleUsuario : enum
+  * IsAtivo : bool
+}
+
+entity "ResponsavelEvento" as Responsavel {
+  * Id : int <<PK>>
+  --
+  * Nome : string
+  InstituicaoId : int <<FK>>
+}
+
+entity "Evento" as Evento {
+  * Id : int <<PK>>
+  --
+  * ResponsavelEventoId : int <<FK>>
+  InstituicaoId : int <<FK>>
+  * DataEvento : datetime
+  * Capacidade : int
+  * PublicoPermitido : enum
+}
+
+entity "Participacao" as Participacao {
+  * Id : int <<PK>>
+  --
+  * AlunoId : int <<FK>>
+  * EventoId : int <<FK>>
+  * CodigoIngresso : string <<UQ>>
+  * StatusInscricao : enum
+  * PresencaConfirmada : bool
+}
+
+entity "Certificado" as Certificado {
+  * Id : int <<PK>>
+  --
+  * EventoId : int <<FK>>
+  * DataCertifcado : datetime
+  * Texto : string
+}
+
+entity "PreferenciaNotificacao" as Preferencia {
+  * Id : int <<PK>>
+  --
+  * AlunoId : int <<FK, UQ>>
+  * LembretesEventos : bool
+  * Recomendacoes : bool
+}
+
+entity "NotificacaoEvento" as Notificacao {
+  * Id : int <<PK>>
+  --
+  * AlunoId : int <<FK>>
+  * EventoId : int <<FK>>
+  * Tipo : string
+  * Enviada : bool
+}
+
+Instituicao "0..1" -- "0..*" Aluno : vincula
+Instituicao "0..1" -- "0..*" Secretaria : vincula
+Instituicao "0..1" -- "0..*" Responsavel : possui
+Instituicao "0..1" -- "0..*" Evento : promove
+Responsavel ||--o{ Evento : responde por
+Aluno ||--o{ Participacao : realiza
+Evento ||--o{ Participacao : recebe
+Evento ||--o{ Certificado : configura
+Aluno ||--o| Preferencia : define
+Aluno ||--o{ Notificacao : recebe
+Evento ||--o{ Notificacao : origina
+
+note bottom of Participacao
+  Restrição única: (AlunoId, EventoId)
+  CodigoIngresso também é único.
+  O PDF emitido e seu estado de envio
+  ficam persistidos nesta entidade.
+end note
+
+note bottom of Notificacao
+  Restrição única:
+  (AlunoId, EventoId, Tipo)
+end note
+@enduml

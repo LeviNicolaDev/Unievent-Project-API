@@ -19,7 +19,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
     {
         if (!User.IsGlobalAdmin()) return Forbid();
 
-        var totalInscricoes = await db.Participacao.CountAsync();
+        var totalInscricoes = await db.Participacao.CountAsync(p => p.StatusInscricao == StatusInscricao.Ativa);
         var totalPresencas = await db.Participacao.CountAsync(p => p.PresencaConfirmada);
         var instituicoes = await db.Instituicao
             .IgnoreQueryFilters()
@@ -31,7 +31,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
                 Nome = i.Nome ?? i.NomeAbreviado ?? $"Instituição #{i.Id}",
                 i.IsAtivo,
                 Eventos = db.Evento.Count(e => e.InstituicaoId == i.Id),
-                Inscricoes = db.Participacao.Count(p => p.Evento.InstituicaoId == i.Id),
+                Inscricoes = db.Participacao.Count(p => p.Evento.InstituicaoId == i.Id && p.StatusInscricao == StatusInscricao.Ativa),
                 Presencas = db.Participacao.Count(p => p.Evento.InstituicaoId == i.Id && p.PresencaConfirmada),
                 CertificadosEmitidos = db.Participacao.Count(p => p.Evento.InstituicaoId == i.Id && p.CertificadoEmitido)
             })
@@ -92,7 +92,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
             .Where(e => e.InstituicaoId == instituicaoId.Value);
         var inscricoesQuery = db.Participacao
             .AsNoTracking()
-            .Where(p => p.Evento.InstituicaoId == instituicaoId.Value);
+            .Where(p => p.Evento.InstituicaoId == instituicaoId.Value && p.StatusInscricao == StatusInscricao.Ativa);
         var totalInscricoes = await inscricoesQuery.CountAsync();
         var totalPresencas = await inscricoesQuery.CountAsync(p => p.PresencaConfirmada);
 
@@ -104,7 +104,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
                 e.Nome,
                 e.DataEvento,
                 e.Capacidade,
-                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id),
+                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa),
                 Presentes = db.Participacao.Count(p => p.EventoId == e.Id && p.PresencaConfirmada),
                 CertificadosEmitidos = db.Participacao.Count(p => p.EventoId == e.Id && p.CertificadoEmitido)
             })
@@ -119,7 +119,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
                 Id = e.Id,
                 Nome = e.Nome,
                 DataEvento = e.DataEvento,
-                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id),
+                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa),
                 Presencas = db.Participacao.Count(p => p.EventoId == e.Id && p.PresencaConfirmada),
                 CertificadosEmitidos = db.Participacao.Count(p => p.EventoId == e.Id && p.CertificadoEmitido)
             })
@@ -133,7 +133,7 @@ public class DashboardController(AppDbContext db) : ControllerBase
                 Id = e.Id,
                 Nome = e.Nome,
                 DataEvento = e.DataEvento,
-                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id),
+                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa),
                 Presencas = db.Participacao.Count(p => p.EventoId == e.Id && p.PresencaConfirmada),
                 CertificadosEmitidos = db.Participacao.Count(p => p.EventoId == e.Id && p.CertificadoEmitido)
             })
@@ -171,8 +171,87 @@ public class DashboardController(AppDbContext db) : ControllerBase
         });
     }
 
+    [HttpGet("Evento/{eventId:int}/dashboard")]
+    [Authorize(Roles = "Admin,Secretaria")]
+    public async Task<ActionResult<EventoDashboardResponse>> EventoDashboard([FromRoute] int eventId)
+    {
+        var evento = await db.Evento
+            .AsNoTracking()
+            .Include(e => e.Instituicao)
+            .Include(e => e.ResponsavelEvento)
+            .Where(e => e.Id == eventId)
+            .Select(e => new
+            {
+                e.Id,
+                e.Nome,
+                e.DataEvento,
+                e.Local,
+                e.InstituicaoId,
+                InstituicaoNome = e.Instituicao != null
+                    ? e.Instituicao.Nome ?? e.Instituicao.NomeAbreviado ?? $"Instituição #{e.Instituicao.Id}"
+                    : "Instituição não informada",
+                e.ResponsavelEventoId,
+                ResponsavelEventoNome = e.ResponsavelEvento != null ? e.ResponsavelEvento.Nome : string.Empty,
+                e.PublicoPermitido,
+                e.Capacidade,
+                e.InicioInscricoes,
+                e.FimInscricoes,
+                Inscricoes = db.Participacao.Count(p => p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa),
+                CheckIns = db.Participacao.Count(p => p.EventoId == e.Id && p.PresencaConfirmada),
+                CertificadosEmitidos = db.Participacao.Count(p => p.EventoId == e.Id && p.CertificadoEmitido),
+                InscricoesPublicoGeral = db.Participacao.Count(p =>
+                    p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa &&
+                    p.Aluno.TipoParticipante == TipoParticipante.Externo),
+                InscricoesAlunosFatec = db.Participacao.Count(p =>
+                    p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa &&
+                    p.Aluno.TipoParticipante == TipoParticipante.Interno),
+                PossuiCertificado = db.Certificado.Any(c => c.EventoId == e.Id)
+            })
+            .FirstOrDefaultAsync();
+
+        if (evento is null) return NotFound("Evento não encontrado");
+        if (!User.CanAccessInstituicao(evento.InstituicaoId)) return Forbid();
+
+        var vagasRestantes = Math.Max(evento.Capacidade - evento.Inscricoes, 0);
+
+        return Ok(new EventoDashboardResponse
+        {
+            EventoId = evento.Id,
+            Nome = evento.Nome,
+            DataEvento = evento.DataEvento,
+            Local = evento.Local,
+            InstituicaoId = evento.InstituicaoId,
+            InstituicaoNome = evento.InstituicaoNome,
+            ResponsavelEventoId = evento.ResponsavelEventoId,
+            ResponsavelEventoNome = evento.ResponsavelEventoNome,
+            PublicoPermitido = evento.PublicoPermitido,
+            CapacidadeTotal = evento.Capacidade,
+            TotalInscricoes = evento.Inscricoes,
+            VagasRestantes = vagasRestantes,
+            CheckInsRealizados = evento.CheckIns,
+            AusentesSemCheckIn = evento.Inscricoes - evento.CheckIns,
+            PercentualOcupacao = CalcularTaxa(evento.Inscricoes, evento.Capacidade),
+            PercentualPresenca = CalcularTaxa(evento.CheckIns, evento.Inscricoes),
+            StatusEvento = ObterStatusEvento(evento.DataEvento, evento.InicioInscricoes, evento.FimInscricoes, vagasRestantes),
+            PossuiCertificado = evento.PossuiCertificado,
+            CertificadosEmitidos = evento.CertificadosEmitidos,
+            InscricoesPublicoGeral = evento.InscricoesPublicoGeral,
+            InscricoesAlunosFatec = evento.InscricoesAlunosFatec
+        });
+    }
+
     private static double CalcularTaxa(int parte, int total)
     {
         return total == 0 ? 0 : Math.Round(parte * 100d / total, 1);
+    }
+
+    private static string ObterStatusEvento(DateTime dataEvento, DateTime? inicioInscricoes, DateTime? fimInscricoes, int vagasRestantes)
+    {
+        var agora = DateTime.UtcNow;
+        if (dataEvento.ToUniversalTime() < agora) return "Realizado";
+        if (vagasRestantes <= 0) return "Lotado";
+        if (inicioInscricoes.HasValue && agora < inicioInscricoes.Value.ToUniversalTime()) return "Inscrições não iniciadas";
+        if (fimInscricoes.HasValue && agora > fimInscricoes.Value.ToUniversalTime()) return "Inscrições encerradas";
+        return "Inscrições abertas";
     }
 }

@@ -1,0 +1,20 @@
+@startuml
+!include _tema.puml
+title UC034 - Definir público permitido do evento
+|Secretaria ou Admin|
+start
+:Escolhe quem poderá participar do evento;
+|Gestão de eventos|
+if (Opção é uma categoria de público reconhecida?) then (Sim)
+  :Registra Público Geral, Todos os Alunos Fatec
+  ou Alunos da Instituição;
+  :Aplica a regra à divulgação e à inscrição;
+  |Secretaria ou Admin|
+  :Recebe confirmação da configuração;
+else (Não - exceção)
+  :Mantém a configuração anterior;
+  :Solicita uma opção válida;
+endif
+stop
+@enduml
+

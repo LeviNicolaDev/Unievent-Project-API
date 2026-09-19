@@ -1,0 +1,29 @@
+@startuml
+!include _tema.puml
+title UC012 - Inscrever aluno em evento
+|Aluno Fatec|
+start
+:Solicita participação no evento;
+|Gestão de inscrições|
+if (Evento existe e aceita inscrições?) then (Sim)
+  if (Aluno pertence ao público permitido?) then (Sim)
+    if (Aluno ainda não está inscrito?) then (Sim)
+      if (Há vaga disponível?) then (Sim)
+        :Registra a participação e reserva a vaga;
+        :Disponibiliza o ingresso;
+        |Aluno Fatec|
+        :Recebe a confirmação da inscrição;
+      else (Não - exceção)
+        :Informa que o evento está lotado;
+      endif
+    else (Não - exceção)
+      :Informa que já existe inscrição;
+    endif
+  else (Não - exceção)
+    :Informa que o aluno não pertence ao público permitido;
+  endif
+else (Não - exceção)
+  :Informa evento indisponível ou inscrições encerradas;
+endif
+stop
+@enduml

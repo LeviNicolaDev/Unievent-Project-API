@@ -334,6 +334,7 @@ function normalizeInstitution(institution) {
 
 export function mapApiCertificate(certificate) {
   return {
+    ...certificate,
     id: String(certificate.id ?? certificate.Id),
     eventId: String(certificate.eventoId ?? certificate.EventoId),
     date:
@@ -431,8 +432,8 @@ export const institutionsApi = {
 };
 
 export const certificatesApi = {
-  async list() {
-    const result = await apiFetch("/Certificado");
+  async list(token) {
+    const result = await apiFetch("/Certificado/meus", { token });
     return Array.isArray(result) ? result.map(mapApiCertificate) : [];
   },
 };

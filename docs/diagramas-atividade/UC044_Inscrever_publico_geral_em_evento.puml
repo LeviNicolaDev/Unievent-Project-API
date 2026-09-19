@@ -1,0 +1,30 @@
+@startuml
+!include _tema.puml
+title UC044 - Inscrever Público Geral em evento
+|Público Geral|
+start
+:Solicita participação em um evento;
+|Gestão de inscrições|
+if (Evento está publicado e aceita inscrições?) then (Sim)
+  if (Evento aceita Público Geral?) then (Sim)
+    if (Participante ainda não está inscrito?) then (Sim)
+      if (Há vaga disponível?) then (Sim)
+        :Registra a participação e reserva a vaga;
+        :Disponibiliza o ingresso;
+        |Público Geral|
+        :Recebe confirmação da inscrição;
+      else (Não - exceção)
+        :Informa que o evento está lotado;
+      endif
+    else (Não - exceção)
+      :Informa que já existe inscrição;
+    endif
+  else (Não - exceção)
+    :Informa que o evento é restrito;
+  endif
+else (Não - exceção)
+  :Informa evento indisponível ou período encerrado;
+endif
+stop
+@enduml
+

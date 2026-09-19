@@ -38,24 +38,37 @@ public class ParticipacaoService : IParticipacaoService
         if (participacao is null)
             return Result<IngressoResponse>.Failure("Inscrição não encontrada");
 
-        return Result<IngressoResponse>.Success(new IngressoResponse(
-            eventoId, participacao.CodigoIngresso, participacao.PresencaConfirmada));
+        return Result<IngressoResponse>.Success(MapIngresso(participacao));
+    }
+
+    async Task<Result<IReadOnlyCollection<IngressoResponse>>> IParticipacaoService.ListarIngressosAsync(int alunoId)
+    {
+        var participacoes = await _repositoryParticipacao.ListByAlunoIdAsync(alunoId);
+        return Result<IReadOnlyCollection<IngressoResponse>>.Success(
+            participacoes.Select(MapIngresso).ToList());
     }
 
     async Task<Result<ParticipacaoResponse>> IParticipacaoService.ValidarCheckInAsync(int operadorId, CheckInRequest request)
     {
-        var participacao = await _repositoryParticipacao.GetByCodigoIngressoAsync(request.CodigoIngresso);
+        var codigoIngresso = request.CodigoIngresso.Trim();
+        var participacao = await _repositoryParticipacao.GetByCodigoIngressoAsync(codigoIngresso);
         if (participacao is null)
             return Result<ParticipacaoResponse>.Failure("Ingresso inválido");
         if (request.EventoId.HasValue && participacao.EventoId != request.EventoId.Value)
             return Result<ParticipacaoResponse>.Failure("Ingresso não pertence ao evento informado");
+        if (participacao.StatusInscricao == StatusInscricao.Cancelada)
+            return Result<ParticipacaoResponse>.Failure("Inscrição cancelada");
         if (participacao.PresencaConfirmada)
             return Result<ParticipacaoResponse>.Success(Map(participacao));
 
         var evento = participacao.Evento;
         var agora = DateTime.UtcNow;
-        var inicio = evento.DataEvento.ToUniversalTime().AddMinutes(-evento.ToleranciaCheckInMinutos);
-        var fim = evento.DataEvento.ToUniversalTime().AddMinutes(evento.ToleranciaCheckInMinutos);
+        // O formulário cadastra horário civil de São Paulo; datetime2 não conserva DateTime.Kind.
+        var dataUtc = evento.DataEvento.Kind == DateTimeKind.Unspecified
+            ? TimeZoneInfo.ConvertTimeToUtc(evento.DataEvento, TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"))
+            : evento.DataEvento.ToUniversalTime();
+        var inicio = dataUtc.AddMinutes(-evento.ToleranciaCheckInMinutos);
+        var fim = dataUtc.AddMinutes(evento.ToleranciaCheckInMinutos);
         if (agora < inicio || agora > fim)
             return Result<ParticipacaoResponse>.Failure("Check-in fora da janela permitida");
 
@@ -80,19 +93,16 @@ public class ParticipacaoService : IParticipacaoService
             participacao.ConfirmarPresencaPorCodigo(operadorId);
         }
 
-        await _repositoryParticipacao.Update(participacao);
-        await _repositoryParticipacao.SaveChangesAsync();
+        var primeiraConfirmacao = await _repositoryParticipacao.TryConfirmarPresencaAsync(participacao);
+        if (primeiraConfirmacao)
+            await ProcessarCertificacaoSeguraAsync(participacao.Id);
 
-        if (_certificadoAutomaticoService is not null)
+        participacao = await _repositoryParticipacao.GetByCodigoIngressoAsync(codigoIngresso) ?? participacao;
+        if (!primeiraConfirmacao && !participacao.PresencaConfirmada)
         {
-            var certificado = await _certificadoAutomaticoService.ProcessarAposCheckInAsync(participacao.Id);
-            if (certificado.IsFailure)
-            {
-                _logger.LogWarning(
-                    "Presença confirmada para participação {ParticipacaoId}, mas a automação do certificado falhou: {Erros}",
-                    participacao.Id,
-                    string.Join("; ", certificado.Errors));
-            }
+            return participacao.StatusInscricao == StatusInscricao.Cancelada
+                ? Result<ParticipacaoResponse>.Failure("Inscrição cancelada")
+                : Result<ParticipacaoResponse>.Failure("Não foi possível confirmar o check-in");
         }
 
         return Result<ParticipacaoResponse>.Success(Map(participacao));
@@ -105,11 +115,41 @@ public class ParticipacaoService : IParticipacaoService
         NomeAluno = participacao.Aluno?.Nome ?? string.Empty,
         EventoId = participacao.EventoId,
         PresencaGarantida = participacao.PresencaConfirmada,
+        StatusInscricao = participacao.StatusInscricao,
         CertificadoEmitido = participacao.CertificadoEmitido,
         CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
         ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail,
+        StatusEnvioCertificado = participacao.StatusEnvioCertificado,
+        CertificadoPdfDisponivel = participacao.CertificadoPdf != null,
         DataConfirmacao = participacao.DataConfirmacao
     };
+
+    private static IngressoResponse MapIngresso(Participacao participacao) => new()
+    {
+        Id = participacao.Id,
+        EventoId = participacao.EventoId,
+        NomeEvento = participacao.Evento?.Nome ?? string.Empty,
+        InstituicaoNome = participacao.Evento?.Instituicao?.Nome ??
+                          participacao.Evento?.Instituicao?.NomeAbreviado ??
+                          "Instituição não informada",
+        DataEvento = participacao.Evento?.DataEvento ?? default,
+        Local = participacao.Evento?.Local ?? "Local não informado",
+        StatusInscricao = participacao.StatusInscricao,
+        PresencaConfirmada = participacao.PresencaConfirmada,
+        DataCheckIn = participacao.DataConfirmacao,
+        CodigoIngresso = participacao.CodigoIngresso,
+        EventoRealizado = EventoJaRealizado(participacao.Evento?.DataEvento)
+    };
+
+    private static bool EventoJaRealizado(DateTime? dataEvento)
+    {
+        if (!dataEvento.HasValue) return false;
+        var dataUtc = dataEvento.Value.Kind == DateTimeKind.Unspecified
+            ? TimeZoneInfo.ConvertTimeToUtc(dataEvento.Value,
+                TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"))
+            : dataEvento.Value.ToUniversalTime();
+        return dataUtc < DateTime.UtcNow;
+    }
 
     private static double CalcularDistanciaMetros(double lat1, double lon1, double lat2, double lon2)
     {
@@ -131,50 +171,29 @@ public class ParticipacaoService : IParticipacaoService
             return Result<ParticipacaoResponse>.Failure("Inscrição não encontrada para este evento.");
         if (!participacao.PresencaConfirmada)
             return Result<ParticipacaoResponse>.Failure("Aluno sem presença confirmada.");
-        if (participacao.CertificadoEmitido)
-            return Result<ParticipacaoResponse>.Success(Map(participacao));
-
-        participacao.EmitirCertificado(Guid.NewGuid().ToString("N"));
-        await _repositoryParticipacao.Update(participacao);
-        await _repositoryParticipacao.SaveChangesAsync();
-
+        if (_certificadoAutomaticoService is null)
+            return Result<ParticipacaoResponse>.Failure("Serviço de certificação indisponível.");
+        var resultado = await _certificadoAutomaticoService.ProcessarAposCheckInAsync(participacao.Id);
+        if (resultado.IsFailure) return Result<ParticipacaoResponse>.Failure(resultado.Errors);
+        if (resultado.Value?.CertificadoConfigurado != true)
+            return Result<ParticipacaoResponse>.Failure("Evento sem certificado configurado.");
+        participacao = await _repositoryParticipacao.GetByAlunoIdAndEventoIdAsync(alunoId, eventoId) ?? participacao;
         return Result<ParticipacaoResponse>.Success(Map(participacao));
     }
 
-    async Task<Result<ParticipacaoResponse>> IParticipacaoService.GarantirPresencaAsync(int alunoId, int eventoId)
+    private async Task ProcessarCertificacaoSeguraAsync(int participacaoId)
     {
-        var participacao = await _repositoryParticipacao.GetByAlunoIdAndEventoIdAsync(alunoId, eventoId);
-
-        if (participacao is null)
+        if (_certificadoAutomaticoService is null) return;
+        try
         {
-            _logger.LogWarning("Inscrição não encontrada para o aluno {AlunoId} e evento {EventoId}", alunoId, eventoId);
-            return Result<ParticipacaoResponse>.Failure("Inscrição não encontrada para este evento.");
+            var resultado = await _certificadoAutomaticoService.ProcessarAposCheckInAsync(participacaoId);
+            if (resultado.IsFailure)
+                _logger.LogWarning("Certificação pendente para participação {ParticipacaoId}; presença preservada", participacaoId);
         }
-        if (participacao.PresencaConfirmada)
+        catch (Exception ex)
         {
-            _logger.LogWarning("Presença já confirmada para o aluno {AlunoId} e evento {EventoId}", alunoId, eventoId);
-            return Result<ParticipacaoResponse>.Failure("Presença já confirmada.");
+            _logger.LogError(ex, "Erro na certificação da participação {ParticipacaoId}; presença preservada", participacaoId);
         }
-
-        participacao.ConfirmarPresenca();
-
-        await _repositoryParticipacao.Update(participacao);
-        await _repositoryParticipacao.SaveChangesAsync();
-
-        var response = new ParticipacaoResponse
-        {
-            Id = participacao.Id,
-            AlunoId = participacao.AlunoId,
-            NomeAluno = participacao.Aluno.Nome,
-            EventoId = participacao.EventoId,
-            PresencaGarantida = participacao.PresencaConfirmada,
-            CertificadoEmitido = participacao.CertificadoEmitido,
-            CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
-            ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail,
-            DataConfirmacao = participacao.DataConfirmacao
-        };
-
-        return Result<ParticipacaoResponse>.Success(response);
     }
 
     async Task<Result<ParticipacaoResponse>> IParticipacaoService.InscreverAsync(int alunoId, int eventoId)
@@ -225,6 +244,7 @@ public class ParticipacaoService : IParticipacaoService
             DataConfirmacao = participacao.DataConfirmacao,
             EventoId = participacao.EventoId,
             PresencaGarantida = participacao.PresencaConfirmada,
+            StatusInscricao = participacao.StatusInscricao,
             CertificadoEmitido = participacao.CertificadoEmitido,
             CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
             ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail

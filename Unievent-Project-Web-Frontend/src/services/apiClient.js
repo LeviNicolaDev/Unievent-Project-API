@@ -1,3 +1,5 @@
+import { getCurrentAuthScope, readAuthSession } from './authSession.js';
+
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
 const configuredAssetBaseUrl = import.meta.env.VITE_API_ASSET_BASE_URL || '';
 
@@ -72,8 +74,9 @@ export function getApiAssetUrl(path) {
 }
 
 export async function request(path, options = {}) {
-  const { skipAuth = false, ...fetchOptions } = options;
-  const token = localStorage.getItem('authToken');
+  const { skipAuth = false, authScope, responseType, ...fetchOptions } = options;
+  const scope = authScope || getCurrentAuthScope();
+  const token = readAuthSession(scope)?.token;
   
   const headers = {
     ...fetchOptions.headers,
@@ -110,6 +113,7 @@ export async function request(path, options = {}) {
   }
 
   // Tentar parsear JSON
+  if (responseType === 'response') return response;
   const text = await response.text();
   return parseJson(text);
 }

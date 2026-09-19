@@ -7,3 +7,7 @@ export function getAdminDashboard() {
 export function getInstituicaoDashboard() {
   return request("/instituicao/dashboard", { method: "GET" });
 }
+
+export function getEventoDashboard(eventId) {
+  return request(`/Evento/${eventId}/dashboard`, { method: "GET" });
+}

@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC036 - Gerenciar modelo de certificado
+|Secretaria ou Admin|
+start
+:Escolhe cadastrar, editar ou remover
+o modelo de certificado de um evento;
+|Gestão de certificação|
+if (Evento existe e pertence ao âmbito permitido?) then (Sim)
+  if (Texto e data do certificado são válidos?) then (Sim)
+    :Registra a alteração solicitada;
+    :Atualiza a habilitação de certificação do evento;
+    |Secretaria ou Admin|
+    :Recebe confirmação;
+  else (Não - exceção)
+    :Mantém a configuração anterior e informa inconsistências;
+  endif
+else (Não - exceção)
+  :Recusa a operação por evento inválido ou sem autorização;
+endif
+stop
+@enduml

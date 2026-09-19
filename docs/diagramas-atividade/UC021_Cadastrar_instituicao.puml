@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC021 - Cadastrar instituição
+|Admin UniEvent|
+start
+:Informa identificação, CNPJ, contato e endereço;
+|Gestão institucional|
+:Confere obrigatoriedade e formato dos dados;
+if (CNPJ ou código já cadastrado?) then (Sim - exceção)
+  :Informa duplicidade e não cria a instituição;
+else (Não)
+  if (Dados são válidos?) then (Sim)
+    :Registra a instituição como disponível para vínculos;
+    |Admin UniEvent|
+    :Recebe confirmação do cadastro;
+  else (Não - exceção)
+    :Informa os dados que precisam de correção;
+  endif
+endif
+stop
+@enduml
+

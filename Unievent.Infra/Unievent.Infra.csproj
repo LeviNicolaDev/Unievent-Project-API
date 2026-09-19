@@ -6,6 +6,7 @@
     <UserSecretsId>7c5df49e-2ea1-4bc0-becf-03affca02005</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="PDFsharp-MigraDoc" Version="6.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.5" />
@@ -19,5 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Unievent.Application\Unievent.Application.csproj" />
     <ProjectReference Include="..\Unievent.Domain\Unievent.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Templates/Fonts/*.ttf" />
+    <None Update="Templates/Fonts/LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

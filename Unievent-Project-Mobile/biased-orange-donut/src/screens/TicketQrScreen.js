@@ -9,6 +9,7 @@ import { BLACK, LIGHT_BG, ORANGE } from "../constants/theme";
 import { useEvents } from "../context/EventContext";
 import { useAuth } from "../context/AuthContext";
 import { eventsApi } from "../services/api";
+import { generateCertificatePdf } from "../utils/certificatePdf";
 import { styles } from "../styles/globalStyles";
 
 export default function TicketQrScreen({ theme, navigation, route }) {
@@ -18,7 +19,7 @@ export default function TicketQrScreen({ theme, navigation, route }) {
     getEventById,
     hasAttended,
     hasIssuedCertificate,
-    issueCertificate,
+    refreshEvents,
   } = useEvents();
   const { token } = useAuth();
   const event = getEventById(route.params?.eventId) || events[0];
@@ -36,14 +37,9 @@ export default function TicketQrScreen({ theme, navigation, route }) {
     return () => { active = false; };
   }, [event.id, token]);
 
-  function handleCertificatePress() {
+  async function handleCertificatePress() {
     try {
-      const certificate = issueCertificate(event.id);
-      Alert.alert(
-        "Certificado emitido",
-        certificate?.text ||
-          `O certificado de participação em ${event.title} foi gerado com sucesso.`
-      );
+      await generateCertificatePdf({ event, token });
     } catch (error) {
       Alert.alert("Certificado indisponível", error.message);
     }
@@ -100,22 +96,25 @@ export default function TicketQrScreen({ theme, navigation, route }) {
             ingresso.
           </Text>
 
+          <TouchableOpacity onPress={refreshEvents} accessibilityRole="button">
+            <Text style={styles.qrHelpText}>Atualizar presença</Text>
+          </TouchableOpacity>
           <View style={styles.qrActions}>
             {qrRead ? (
               <>
                 <View style={styles.qrReadBadge}>
                   <Ionicons name="checkmark-circle" size={18} color={ORANGE} />
-                  <Text style={styles.qrReadText}>QR Code lido</Text>
+                  <Text style={styles.qrReadText}>Presença confirmada</Text>
                 </View>
 
                 {event.hasCertificate && event.certificate ? (
                   <TouchableOpacity
                     activeOpacity={0.85}
-                    disabled={certificateIssued || !attended}
+                    disabled={!certificateIssued || !attended}
                     onPress={handleCertificatePress}
                     style={[
                       styles.certificateButton,
-                      (certificateIssued || !attended) &&
+                      (!certificateIssued || !attended) &&
                         styles.certificateButtonDisabled,
                     ]}
                   >
@@ -130,9 +129,9 @@ export default function TicketQrScreen({ theme, navigation, route }) {
                     />
                     <Text style={styles.certificateButtonText}>
                       {certificateIssued
-                        ? "Certificado emitido"
+                        ? "Abrir certificado"
                         : attended
-                        ? "Emitir certificado"
+                        ? "Certificado em preparação"
                         : "Validando presença..."}
                     </Text>
                   </TouchableOpacity>

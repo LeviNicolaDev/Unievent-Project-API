@@ -19,6 +19,10 @@ public record EventoResponse
     public string? InstituicaoNome { get; init; }
     public string? Cidade { get; init; }
     public string? Estado { get; init; }
+    public string? Rua { get; init; }
+    public string? Numero { get; init; }
+    public string? Bairro { get; init; }
+    public string? Cep { get; init; }
     public VisibilidadeEvento Visibilidade { get; init; }
     public PublicoPermitido PublicoPermitido { get; init; }
     public DateTime? InicioInscricoes { get; init; }

@@ -1,0 +1,56 @@
+@startuml
+!include _tema.puml
+title UC030-UC034 - Gestão de eventos e público permitido
+
+actor "Secretaria / Admin" as Usuario
+participant "Web administrativa" as Web
+participant "EventoController" as Api
+participant "EventoService" as Service
+database "SQL Server" as DB
+
+Usuario -> Web : Abre Eventos
+Web -> Api : GET /api/Evento\nBearer JWT
+Api -> Api : Identifica escopo administrativo
+Api -> Service : ListarEventos()
+Service -> DB : Consulta eventos
+DB --> Service : Eventos
+Api -> Api : Filtra pela instituição quando Secretaria
+Api --> Web : 200 eventos permitidos
+
+alt Cadastrar evento
+  Usuario -> Web : Informa dados, público, responsável e imagem
+  Web -> Api : POST /api/Evento (multipart)
+  Api -> Api : Define/valida instituição do usuário
+  Api -> DB : Confere vínculo do responsável
+  Api -> Service : CriarEvento(request)
+  Service -> Service : Valida datas, capacidade e campos
+  Service -> DB : Persiste evento e PúblicoPermitido
+else Editar evento
+  Usuario -> Web : Altera dados e/ou público permitido
+  Web -> Api : PUT /api/Evento/{id} (multipart)
+  Api -> DB : Busca evento e valida instituição
+  Api -> Service : AtualizarEvento(id, update)
+  Service -> DB : Persiste alterações
+else Excluir evento
+  Usuario -> Web : Confirma exclusão
+  Web -> Api : DELETE /api/Evento/{id}
+  Api -> DB : Confere evento e escopo
+  Api -> Service : DeletarEvento(id)
+  Service -> DB : Remove ou rejeita devido a vínculos
+end
+
+alt Operação válida
+  Service --> Api : Evento atualizado
+  Api --> Web : 200 resultado
+  Web --> Usuario : Atualiza listagem
+else Dados ou acesso inválidos
+  Api --> Web : 400, 403 ou 404
+  Web --> Usuario : Exibe erros
+end
+
+note over Api,Service
+  PúblicoPermitido é validado novamente nas consultas
+  públicas e na inscrição do participante.
+end note
+@enduml
+

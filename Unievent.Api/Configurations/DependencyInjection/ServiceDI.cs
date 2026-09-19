@@ -18,6 +18,7 @@ namespace Unievent.Api.Configurations.DependencyInjection
             services.AddScoped<IParticipacaoService, ParticipacaoService>();
             services.AddScoped<IAutomacaoEventosService, AutomacaoEventosService>();
             services.AddScoped<ICertificadoAutomaticoService, CertificadoAutomaticoService>();
+            services.AddSingleton<ICertificadoPdfGenerator, CertificadoPdfGenerator>();
 
             return services;
         }

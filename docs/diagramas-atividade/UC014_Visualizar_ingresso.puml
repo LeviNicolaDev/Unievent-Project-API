@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC014 - Visualizar ingresso
+|Participante|
+start
+:Seleciona uma participação;
+|Gestão de inscrições|
+if (A inscrição pertence ao participante?) then (Sim)
+  if (Inscrição está ativa?) then (Sim)
+    :Apresenta ingresso, evento e situação da presença;
+    |Participante|
+    :Consulta o ingresso;
+  else (Não - exceção)
+    :Apresenta a inscrição apenas no histórico;
+    :Informa que o ingresso não é mais válido;
+  endif
+else (Não - exceção)
+  :Nega acesso ao ingresso solicitado;
+endif
+stop
+@enduml
+

@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   CalendarDays,
   Eye,
   Pencil,
@@ -193,6 +194,9 @@ export function EventsPage() {
             </button>
             <Link to={`${routePrefix}/preview`} title={t("preview")}>
               <Eye size={18} />
+            </Link>
+            <Link to={`${routePrefix}/${row.id}/dashboard`} title="Visualizar dashboard">
+              <BarChart3 size={18} />
             </Link>
           </div>
         ),

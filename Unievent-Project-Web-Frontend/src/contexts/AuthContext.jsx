@@ -1,85 +1,112 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { isUserSecretary } from "../services/authService.js";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { isAuthenticatedUser } from "../services/authService.js";
+import {
+  AUTH_SCOPES,
+  AUTH_STORAGE_KEYS,
+  getAuthScopeForPath,
+  getAuthScopeForUser,
+  migrateLegacyAuthSession,
+  readAuthSession,
+  removeAuthSession,
+  writeAuthSession,
+} from "../services/authSession.js";
 
 const AuthContext = createContext(null);
 
+const EMPTY_SESSIONS = {
+  [AUTH_SCOPES.ADMIN]: null,
+  [AUTH_SCOPES.SECRETARY]: null,
+  [AUTH_SCOPES.PUBLIC]: null,
+};
+
+function readValidatedSession(scope) {
+  const session = readAuthSession(scope);
+  if (
+    !session ||
+    !isAuthenticatedUser(session.user) ||
+    getAuthScopeForUser(session.user) !== scope
+  ) {
+    if (session) removeAuthSession(scope);
+    return null;
+  }
+
+  return session;
+}
+
+function loadSessions() {
+  migrateLegacyAuthSession();
+  return Object.values(AUTH_SCOPES).reduce(
+    (sessions, scope) => ({ ...sessions, [scope]: readValidatedSession(scope) }),
+    { ...EMPTY_SESSIONS },
+  );
+}
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+  const [sessions, setSessions] = useState(loadSessions);
   const [error, setError] = useState(null);
+  const activeScope = getAuthScopeForPath(location.pathname);
+  const activeSession = sessions[activeScope];
+  const user = activeSession?.user || null;
+  const token = activeSession?.token || null;
 
-  // Restaurar sessão ao montar componente
   useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    const storedUser = localStorage.getItem("authUser");
+    function synchronizeSession(event) {
+      const scope = Object.keys(AUTH_STORAGE_KEYS).find(
+        (candidate) => AUTH_STORAGE_KEYS[candidate] === event.key,
+      );
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-
-        // Validar que é um UsuarioSecretaria
-        if (!isUserSecretary(parsedUser)) {
-          localStorage.removeItem("authToken");
-          localStorage.removeItem("authUser");
-          setError(
-            "Acesso negado: apenas usuários administrativos podem usar este sistema",
-          );
-          setIsLoading(false);
-          return;
-        }
-
-        setToken(storedToken);
-        setUser(parsedUser);
-      } catch (err) {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
-        setError("Erro ao restaurar sessão");
+      if (scope) {
+        setSessions((current) => ({
+          ...current,
+          [scope]: readValidatedSession(scope),
+        }));
       }
     }
 
-    setIsLoading(false);
+    window.addEventListener("storage", synchronizeSession);
+    return () => window.removeEventListener("storage", synchronizeSession);
   }, []);
 
-  // Fazer login
-  const login = (userData, authToken) => {
-    if (!isUserSecretary(userData)) {
-      setError("Acesso negado: apenas usuários administrativos podem usar este sistema");
+  const login = useCallback((userData, authToken) => {
+    const scope = getAuthScopeForUser(userData);
+
+    if (!scope || !authToken || !isAuthenticatedUser(userData)) {
+      setError("Sessão inválida. Faça login novamente.");
       return false;
     }
 
-    setUser(userData);
-    setToken(authToken);
-
-    localStorage.setItem("authToken", authToken);
-    localStorage.setItem("authUser", JSON.stringify(userData));
+    const session = { token: authToken, user: userData };
+    writeAuthSession(scope, session);
+    setSessions((current) => ({ ...current, [scope]: session }));
 
     setError(null);
     return true;
-  };
-  // Fazer logout
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
-    setError(null);
-  };
+  }, []);
 
-  const isAuthenticated = !!token && isUserSecretary(user);
+  const logout = useCallback((scope = activeScope) => {
+    removeAuthSession(scope);
+    setSessions((current) => ({ ...current, [scope]: null }));
+    setError(null);
+  }, [activeScope]);
+
+  const isAuthenticated = !!token && isAuthenticatedUser(user);
 
   const value = useMemo(
     () => ({
       user,
       token,
-      isLoading,
+      activeScope,
+      sessions,
+      isLoading: false,
       error,
       isAuthenticated,
       login,
       logout,
       setError,
     }),
-    [user, token, isLoading, error, isAuthenticated],
+    [user, token, activeScope, sessions, error, isAuthenticated, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

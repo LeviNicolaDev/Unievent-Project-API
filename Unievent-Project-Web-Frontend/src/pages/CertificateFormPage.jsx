@@ -142,6 +142,7 @@ export function CertificateFormPage({ mode = "create" }) {
           </div>
 
           <form className="certificate-form" onSubmit={submit}>
+            <p>Ao vincular este modelo ao evento, alunos FATEC e Público Geral com presença confirmada pela Secretaria recebem automaticamente o certificado em PDF por e-mail. Informe a carga horária no texto, quando aplicável.</p>
             {error ? (
               <div
                 className="auth-error-message"

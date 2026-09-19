@@ -1,7 +1,9 @@
-import { CalendarDays, Filter, MapPin, Search, SlidersHorizontal, Ticket } from "lucide-react";
+import { CalendarDays, Filter, MapPin, Search, SlidersHorizontal, Ticket, UsersRound } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import logo from "../assets/images/logo.svg";
+import { useAuth } from "../contexts/AuthContext.jsx";
+import { isPublicParticipant } from "../services/authService.js";
 import { getEventCategories, searchEvents } from "../services/eventService.js";
 import { listPublicInstitutions } from "../services/institutionService.js";
 import { formatDate, getAssetUrl } from "../utils/formatters.js";
@@ -63,6 +65,7 @@ function getInstitutionSearchParams(value) {
 }
 
 export function PublicEventsPage() {
+  const { user, logout } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [institutions, setInstitutions] = useState([]);
@@ -70,6 +73,7 @@ export function PublicEventsPage() {
   const [meta, setMeta] = useState({ page: 1, pageSize: 12, totalItems: 0, totalPages: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const publicUser = isPublicParticipant(user);
 
   const filters = useMemo(() => ({
     instituicao: searchParams.get("instituicao") || searchParams.get("instituicaoId") || "",
@@ -149,7 +153,20 @@ export function PublicEventsPage() {
         <Link className="public-events-brand" to="/">
           <img src={logo} alt="UniEvent" />
         </Link>
-        <Link className="public-events-login" to="/login">Login</Link>
+        <div className="public-events-account">
+          {publicUser ? (
+            <>
+              <Link className="public-account-link" to="/meus-ingressos">Meus Ingressos</Link>
+              <span>{user.email}</span>
+              <button className="public-events-login" type="button" onClick={logout}>Sair</button>
+            </>
+          ) : (
+            <>
+              <Link className="public-events-login" to="/entrar">Entrar</Link>
+              <Link className="public-events-login" to="/criar-conta">Criar conta</Link>
+            </>
+          )}
+        </div>
       </header>
 
       <section className="public-events-hero">
@@ -252,6 +269,14 @@ export function PublicEventsPage() {
                 <div>
                   <Ticket size={16} />
                   <dd>{getAudienceLabel(event)}</dd>
+                </div>
+                <div>
+                  <UsersRound size={16} />
+                  <dd>
+                    {event.vagasDisponiveis === 0
+                      ? "Lotado"
+                      : `${event.vagasDisponiveis ?? event.capacidade} vagas disponíveis`}
+                  </dd>
                 </div>
                 {event.local && (
                   <div>

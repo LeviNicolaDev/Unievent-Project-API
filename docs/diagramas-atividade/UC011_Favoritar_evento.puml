@@ -1,0 +1,18 @@
+@startuml
+!include _tema.puml
+title UC011 - Favoritar evento
+|Aluno Fatec|
+start
+:Escolhe marcar ou desmarcar um evento favorito;
+|Gestão de preferências|
+if (Evento ainda pode ser consultado?) then (Sim)
+  :Registra a preferência escolhida;
+  |Aluno Fatec|
+  :Visualiza o novo estado do favorito;
+else (Não - exceção)
+  :Mantém a preferência anterior;
+  :Informa que o evento está indisponível;
+endif
+stop
+@enduml
+

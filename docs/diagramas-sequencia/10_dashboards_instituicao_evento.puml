@@ -1,0 +1,37 @@
+@startuml
+!include _tema.puml
+title UC029 e UC045 - Dashboards da instituição e do evento
+
+actor "Usuário Secretaria / Admin" as Usuario
+participant "Web administrativa" as Web
+participant "DashboardController" as Api
+database "SQL Server" as DB
+
+Usuario -> Web : Abre dashboard institucional
+Web -> Api : GET /api/instituicao/dashboard\nBearer JWT
+Api -> Api : Lê role e instituicao_id do JWT
+alt Secretaria sem instituição ou acesso inválido
+  Api --> Web : 403
+  Web --> Usuario : Informa acesso negado
+else Escopo válido
+  Api -> DB : Agrega eventos, inscrições, presenças\ne certificados da instituição
+  DB --> Api : Métricas institucionais
+  Api --> Web : 200 InstituicaoDashboardResponse
+  Web --> Usuario : Exibe indicadores e eventos
+end
+
+Usuario -> Web : Seleciona o dashboard de um evento
+Web -> Api : GET /api/Evento/{eventId}/dashboard
+Api -> DB : Localiza evento e instituição
+Api -> Api : Valida CanAccessInstituicao
+alt Evento fora do escopo
+  Api --> Web : 403 ou 404
+  Web --> Usuario : Bloqueia consulta
+else Evento permitido
+  Api -> DB : Agrega capacidade, inscrições, check-ins,\ncertificados e participantes
+  DB --> Api : Métricas do evento
+  Api --> Web : 200 EventoDashboardResponse
+  Web --> Usuario : Exibe dashboard individual
+end
+@enduml
+

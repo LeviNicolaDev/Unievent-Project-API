@@ -1,0 +1,58 @@
+@startuml
+!include _tema.puml
+title UC047 - Meus Ingressos do Público Geral
+
+actor "Público Geral" as Publico
+participant "Web pública\nReact" as Web
+participant "EventoController" as Api
+participant "ParticipacaoService" as Service
+actor "Secretaria / Operador" as Operador
+database "SQL Server" as DB
+
+Publico -> Web : Acessa Meus Ingressos
+alt Sessão pública ausente
+  Web --> Publico : Redireciona para Entrar
+else Sessão autenticada
+  Web -> Api : GET /api/Evento/meus-ingressos\nBearer JWT
+  Api -> Api : Obtém AlunoId do token
+  Api -> Service : ListarIngressosAsync(alunoId)
+  Service -> DB : Consulta participações do titular\ncom evento e instituição
+  DB --> Service : IngressoResponse[]
+  Service --> Api : Ingressos próprios
+  Api --> Web : 200 ingressos
+  alt Nenhum ingresso
+    Web --> Publico : Exibe estado vazio e link para eventos
+  else Possui ingressos
+    Web -> Web : Separa próximos eventos e histórico
+    Web --> Publico : Exibe cartões dos ingressos
+  end
+end
+
+Publico -> Web : Seleciona Ver ingresso
+Web -> Api : GET /api/Evento/{eventoId}/ingresso
+Api -> Service : ObterIngressoAsync(alunoId, eventoId)
+Service -> DB : Busca participação do titular
+alt Inscrição ativa
+  DB --> Service : Ingresso + CodigoIngresso
+  Service --> Api : IngressoResponse
+  Api --> Web : 200
+  Web -> Web : Renderiza QR Code sem alterar presença
+  Web --> Publico : Exibe ingresso digital inteiro
+else Ingresso indisponível
+  Api --> Web : 404
+  Web --> Publico : Informa inscrição indisponível
+end
+
+Publico -> Operador : Apresenta QR Code
+Operador -> Api : POST /api/Evento/check-in
+Api -> Service : ValidarCheckInAsync(...)
+Service -> DB : Valida e confirma presença
+Service --> Api : Resultado idempotente
+Api --> Operador : Confirmação ou motivo da recusa
+
+Publico -> Web : Atualiza Meus Ingressos
+Web -> Api : GET /api/Evento/meus-ingressos
+Api --> Web : presencaConfirmada = true
+Web --> Publico : Exibe Check-in realizado
+@enduml
+

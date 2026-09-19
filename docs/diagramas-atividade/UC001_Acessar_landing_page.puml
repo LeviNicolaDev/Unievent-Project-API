@@ -1,0 +1,20 @@
+@startuml
+!include _tema.puml
+title UC001 - Conhecer o UniEvent
+|Visitante|
+start
+:Busca informações sobre eventos e instituições;
+|UniEvent|
+if (Canal de atendimento disponível?) then (Sim)
+  :Apresenta a proposta do serviço;
+  :Oferece acesso à descoberta de eventos e à identificação;
+  |Visitante|
+  :Escolhe o próximo passo;
+else (Não - exceção)
+  :Informa indisponibilidade temporária;
+  |Visitante|
+  :Tenta novamente em outro momento;
+endif
+stop
+@enduml
+

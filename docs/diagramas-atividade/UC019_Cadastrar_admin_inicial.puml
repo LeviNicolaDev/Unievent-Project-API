@@ -1,0 +1,22 @@
+@startuml
+!include _tema.puml
+title UC019 - Cadastrar administrador inicial
+|Responsável pela implantação|
+start
+:Solicita criar o primeiro administrador;
+:Informa nome, e-mail e senha;
+|Governança UniEvent|
+if (Já existe administrador inicial?) then (Sim - exceção)
+  :Recusa novo cadastro inicial;
+else (Não)
+  if (Dados atendem às regras?) then (Sim)
+    :Registra o administrador global;
+    |Responsável pela implantação|
+    :Recebe confirmação e pode iniciar a gestão;
+  else (Não - exceção)
+    :Informa os dados que precisam de correção;
+  endif
+endif
+stop
+@enduml
+

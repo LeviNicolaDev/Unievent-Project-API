@@ -1,9 +1,16 @@
 import { request } from "./apiClient.js";
+import {
+  getCurrentAuthScope,
+  readAuthSession,
+  removeAuthSession,
+} from "./authSession.js";
 
 const USER_UNIEVENT_TYPE = "UsuarioUnievent";
 const USER_SECRETARY_TYPE = "UsuarioSecretaria";
+const STUDENT_USER_TYPE = "Aluno";
 const ADMINISTRATIVE_USER_TYPES = [USER_UNIEVENT_TYPE, USER_SECRETARY_TYPE];
 const ADMINISTRATIVE_ROLES = ["Admin", "Secretaria"];
+const PARTICIPANT_ROLES = ["Aluno"];
 const ROLE_CLAIM = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 const EMAIL_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress";
 const ID_CLAIM = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
@@ -42,8 +49,13 @@ function createUserFromToken(token, fallbackEmail) {
   const instituicaoId = claims.instituicao_id ? Number(claims.instituicao_id) : null;
   const tipoUsuario =
     claims.tipo_usuario ||
-    (roleUsuario === "Admin" && !instituicaoId ? USER_UNIEVENT_TYPE : USER_SECRETARY_TYPE);
+    (roleUsuario === "Aluno"
+      ? STUDENT_USER_TYPE
+      : roleUsuario === "Admin" && !instituicaoId
+        ? USER_UNIEVENT_TYPE
+        : USER_SECRETARY_TYPE);
   const statusUsuario = claims.status_usuario || claims.statusUsuario || null;
+  const tipoParticipante = claims.tipo_participante || claims.tipoParticipante || null;
 
   return {
     id: id ? Number(id) : null,
@@ -52,8 +64,13 @@ function createUserFromToken(token, fallbackEmail) {
     roleUsuario,
     instituicaoId,
     tipoUsuario,
+    tipoParticipante,
     statusUsuario,
   };
+}
+
+function normalizeText(value) {
+  return String(value || "").trim().toLowerCase();
 }
 
 export async function loginAdmin(email, password) {
@@ -66,6 +83,7 @@ export async function loginAdmin(email, password) {
     headers: {
       "Content-Type": "application/json",
     },
+    skipAuth: true,
   });
   const token = typeof response === "string" ? response : response?.token;
 
@@ -85,19 +103,58 @@ export async function loginAdmin(email, password) {
   };
 }
 
-export function logout() {
-  // Limpar dados locais
-  localStorage.removeItem("authToken");
-  localStorage.removeItem("authUser");
+export async function loginPublic(email, password) {
+  const response = await request("/Auth/login-publico", {
+    method: "POST",
+    body: JSON.stringify({
+      email,
+      senha: password,
+    }),
+    headers: {
+      "Content-Type": "application/json",
+    },
+    skipAuth: true,
+  });
+  const token = typeof response === "string" ? response : response?.token;
+
+  if (!token) {
+    throw new Error("Token de autenticação não recebido pela API");
+  }
+
+  const user = createUserFromToken(token, email);
+  if (!isPublicParticipant(user)) {
+    throw new Error("Este login é exclusivo para público geral");
+  }
+
+  return {
+    token,
+    user,
+  };
 }
 
-export function getStoredToken() {
-  return localStorage.getItem("authToken");
+export async function registerPublic(payload) {
+  return request("/Auth/cadastro-publico", {
+    method: "POST",
+    body: JSON.stringify({
+      nome: payload.name || payload.nome,
+      email: payload.email,
+      senha: payload.password || payload.senha,
+      confirmacaoSenha: payload.confirmPassword || payload.confirmacaoSenha,
+    }),
+    skipAuth: true,
+  });
 }
 
-export function getStoredUser() {
-  const user = localStorage.getItem("authUser");
-  return user ? JSON.parse(user) : null;
+export function logout(scope = getCurrentAuthScope()) {
+  removeAuthSession(scope);
+}
+
+export function getStoredToken(scope = getCurrentAuthScope()) {
+  return readAuthSession(scope)?.token || null;
+}
+
+export function getStoredUser(scope = getCurrentAuthScope()) {
+  return readAuthSession(scope)?.user || null;
 }
 
 export function isUserAdmin(user) {
@@ -109,8 +166,27 @@ export function isUserSecretary(user) {
 }
 
 export function isAdministrativeUser(user) {
+  const tipoUsuario = normalizeText(user?.tipoUsuario);
+  const roleUsuario = normalizeText(user?.roleUsuario);
+
   return (
-    ADMINISTRATIVE_USER_TYPES.includes(user?.tipoUsuario) &&
-    ADMINISTRATIVE_ROLES.includes(user?.roleUsuario)
+    ADMINISTRATIVE_USER_TYPES.map(normalizeText).includes(tipoUsuario) &&
+    ADMINISTRATIVE_ROLES.map(normalizeText).includes(roleUsuario)
   );
+}
+
+export function isPublicParticipant(user) {
+  const tipoUsuario = normalizeText(user?.tipoUsuario);
+  const roleUsuario = normalizeText(user?.roleUsuario);
+  const tipoParticipante = normalizeText(user?.tipoParticipante);
+
+  return (
+    tipoUsuario === normalizeText(STUDENT_USER_TYPE) &&
+    PARTICIPANT_ROLES.map(normalizeText).includes(roleUsuario) &&
+    tipoParticipante === "externo"
+  );
+}
+
+export function isAuthenticatedUser(user) {
+  return isAdministrativeUser(user) || isPublicParticipant(user);
 }

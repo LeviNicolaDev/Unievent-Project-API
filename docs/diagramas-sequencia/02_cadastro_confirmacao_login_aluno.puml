@@ -1,0 +1,62 @@
+@startuml
+!include _tema.puml
+title UC005-UC008 - Cadastro, confirmação e login do aluno
+
+actor "Aluno Fatec" as Aluno
+participant "Aplicativo mobile" as Mobile
+participant "InstituicaoController" as InstituicaoApi
+participant "AlunoController" as AlunoApi
+participant "EmailController" as EmailApi
+participant "AuthController" as AuthApi
+participant "AlunoService / AuthService" as Service
+participant "Serviço SMTP" as SMTP
+database "SQL Server" as DB
+
+Aluno -> Mobile : Abre o cadastro
+Mobile -> InstituicaoApi : GET /api/Instituicao/ativas
+InstituicaoApi -> DB : Lista instituições
+DB --> InstituicaoApi : Opções ativas
+InstituicaoApi --> Mobile : 200 instituições
+Aluno -> Mobile : Informa dados, foto e instituição
+Mobile -> AlunoApi : POST /api/Aluno (multipart/form-data)
+AlunoApi -> Service : CriarAluno(request)
+Service -> DB : Valida duplicidade e salva senha com hash
+alt Cadastro inválido
+  Service --> AlunoApi : Falha de validação
+  AlunoApi --> Mobile : 400 erros
+  Mobile --> Aluno : Solicita correção
+else Cadastro válido
+  DB --> Service : Aluno criado + chave de confirmação
+  Service --> AlunoApi : AlunoResponse
+  AlunoApi --> Mobile : 200 cadastro realizado
+  Mobile -> EmailApi : POST /api/Email/enviar-email-confirmacao-conta
+  EmailApi -> SMTP : Envia link com a chave
+  SMTP --> Aluno : E-mail de confirmação
+end
+
+Aluno -> Mobile : Abre o link de confirmação
+Mobile -> EmailApi : POST /api/Email/confirmar-conta { chave }
+EmailApi -> DB : Localiza chave e confirma o e-mail
+alt Chave inválida ou expirada
+  EmailApi --> Mobile : 400 confirmação recusada
+else Chave válida
+  EmailApi --> Mobile : 200 conta confirmada
+  Mobile --> Aluno : Direciona para o login
+end
+
+Aluno -> Mobile : Informa e-mail e senha
+Mobile -> AuthApi : POST /api/Auth/login-aluno
+AuthApi -> Service : LoginAluno(request)
+Service -> DB : Busca aluno e valida senha/e-mail confirmado
+alt Credenciais ou confirmação inválidas
+  Service --> AuthApi : Falha
+  AuthApi --> Mobile : 401 motivo
+else Autenticação válida
+  Service -> Service : Gera JWT de Aluno
+  Service --> AuthApi : Token
+  AuthApi --> Mobile : 200 JWT
+  Mobile -> Mobile : Persiste sessão segura
+  Mobile --> Aluno : Exibe área autenticada
+end
+@enduml
+

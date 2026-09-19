@@ -20,9 +20,6 @@ const EventContext = createContext(null);
 
 const STORAGE_KEYS = {
   favorites: "@unievent:favorites",
-  registrations: "@unievent:registrations",
-  attended: "@unievent:attended",
-  certificates: "@unievent:certificates",
 };
 
 function normalizeText(value) {
@@ -59,14 +56,15 @@ function attachCertificatesToEvents(events, certificates) {
     if (!certificate) {
       return {
         ...event,
-        hasCertificate: Boolean(event.hasCertificate && event.certificate),
+        hasCertificate: false,
+        certificate: null,
       };
     }
 
     return {
       ...event,
       certificate,
-      hasCertificate: true,
+      hasCertificate: Boolean(certificate.temCertificado),
     };
   });
 }
@@ -102,17 +100,23 @@ export function EventProvider({ children }) {
       try {
         if (!token) {
           setEventItems(fallbackEvents);
+          setRegisteredIds([]);
+          setAttendedIds([]);
+          setCertificateIds([]);
           return;
         }
 
         const [apiEvents, apiCertificates, apiInstitutions] = await Promise.all([
           eventsApi.list(token, { instituicaoId: selectedInstitutionId }),
-          certificatesApi.list().catch(() => []),
+          certificatesApi.list(token),
           institutionsApi.listPublic().catch(() => []),
         ]);
 
         if (isMounted) {
           setEventItems(attachCertificatesToEvents(apiEvents, apiCertificates));
+          setRegisteredIds(apiCertificates.map(c => c.eventId));
+          setAttendedIds(apiCertificates.filter(c => c.presencaConfirmada).map(c => c.eventId));
+          setCertificateIds(apiCertificates.filter(c => c.pdfDisponivel).map(c => c.eventId));
         }
         if (isMounted) {
           setInstitutionFilters(apiInstitutions);
@@ -121,6 +125,9 @@ export function EventProvider({ children }) {
         if (isMounted) {
           setEventsError(error.message);
           setEventItems(fallbackEvents);
+          setRegisteredIds([]);
+          setAttendedIds([]);
+          setCertificateIds([]);
         }
       } finally {
         if (isMounted) {
@@ -142,29 +149,17 @@ export function EventProvider({ children }) {
     async function hydrate() {
       setHydrated(false);
       setFavoriteIds([]);
-      setRegisteredIds([]);
-      setAttendedIds([]);
-      setCertificateIds([]);
+
 
       try {
-        const [
-          storedFavorites,
-          storedRegistrations,
-          storedAttended,
-          storedCertificates,
-        ] = await Promise.all([
-          AsyncStorage.getItem(`${STORAGE_KEYS.favorites}${storageSuffix}`),
-          AsyncStorage.getItem(`${STORAGE_KEYS.registrations}${storageSuffix}`),
-          AsyncStorage.getItem(`${STORAGE_KEYS.attended}${storageSuffix}`),
-          AsyncStorage.getItem(`${STORAGE_KEYS.certificates}${storageSuffix}`),
-        ]);
+        const storedFavorites = await AsyncStorage.getItem(
+          `${STORAGE_KEYS.favorites}${storageSuffix}`
+        );
 
         if (!isMounted) return;
 
         setFavoriteIds(readStoredIds(storedFavorites));
-        setRegisteredIds(readStoredIds(storedRegistrations));
-        setAttendedIds(readStoredIds(storedAttended));
-        setCertificateIds(readStoredIds(storedCertificates));
+        // Presença, inscrições e certificados são consultados somente no backend.
       } catch {
         return null;
       } finally {
@@ -189,33 +184,6 @@ export function EventProvider({ children }) {
       JSON.stringify(favoriteIds)
     ).catch(() => null);
   }, [favoriteIds, hydrated, storageSuffix]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    AsyncStorage.setItem(
-      `${STORAGE_KEYS.registrations}${storageSuffix}`,
-      JSON.stringify(registeredIds)
-    ).catch(() => null);
-  }, [registeredIds, hydrated, storageSuffix]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    AsyncStorage.setItem(
-      `${STORAGE_KEYS.attended}${storageSuffix}`,
-      JSON.stringify(attendedIds)
-    ).catch(() => null);
-  }, [attendedIds, hydrated, storageSuffix]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-
-    AsyncStorage.setItem(
-      `${STORAGE_KEYS.certificates}${storageSuffix}`,
-      JSON.stringify(certificateIds)
-    ).catch(() => null);
-  }, [certificateIds, hydrated, storageSuffix]);
 
   const getEventById = useCallback(
     (eventId) =>
@@ -266,32 +234,6 @@ export function EventProvider({ children }) {
     [token]
   );
 
-  const markEventAsAttended = useCallback(
-    async (eventId) => {
-      const id = asId(eventId);
-
-      if (!token) {
-        throw new Error("Faça login como aluno para confirmar presença.");
-      }
-
-      try {
-        await eventsApi.confirmAttendance(id, token);
-      } catch (error) {
-        if (!normalizeText(error.message).includes("presenca ja confirmada")) {
-          throw error;
-        }
-      }
-
-      setRegisteredIds((current) =>
-        current.includes(id) ? current : [...current, id]
-      );
-      setAttendedIds((current) =>
-        current.includes(id) ? current : [...current, id]
-      );
-    },
-    [token]
-  );
-
   const hasAttended = useCallback(
     (eventId) => attendedIds.includes(asId(eventId)),
     [attendedIds]
@@ -300,30 +242,6 @@ export function EventProvider({ children }) {
   const hasIssuedCertificate = useCallback(
     (eventId) => certificateIds.includes(asId(eventId)),
     [certificateIds]
-  );
-
-  const issueCertificate = useCallback(
-    (eventId) => {
-      const id = asId(eventId);
-      const event = eventItems.find((item) => asId(item.id) === id);
-
-      if (!attendedIds.includes(id)) {
-        throw new Error(
-          "Leia o QR Code do ingresso antes de emitir o certificado."
-        );
-      }
-
-      if (!event?.hasCertificate || !event?.certificate) {
-        throw new Error("Este evento não possui certificado associado.");
-      }
-
-      setCertificateIds((current) =>
-        current.includes(id) ? current : [...current, id]
-      );
-
-      return event.certificate;
-    },
-    [attendedIds, eventItems]
   );
 
   const filteredEvents = useMemo(() => {
@@ -386,14 +304,18 @@ export function EventProvider({ children }) {
     try {
       const [apiEvents, apiCertificates] = await Promise.all([
         eventsApi.list(token, { instituicaoId: selectedInstitutionId }),
-        certificatesApi.list().catch(() => []),
+        certificatesApi.list(token),
       ]);
-      setEventItems(
-        attachCertificatesToEvents(apiEvents, apiCertificates)
-      );
+      setEventItems(attachCertificatesToEvents(apiEvents, apiCertificates));
+      setRegisteredIds(apiCertificates.map(c => c.eventId));
+      setAttendedIds(apiCertificates.filter(c => c.presencaConfirmada).map(c => c.eventId));
+      setCertificateIds(apiCertificates.filter(c => c.pdfDisponivel).map(c => c.eventId));
     } catch (error) {
       setEventsError(error.message);
       setEventItems(fallbackEvents);
+      setRegisteredIds([]);
+      setAttendedIds([]);
+      setCertificateIds([]);
     } finally {
       setEventsLoading(false);
     }
@@ -424,11 +346,9 @@ export function EventProvider({ children }) {
       attendedIds,
       attendedEvents,
       refreshEvents,
-      markEventAsAttended,
       hasAttended,
       certificateIds,
       hasIssuedCertificate,
-      issueCertificate,
       getEventById,
     }),
     [
@@ -456,8 +376,6 @@ export function EventProvider({ children }) {
       selectedCategory,
       toggleFavorite,
       registerForEvent,
-      markEventAsAttended,
-      issueCertificate,
     ]
   );
 

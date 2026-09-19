@@ -1,0 +1,48 @@
+@startuml
+!include _tema.puml
+title UC018-UC019 - Login administrativo e cadastro do Admin inicial
+
+actor "Administrador / Secretaria" as Usuario
+participant "Web administrativa" as Web
+participant "AuthController" as AuthApi
+participant "UsuarioUnieventController" as UsuarioApi
+participant "AuthService" as AuthService
+participant "UsuarioUnieventService" as UsuarioService
+database "SQL Server" as DB
+
+opt Primeiro acesso da instalação
+  Usuario -> Web : Informa dados do Admin inicial
+  Web -> UsuarioApi : POST /api/UsuarioUnievent/admin-inicial
+  UsuarioApi -> DB : Verifica se já existe Admin
+  alt Admin já existe ou dados inválidos
+    UsuarioApi --> Web : 400 cadastro recusado
+  else Instalação sem Admin
+    UsuarioApi -> UsuarioService : Criar usuário Admin
+    UsuarioService -> DB : Salva credenciais com hash
+    UsuarioService --> UsuarioApi : Admin criado
+    UsuarioApi --> Web : 200
+  end
+end
+
+Usuario -> Web : Informa e-mail e senha
+Web -> AuthApi : POST /api/Auth/login
+AuthApi -> AuthService : Login(request)
+AuthService -> DB : Busca usuário administrativo
+AuthService -> AuthService : Valida senha, perfil e status
+alt Acesso inválido, pendente ou bloqueado
+  AuthService --> AuthApi : Falha
+  AuthApi --> Web : 401 motivo
+  Web --> Usuario : Mantém tela de login
+else Acesso autorizado
+  AuthService -> AuthService : Gera JWT com role e instituição
+  AuthService --> AuthApi : Token
+  AuthApi --> Web : 200 JWT
+  Web -> Web : Decodifica escopo e persiste sessão
+  alt Admin global
+    Web --> Usuario : Abre dashboard administrativo
+  else Secretaria ativa
+    Web --> Usuario : Abre dashboard institucional
+  end
+end
+@enduml
+

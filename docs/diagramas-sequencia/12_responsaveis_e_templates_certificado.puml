@@ -1,0 +1,55 @@
+@startuml
+!include _tema.puml
+title UC035-UC036 - Responsáveis e templates de certificado
+
+actor "Secretaria / Admin" as Usuario
+participant "Web administrativa" as Web
+participant "ResponsavelEventoController" as ResponsavelApi
+participant "CertificadoController" as CertificadoApi
+participant "Serviços de aplicação" as Services
+database "SQL Server" as DB
+
+group Gestão de responsáveis
+  Usuario -> Web : Abre Responsáveis
+  Web -> ResponsavelApi : GET /api/ResponsavelEvento
+  ResponsavelApi -> Services : ListarResponsaveisEvento()
+  Services -> DB : Consulta responsáveis
+  DB --> Services : Lista
+  ResponsavelApi -> ResponsavelApi : Filtra pelo escopo institucional
+  ResponsavelApi --> Web : 200 responsáveis
+  Usuario -> Web : Cadastra, edita ou exclui
+  alt Cadastrar
+    Web -> ResponsavelApi : POST /api/ResponsavelEvento (multipart)
+  else Editar
+    Web -> ResponsavelApi : PATCH /api/ResponsavelEvento/{id}
+  else Excluir
+    Web -> ResponsavelApi : DELETE /api/ResponsavelEvento/{id}
+  end
+  ResponsavelApi -> ResponsavelApi : Valida instituição
+  ResponsavelApi -> Services : Executa operação
+  Services -> DB : Persiste alteração
+  ResponsavelApi --> Web : 200 ou erro
+end
+
+group Gestão de templates de certificado
+  Usuario -> Web : Abre Certificados
+  Web -> CertificadoApi : GET /api/Certificado
+  CertificadoApi -> Services : ListarCertificados()
+  Services -> DB : Consulta templates e eventos
+  CertificadoApi -> CertificadoApi : Filtra pelo escopo institucional
+  CertificadoApi --> Web : 200 templates
+  Usuario -> Web : Cadastra, edita ou exclui template
+  alt Cadastrar
+    Web -> CertificadoApi : POST /api/Certificado
+  else Editar
+    Web -> CertificadoApi : PATCH /api/Certificado/{id}
+  else Excluir (Admin)
+    Web -> CertificadoApi : DELETE /api/Certificado/{id}
+  end
+  CertificadoApi -> DB : Confere evento e instituição
+  CertificadoApi -> Services : Executa operação
+  Services -> DB : Persiste texto/data/evento
+  CertificadoApi --> Web : 200 ou erro
+end
+@enduml
+

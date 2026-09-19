@@ -1,0 +1,41 @@
+@startuml
+skinparam shadowing false
+title UniEvent - Sequência da certificação automática
+
+actor Secretaria
+participant "Frontend Web" as Web
+participant "API / EventoController" as API
+participant "ParticipacaoService" as CheckIn
+database "SQL Server" as DB
+participant "CertificadoAutomaticoService" as Cert
+participant "PDF Generator" as PDF
+participant "EmailService / SMTP" as Email
+actor "Aluno FATEC ou\nPúblico Geral" as Participante
+
+Secretaria -> Web : informa evento + código do ingresso
+Web -> API : POST /api/Evento/check-in
+API -> DB : valida usuário ativo, role e instituição
+API -> CheckIn : ValidarCheckInAsync
+CheckIn -> DB : UPDATE presença se ainda não confirmada
+alt presença confirmada pela primeira vez
+  CheckIn -> Cert : ProcessarAposCheckInAsync
+  Cert -> DB : consulta template e reserva participação
+  alt evento possui certificado
+    Cert -> PDF : gerar PDF
+    PDF --> Cert : bytes + nome sanitizado
+    Cert -> DB : persiste PDF, código e emissão
+    Cert -> DB : marca Enviando se ainda reservado
+    Cert -> Email : envia MIME com anexo PDF
+    Email -> Participante : certificado anexado
+    Email --> Cert : resultado classificado
+    Cert -> DB : persiste resultado sem alterar presença
+  else evento sem certificado
+    Cert --> CheckIn : processamento dispensado
+  end
+else check-in já confirmado
+  CheckIn --> API : resultado idempotente, sem novo envio
+end
+CheckIn --> API : presença confirmada
+API --> Web : resultado + estado da certificação
+Web --> Secretaria : confirmação do check-in
+@enduml

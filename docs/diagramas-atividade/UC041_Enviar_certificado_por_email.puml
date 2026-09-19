@@ -1,0 +1,34 @@
+@startuml
+!include _tema.puml
+title UC041 - Entregar certificado por e-mail
+|Gestão de certificação|
+start
+:Recebe certificado emitido para entrega;
+if (Participante possui endereço de e-mail válido?) then (Sim)
+  if (Certificado já foi entregue?) then (Sim - exceção)
+    :Mantém o registro de entrega sem repetir o envio;
+  else (Não)
+    |Serviço de comunicação|
+    :Envia mensagem com o certificado anexado;
+    if (Entrega foi confirmada?) then (Sim)
+      |Gestão de certificação|
+      :Registra data e confirmação de entrega;
+    else (Não - exceção)
+      :Registra a ocorrência de entrega;
+      if (Nova tentativa é segura e permitida?) then (Sim)
+        :Programa nova tentativa dentro do limite;
+      else (Não)
+        :Encaminha a ocorrência para análise;
+      endif
+    endif
+  endif
+else (Não - exceção)
+  :Registra impedimento por contato inválido;
+endif
+note right
+  Falhas de entrega não anulam a presença
+  nem a emissão já realizada.
+end note
+stop
+@enduml
+

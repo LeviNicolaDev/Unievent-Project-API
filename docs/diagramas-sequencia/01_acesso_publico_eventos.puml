@@ -1,0 +1,53 @@
+@startuml
+!include _tema.puml
+title UC001-UC004 - Acesso público e descoberta de eventos
+
+actor "Visitante" as Visitante
+participant "Web pública\nReact" as Web
+participant "EventoController" as EventoApi
+participant "InstituicaoController" as InstituicaoApi
+participant "EventoService" as EventoService
+database "SQL Server" as DB
+
+Visitante -> Web : Acessa a landing page
+Web --> Visitante : Conteúdo e opções de navegação
+Visitante -> Web : Abre Descobrir eventos
+par Carregar instituições
+  Web -> InstituicaoApi : GET /api/Instituicao/publicas
+  InstituicaoApi -> DB : Consulta instituições e total de eventos públicos
+  DB --> InstituicaoApi : Instituições disponíveis
+  InstituicaoApi --> Web : 200 InstituicaoPublicaResponse[]
+else Carregar eventos
+  Web -> EventoApi : GET /api/Evento
+  EventoApi -> EventoService : ListarEventosDisponiveis(tipo?)
+  EventoService -> DB : Consulta eventos visíveis e vagas
+  DB --> EventoService : Eventos disponíveis
+  EventoService --> EventoApi : EventoResponse[]
+  EventoApi --> Web : 200 eventos
+end
+Web --> Visitante : Exibe catálogo público
+
+opt Filtrar por instituição/categoria/busca
+  Visitante -> Web : Define filtros
+  Web -> EventoApi : GET /api/Evento?filtros
+  EventoApi -> DB : Aplica filtros e regras de visibilidade
+  DB --> EventoApi : Eventos filtrados
+  EventoApi --> Web : 200 resultado paginado
+  Web --> Visitante : Atualiza a listagem
+end
+
+Visitante -> Web : Seleciona um evento
+Web -> EventoApi : GET /api/Evento/{id}
+EventoApi -> EventoService : ListarEventoById(id)
+EventoService -> DB : Consulta evento, instituição e responsável
+alt Evento existe e pode ser visualizado
+  DB --> EventoService : Dados do evento
+  EventoService --> EventoApi : EventoResponse
+  EventoApi --> Web : 200 detalhes + vagas
+  Web --> Visitante : Exibe detalhes completos
+else Evento ausente ou restrito
+  EventoApi --> Web : 404 ou 403
+  Web --> Visitante : Informa indisponibilidade
+end
+@enduml
+

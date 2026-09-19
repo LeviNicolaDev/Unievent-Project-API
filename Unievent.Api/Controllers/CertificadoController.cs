@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using Unievent.Api.Security;
 using Unievent.Application.Dtos.Certificado;
 using Unievent.Application.Interfaces.Services;
@@ -36,6 +37,40 @@ public class CertificadoController : ControllerBase
         if (certificado.IsFailure) return BadRequest(certificado.Errors);
 
         return Ok(certificado.Value);
+    }
+
+    [HttpGet("meus")]
+    [Authorize(Roles = "Aluno")]
+    public async Task<IActionResult> MeusCertificados(CancellationToken cancellationToken)
+    {
+        if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var alunoId)) return Unauthorized();
+        var result = await _db.Participacao.AsNoTracking()
+            .Where(p => p.AlunoId == alunoId)
+            .OrderByDescending(p => p.Evento.DataEvento)
+            .Select(p => new
+            {
+                p.Id, p.EventoId, NomeEvento = p.Evento.Nome,
+                p.PresencaConfirmada, p.CertificadoEmitido, p.CodigoValidacao,
+                p.CertificadoEnviadoPorEmail, p.StatusEnvioCertificado, p.ErroEnvioCertificadoEmail,
+                p.DataGeracaoCertificado, p.DataEnvioCertificadoEmail,
+                PdfDisponivel = p.CertificadoPdf != null,
+                TemCertificado = p.CertificadoPdf != null || _db.Certificado.Any(c => c.EventoId == p.EventoId)
+            }).ToListAsync(cancellationToken);
+        return Ok(result);
+    }
+
+    [HttpGet("eventos/{eventoId}/pdf")]
+    [Authorize(Roles = "Aluno")]
+    public async Task<IActionResult> BaixarMeuPdf(int eventoId, CancellationToken cancellationToken)
+    {
+        if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var alunoId)) return Unauthorized();
+        var arquivo = await _db.Participacao.AsNoTracking()
+            .Where(p => p.AlunoId == alunoId && p.EventoId == eventoId && p.PresencaConfirmada && p.CertificadoEmitido)
+            .Select(p => new { p.CertificadoPdf, p.NomeArquivoCertificado })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (arquivo?.CertificadoPdf is null) return NotFound("Certificado PDF ainda não disponível.");
+        Response.Headers.CacheControl = "private, no-store";
+        return File(arquivo.CertificadoPdf, "application/pdf", arquivo.NomeArquivoCertificado ?? "certificado.pdf");
     }
 
     [HttpPatch("{id}")]

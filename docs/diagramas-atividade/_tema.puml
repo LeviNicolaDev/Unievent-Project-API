@@ -1,0 +1,21 @@
+skinparam shadowing false
+skinparam handwritten false
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #1F4E79
+skinparam activity {
+  BackgroundColor #FFF8DC
+  BorderColor #1F4E79
+  FontColor #111111
+  DiamondBackgroundColor #EAF3F8
+  DiamondBorderColor #1F4E79
+}
+skinparam partition {
+  BackgroundColor #FFFFFF
+  BorderColor #A7B4C2
+  FontColor #111111
+}
+skinparam note {
+  BackgroundColor #FFF3E8
+  BorderColor #E86A1C
+}
+

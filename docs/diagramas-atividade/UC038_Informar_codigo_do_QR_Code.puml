@@ -1,0 +1,27 @@
+@startuml
+!include _tema.puml
+title UC038 - Informar código do ingresso
+|Participante|
+start
+:Apresenta o ingresso no local do evento;
+|Operador de check-in|
+:Tenta ler o código visual;
+if (Código está legível?) then (Sim)
+  :Encaminha o código para validação da presença;
+else (Não - exceção)
+  :Solicita o código textual ao participante;
+  |Participante|
+  if (Consegue apresentar código válido?) then (Sim)
+    |Operador de check-in|
+    :Encaminha o código para validação;
+  else (Não - exceção)
+    :Orienta o participante a recuperar o ingresso;
+  endif
+endif
+note right
+  Informar o código apenas inicia a conferência;
+  a presença depende das demais regras do evento.
+end note
+stop
+@enduml
+

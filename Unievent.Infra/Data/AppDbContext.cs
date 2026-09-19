@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 
 namespace Unievent.Infra.Data;
 
@@ -97,7 +98,15 @@ public class AppDbContext : DbContext
         {
             p.HasIndex(x => new { x.AlunoId, x.EventoId }).IsUnique();
             p.HasIndex(x => x.CodigoIngresso).IsUnique();
+            p.Property(x => x.StatusInscricao)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(StatusInscricao.Ativa);
             p.Property(x => x.ErroEnvioCertificadoEmail).HasMaxLength(500);
+            p.Property(x => x.NomeArquivoCertificado).HasMaxLength(180);
+            p.Property(x => x.DestinatarioCertificadoEmail).HasMaxLength(320);
+            p.Property(x => x.StatusEnvioCertificado).HasConversion<string>().HasMaxLength(30);
+            p.HasIndex(x => new { x.StatusEnvioCertificado, x.ProximaTentativaCertificadoUtc });
         });
         modelBuilder.Entity<PreferenciaNotificacao>(p =>
         {

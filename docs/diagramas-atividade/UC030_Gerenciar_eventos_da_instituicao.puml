@@ -1,0 +1,23 @@
+@startuml
+!include _tema.puml
+title UC030 - Gerenciar eventos da instituição
+|Secretaria ou Admin|
+start
+:Solicita os eventos sob sua responsabilidade;
+|Gestão de eventos|
+if (Responsável está autorizado no âmbito da instituição?) then (Sim)
+  if (Há eventos cadastrados?) then (Sim)
+    :Apresenta os eventos permitidos;
+  else (Não - exceção)
+    :Apresenta relação vazia e opção de cadastro;
+  endif
+  |Secretaria ou Admin|
+  :Escolhe cadastrar, editar, excluir ou definir público;
+  |Gestão de eventos|
+  :Encaminha para o processo escolhido;
+else (Não - exceção)
+  :Nega acesso a eventos de outra instituição;
+endif
+stop
+@enduml
+

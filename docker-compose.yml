@@ -28,11 +28,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
       - ConnectionStrings__DefaultConnection=Server=db,1433;Database=Unievent;User Id=sa;Password=${PASSWORD_DB};TrustServerCertificate=True;
-      - EmailSettings__Host=smtp.gmail.com
-      - EmailSettings__Port=587
+      - EmailSettings__Host=${EmailSettings__Host:-smtp.gmail.com}
+      - EmailSettings__Port=${EmailSettings__Port:-587}
       - EmailSettings__Email=${EmailSettings__Email}
       - EmailSettings__Password=${EmailSettings__Password}
-      - EmailSettings__EnableSsl=true
+      - EmailSettings__EnableSsl=${EmailSettings__EnableSsl:-true}
       - EmailSettings__BaseUrl=http://localhost:${WEB_HOST_PORT:-5173}
       - EmailSettings__ConfirmationBaseUrl=http://localhost:${API_HOST_PORT:-5227}
       - EmailSettings__WebLoginUrl=http://localhost:${WEB_HOST_PORT:-5173}/login
@@ -43,6 +43,9 @@ services:
       - Database__MigrateOnStartup=true
       - Automacoes__Ativas=true
       - Automacoes__IntervaloMinutos=30
+      - Certificacao__MaxTentativas=${Certificacao__MaxTentativas:-5}
+      - Certificacao__RetryMinutos=${Certificacao__RetryMinutos:-5}
+      - Certificacao__ReservaMinutos=${Certificacao__ReservaMinutos:-10}
     ports:
       - "${API_HOST_PORT:-5227}:8080"
 

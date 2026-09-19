@@ -83,6 +83,11 @@ namespace Unievent.Application.Templates
 
         public static string CertificadoDisponivel(string nome, string evento, string texto, string codigo, string instituicao = "")
         {
+            nome = System.Net.WebUtility.HtmlEncode(nome);
+            evento = System.Net.WebUtility.HtmlEncode(evento);
+            texto = System.Net.WebUtility.HtmlEncode(texto);
+            codigo = System.Net.WebUtility.HtmlEncode(codigo);
+            instituicao = System.Net.WebUtility.HtmlEncode(instituicao);
             var origemEvento = string.IsNullOrWhiteSpace(instituicao)
                 ? "pelo UniEvent"
                 : $"pela {instituicao}";
@@ -96,7 +101,7 @@ namespace Unievent.Application.Templates
             <body>
                 <h1>Olá, {nome}!</h1>
                 <p>Sua presença no evento <strong>{evento}</strong>, realizado {origemEvento}, foi confirmada.</p>
-                <p>Seu certificado de participação está disponível no UniEvent.</p>
+                <p>Seu certificado de participação em PDF está anexado a este e-mail.</p>
                 <p>{texto}</p>
                 <p>Código de validação: <strong>{codigo}</strong></p>
                 <p>Atenciosamente,<br /><strong>Equipe Unievent</strong></p>

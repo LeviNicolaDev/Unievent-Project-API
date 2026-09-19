@@ -133,9 +133,13 @@ namespace Unievent.Application.Services
                     InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
                     Cidade = evento.Instituicao?.Cidade,
                     Estado = evento.Instituicao?.Estado,
-                    Visibilidade = evento.Visibilidade, PublicoPermitido = evento.PublicoPermitido,
-                    InicioInscricoes = evento.InicioInscricoes, FimInscricoes = evento.FimInscricoes,
-                    Latitude = evento.Latitude, Longitude = evento.Longitude, RaioCheckInMetros = evento.RaioCheckInMetros
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -219,9 +223,13 @@ namespace Unievent.Application.Services
                     InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
                     Cidade = evento.Instituicao?.Cidade,
                     Estado = evento.Instituicao?.Estado,
-                    Visibilidade = evento.Visibilidade, PublicoPermitido = evento.PublicoPermitido,
-                    InicioInscricoes = evento.InicioInscricoes, FimInscricoes = evento.FimInscricoes,
-                    Latitude = evento.Latitude, Longitude = evento.Longitude, RaioCheckInMetros = evento.RaioCheckInMetros
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -253,17 +261,27 @@ namespace Unievent.Application.Services
 
             return Result<IEnumerable<EventoResponse>>.Success(filtrados.Select(e => new EventoResponse
             {
-                Id = e.Id, Nome = e.Nome, Descricao = e.Descricao, Categoria = e.Categoria,
+                Id = e.Id,
+                Nome = e.Nome,
+                Descricao = e.Descricao,
+                Categoria = e.Categoria,
                 Local = e.Local,
-                DataEvento = e.DataEvento, Capacidade = e.Capacidade, Thumbnail = e.Thumbnail.ToList(),
-                IdResponsavelEvento = e.ResponsavelEventoId, Responsavel = e.ResponsavelEvento?.Nome ?? string.Empty,
+                DataEvento = e.DataEvento,
+                Capacidade = e.Capacidade,
+                Thumbnail = e.Thumbnail.ToList(),
+                IdResponsavelEvento = e.ResponsavelEventoId,
+                Responsavel = e.ResponsavelEvento?.Nome ?? string.Empty,
                 InstituicaoId = e.InstituicaoId,
                 InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
                 Cidade = e.Instituicao?.Cidade,
                 Estado = e.Instituicao?.Estado,
-                Visibilidade = e.Visibilidade, PublicoPermitido = e.PublicoPermitido,
-                InicioInscricoes = e.InicioInscricoes, FimInscricoes = e.FimInscricoes,
-                Latitude = e.Latitude, Longitude = e.Longitude, RaioCheckInMetros = e.RaioCheckInMetros
+                Visibilidade = e.Visibilidade,
+                PublicoPermitido = e.PublicoPermitido,
+                InicioInscricoes = e.InicioInscricoes,
+                FimInscricoes = e.FimInscricoes,
+                Latitude = e.Latitude,
+                Longitude = e.Longitude,
+                RaioCheckInMetros = e.RaioCheckInMetros
             }));
         }
 
@@ -313,13 +331,21 @@ namespace Unievent.Application.Services
                     IdResponsavelEvento = evento.ResponsavelEventoId,
                     Thumbnail = evento.Thumbnail.ToList(),
                     Nome = evento.Nome,
+                    Rua = evento.Instituicao?.Rua,
+                    Numero = evento.Instituicao?.Numero,
+                    Bairro = evento.Instituicao?.Bairro,
+                    Cep = evento.Instituicao?.Cep,
                     InstituicaoId = evento.InstituicaoId,
                     InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
                     Cidade = evento.Instituicao?.Cidade,
                     Estado = evento.Instituicao?.Estado,
-                    Visibilidade = evento.Visibilidade, PublicoPermitido = evento.PublicoPermitido,
-                    InicioInscricoes = evento.InicioInscricoes, FimInscricoes = evento.FimInscricoes,
-                    Latitude = evento.Latitude, Longitude = evento.Longitude, RaioCheckInMetros = evento.RaioCheckInMetros
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)
@@ -351,9 +377,13 @@ namespace Unievent.Application.Services
                     InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
                     Cidade = e.Instituicao?.Cidade,
                     Estado = e.Instituicao?.Estado,
-                    Visibilidade = e.Visibilidade, PublicoPermitido = e.PublicoPermitido,
-                    InicioInscricoes = e.InicioInscricoes, FimInscricoes = e.FimInscricoes,
-                    Latitude = e.Latitude, Longitude = e.Longitude, RaioCheckInMetros = e.RaioCheckInMetros
+                    Visibilidade = e.Visibilidade,
+                    PublicoPermitido = e.PublicoPermitido,
+                    InicioInscricoes = e.InicioInscricoes,
+                    FimInscricoes = e.FimInscricoes,
+                    Latitude = e.Latitude,
+                    Longitude = e.Longitude,
+                    RaioCheckInMetros = e.RaioCheckInMetros
                 }));
             }
             catch (Exception ex)
@@ -385,9 +415,13 @@ namespace Unievent.Application.Services
                     InstituicaoNome = e.Instituicao?.Nome ?? e.Instituicao?.NomeAbreviado,
                     Cidade = e.Instituicao?.Cidade,
                     Estado = e.Instituicao?.Estado,
-                    Visibilidade = e.Visibilidade, PublicoPermitido = e.PublicoPermitido,
-                    InicioInscricoes = e.InicioInscricoes, FimInscricoes = e.FimInscricoes,
-                    Latitude = e.Latitude, Longitude = e.Longitude, RaioCheckInMetros = e.RaioCheckInMetros
+                    Visibilidade = e.Visibilidade,
+                    PublicoPermitido = e.PublicoPermitido,
+                    InicioInscricoes = e.InicioInscricoes,
+                    FimInscricoes = e.FimInscricoes,
+                    Latitude = e.Latitude,
+                    Longitude = e.Longitude,
+                    RaioCheckInMetros = e.RaioCheckInMetros
                 }).ToList());
             }
             catch (Exception ex)
@@ -424,9 +458,13 @@ namespace Unievent.Application.Services
                     InstituicaoNome = evento.Instituicao?.Nome ?? evento.Instituicao?.NomeAbreviado,
                     Cidade = evento.Instituicao?.Cidade,
                     Estado = evento.Instituicao?.Estado,
-                    Visibilidade = evento.Visibilidade, PublicoPermitido = evento.PublicoPermitido,
-                    InicioInscricoes = evento.InicioInscricoes, FimInscricoes = evento.FimInscricoes,
-                    Latitude = evento.Latitude, Longitude = evento.Longitude, RaioCheckInMetros = evento.RaioCheckInMetros
+                    Visibilidade = evento.Visibilidade,
+                    PublicoPermitido = evento.PublicoPermitido,
+                    InicioInscricoes = evento.InicioInscricoes,
+                    FimInscricoes = evento.FimInscricoes,
+                    Latitude = evento.Latitude,
+                    Longitude = evento.Longitude,
+                    RaioCheckInMetros = evento.RaioCheckInMetros
                 });
             }
             catch (Exception ex)

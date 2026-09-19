@@ -84,10 +84,7 @@ export function normalizeEvent(event) {
   const capacidade =
     event.capacidade || event.Capacidade || event.capacity || "";
   const instituicaoId =
-    event.instituicaoId ||
-    event.InstituicaoId ||
-    event.institutionId ||
-    "";
+    event.instituicaoId || event.InstituicaoId || event.institutionId || "";
 
   const instituicaoNome =
     event.instituicaoNome ||
@@ -127,8 +124,13 @@ export function normalizeEvent(event) {
     institutionName: instituicaoNome,
     cidade: event.cidade || event.Cidade || "",
     estado: event.estado || event.Estado || "",
+    rua: event.rua || event.Rua || "",
+    numero: event.numero || event.Numero || "",
+    bairro: event.bairro || event.Bairro || "",
+    cep: event.cep || event.Cep || "",
     visibility: event.visibilidade || event.Visibilidade || "Publico",
-    audience: event.publicoPermitido || event.PublicoPermitido || "PublicoGeral",
+    audience:
+      event.publicoPermitido || event.PublicoPermitido || "PublicoGeral",
   };
 }
 
@@ -261,6 +263,34 @@ export async function getEventById(id, options = {}) {
     return normalizeEvent(unwrapResponse(response));
   } catch (error) {
     console.error(`Erro ao carregar evento ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function registerForEvent(id) {
+  try {
+    const response = await request(`/Evento/${id}/inscrever-se`, {
+      method: "POST",
+    });
+    return unwrapResponse(response);
+  } catch (error) {
+    console.error(`Erro ao se inscrever no evento ${id}:`, error);
+    throw error;
+  }
+}
+
+export async function getMyEventRegistration(id) {
+  try {
+    const response = await request(`/Evento/${id}/minha-inscricao`, {
+      method: "GET",
+    });
+    return unwrapResponse(response);
+  } catch (error) {
+    if (error.status === 404) {
+      return null;
+    }
+
+    console.error(`Erro ao consultar inscrição do evento ${id}:`, error);
     throw error;
   }
 }

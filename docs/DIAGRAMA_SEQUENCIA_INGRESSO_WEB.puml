@@ -1,0 +1,42 @@
+@startuml
+skinparam shadowing false
+title UniEvent - Ingresso digital Web e check-in
+
+actor "Público Geral" as Publico
+participant "Web React" as Web
+participant "API EventoController" as API
+participant "ParticipacaoService" as Service
+database "SQL Server" as DB
+actor "Secretaria" as Secretaria
+
+Publico -> Web : Abre Meus Ingressos
+Web -> API : GET /api/Evento/meus-ingressos\nBearer JWT
+API -> API : Obtém NameIdentifier
+API -> Service : ListarIngressosAsync(alunoId)
+Service -> DB : Participações do AlunoId\n+ Evento + Instituição
+DB --> Service : Participações próprias
+Service --> API : IngressoResponse[]
+API --> Web : Dados + CodigoIngresso
+Web -> Web : Renderiza QR(CodigoIngresso)
+Web --> Publico : Ingresso digital
+
+Publico -> Secretaria : Apresenta QR Code
+Secretaria -> API : POST /api/Evento/check-in\nCodigoIngresso
+API -> API : Valida operador ativo\ne instituição do evento
+API -> Service : ValidarCheckInAsync
+Service -> DB : Busca participação pelo código
+Service -> Service : Valida evento, status ativo\ne janela de horário
+alt código inválido, cancelado ou fora do escopo
+  Service --> Secretaria : Check-in negado
+else presença já confirmada
+  Service --> Secretaria : Sucesso idempotente
+else primeira confirmação
+  Service -> DB : Confirma presença atomicamente
+  Service --> Secretaria : Check-in confirmado
+end
+
+Publico -> Web : Atualiza Meus Ingressos
+Web -> API : GET /api/Evento/meus-ingressos
+API --> Web : presencaConfirmada = true
+Web --> Publico : Check-in realizado
+@enduml

@@ -34,7 +34,7 @@ export function CheckInPage() {
       <section className="dashboard-home">
         <div className="dashboard-section-title">
           <h1>Validar ingresso</h1>
-          <p>Informe ou leia o código exibido no QR Code do aluno para confirmar a presença.</p>
+          <p>Informe o código do ingresso do participante e confirme sua presença. Eventos com certificado enviam o PDF automaticamente por e-mail.</p>
         </div>
         <form className="event-form" onSubmit={handleSubmit}>
           <label>
@@ -50,7 +50,12 @@ export function CheckInPage() {
           <Button type="submit" disabled={loading}>{loading ? 'Validando...' : 'Confirmar check-in'}</Button>
         </form>
         {error ? <p role="alert">{error}</p> : null}
-        {result ? <p role="status">Presença confirmada para {result.nomeAluno || 'participante'}.</p> : null}
+        {result ? <div role="status">
+          <p>Presença confirmada para {result.nomeAluno || 'participante'}.</p>
+          {result.certificadoEnviadoPorEmail ? <p>Certificado enviado por e-mail com o PDF em anexo.</p>
+            : result.erroEnvioCertificadoEmail ? <p>{result.erroEnvioCertificadoEmail}</p>
+            : result.certificadoEmitido ? <p>Certificado gerado. O envio por e-mail está pendente.</p> : null}
+        </div> : null}
       </section>
     </>
   );

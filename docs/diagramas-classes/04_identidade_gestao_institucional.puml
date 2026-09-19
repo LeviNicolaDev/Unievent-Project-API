@@ -1,0 +1,101 @@
+@startuml
+!include _tema.puml
+title UniEvent - Classes de identidade e gestão institucional
+left to right direction
+
+class AuthController {
+  +Login(request) : Task<IActionResult>
+  +LoginAluno(request) : Task<IActionResult>
+  +CadastrarPublicoGeral(request) : Task<IActionResult>
+  +LoginPublicoGeral(request) : Task<IActionResult>
+}
+class AuthService {
+  +Login(request) : Task<Result<string>>
+  +LoginAluno(request) : Task<Result<string>>
+  +CadastrarPublicoGeral(request) : Task<Result<AlunoResponse>>
+  +LoginPublicoGeral(request) : Task<Result<string>>
+}
+interface IJwtTokenGenerator
+class JwtTokenGenerator
+
+class AlunoController
+interface IAlunoService
+class AlunoService
+interface IAlunoRepository
+class AlunoRepository
+class Aluno
+
+class InstituicaoController
+interface IInstituicaoService
+class InstituicaoService
+interface IInstituicaoRepository
+class InstituicaoRepository
+class Instituicao
+
+class UsuarioSecretariaController
+interface IUsuarioSecretariaService
+class UsuarioSecretariaService
+interface IUsuarioSecretariaRepository
+class UsuarioSecretariaRepository
+class UsuarioSecretaria
+
+class UsuarioUnieventController
+interface IUsuarioUnieventRepository
+class UsuarioUnieventRepository
+class UsuarioUnievent
+
+class ResponsavelEventoController
+interface IResponsavelEventoService
+class ResponsavelEventoService
+interface IResponsavelEventoRepository
+class ResponsavelEventoRepository
+class ResponsavelEvento
+
+class AppDbContext
+
+AuthController --> AuthService
+AuthService --> IAlunoRepository
+AuthService --> IUsuarioSecretariaRepository
+AuthService --> IUsuarioUnieventRepository
+AuthService --> IJwtTokenGenerator
+JwtTokenGenerator ..|> IJwtTokenGenerator
+
+AlunoController --> IAlunoService
+AlunoService ..|> IAlunoService
+AlunoService --> IAlunoRepository
+AlunoRepository ..|> IAlunoRepository
+AlunoRepository --> AppDbContext
+
+InstituicaoController --> IInstituicaoService
+InstituicaoService ..|> IInstituicaoService
+InstituicaoService --> IInstituicaoRepository
+InstituicaoRepository ..|> IInstituicaoRepository
+InstituicaoRepository --> AppDbContext
+
+UsuarioSecretariaController --> IUsuarioSecretariaService
+UsuarioSecretariaService ..|> IUsuarioSecretariaService
+UsuarioSecretariaService --> IUsuarioSecretariaRepository
+UsuarioSecretariaRepository ..|> IUsuarioSecretariaRepository
+UsuarioSecretariaRepository --> AppDbContext
+
+UsuarioUnieventController --> IUsuarioUnieventRepository
+UsuarioUnieventRepository ..|> IUsuarioUnieventRepository
+UsuarioUnieventRepository --> AppDbContext
+
+ResponsavelEventoController --> IResponsavelEventoService
+ResponsavelEventoService ..|> IResponsavelEventoService
+ResponsavelEventoService --> IResponsavelEventoRepository
+ResponsavelEventoRepository ..|> IResponsavelEventoRepository
+ResponsavelEventoRepository --> AppDbContext
+
+IAlunoRepository ..> Aluno
+IInstituicaoRepository ..> Instituicao
+IUsuarioSecretariaRepository ..> UsuarioSecretaria
+IUsuarioUnieventRepository ..> UsuarioUnievent
+IResponsavelEventoRepository ..> ResponsavelEvento
+
+Instituicao "0..1" <-- "0..*" Aluno
+Instituicao "0..1" <-- "0..*" UsuarioSecretaria
+Instituicao "0..1" <-- "0..*" ResponsavelEvento
+@enduml
+

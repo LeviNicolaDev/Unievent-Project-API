@@ -1,0 +1,54 @@
+@startuml
+!include _tema.puml
+title UC020-UC023 - Gestão de instituições
+
+actor "Admin UniEvent" as Admin
+participant "Web administrativa" as Web
+participant "InstituicaoController" as Api
+participant "InstituicaoService" as Service
+database "SQL Server" as DB
+
+Admin -> Web : Abre Instituições
+Web -> Api : GET /api/Instituicao\nBearer JWT Admin
+Api -> Api : Valida Admin global
+Api -> Service : ListarInstituicoes()
+Service -> DB : Consulta instituições
+DB --> Service : Lista
+Service --> Api : InstituicaoResponse[]
+Api --> Web : 200 instituições
+
+alt Cadastrar
+  Admin -> Web : Preenche dados, endereço e imagem
+  Web -> Api : POST /api/Instituicao (multipart)
+  Api -> Service : CriarInstituicao(request)
+  Service -> DB : Valida CNPJ/código e persiste
+else Editar
+  Admin -> Web : Altera dados
+  Web -> Api : PATCH /api/Instituicao/{id} (multipart)
+  Api -> Api : Valida acesso à instituição
+  Api -> Service : AtualizarInstituicao(id, update)
+  Service -> DB : Persiste alterações
+else Ativar ou desativar
+  Admin -> Web : Escolhe novo status
+  Web -> Api : PATCH /api/Instituicao/{id}/ativar|desativar
+  Api -> Api : Exige Admin global
+  Api -> Service : AlterarStatusInstituicao(id, status)
+  Service -> DB : Atualiza IsAtivo
+else Excluir
+  Admin -> Web : Confirma exclusão
+  Web -> Api : DELETE /api/Instituicao/{id}
+  Api -> Service : DeletarInstituicao(id)
+  Service -> DB : Remove ou rejeita por vínculos
+end
+
+alt Operação válida
+  DB --> Service : Instituição atualizada
+  Service --> Api : Sucesso
+  Api --> Web : 200 resultado
+  Web --> Admin : Atualiza a listagem
+else Validação, permissão ou vínculo inválido
+  Api --> Web : 400, 403 ou 404
+  Web --> Admin : Exibe o motivo
+end
+@enduml
+

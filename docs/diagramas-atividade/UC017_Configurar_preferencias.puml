@@ -1,0 +1,18 @@
+@startuml
+!include _tema.puml
+title UC017 - Configurar preferências de comunicação
+|Aluno Fatec|
+start
+:Consulta suas preferências atuais;
+:Define lembretes, alertas, categorias e localização aproximada;
+|Gestão de preferências|
+if (Preferências são válidas?) then (Sim)
+  :Registra as escolhas do aluno;
+  :Passa a considerá-las em recomendações e alertas;
+else (Não - exceção)
+  :Mantém as escolhas anteriores;
+  :Informa localização, distância ou opção inválida;
+endif
+stop
+@enduml
+

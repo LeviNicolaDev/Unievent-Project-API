@@ -1,0 +1,194 @@
+@startuml
+!include _tema.puml
+title UniEvent - Diagrama de classes do domínio
+left to right direction
+
+abstract class EntidadeBase {
+  +Id : int
+}
+
+class Instituicao {
+  +Nome : string?
+  +NomeAbreviado : string?
+  +Codigo : string?
+  +Cnpj : string
+  +Cidade : string
+  +Estado : string
+  +IsAtivo : bool
+}
+
+class Aluno {
+  +Nome : string
+  +Email : string
+  +EmailConfirmado : bool
+  +FotoPerfil : string
+  +IsAtivo : bool
+  +Role : Role
+  +TipoParticipante : TipoParticipante
+  +InstituicaoId : int?
+}
+
+class UsuarioSecretaria {
+  +NomeUsuario : string
+  +EmailUsuario : string
+  +RoleUsuario : Role
+  +Status : StatusUsuarioSecretaria
+  +IsAtivo : bool
+  +InstituicaoId : int?
+}
+
+class UsuarioUnievent {
+  +NomeUsuario : string
+  +EmailUsuario : string
+  +RoleUsuario : Role
+  +IsAtivo : bool
+}
+
+class ResponsavelEvento {
+  +Nome : string
+  +FotoPerfil : string
+  +InstituicaoId : int?
+}
+
+class Evento {
+  +Nome : string
+  +Descricao : string
+  +Categoria : Categoria
+  +DataEvento : DateTime
+  +Capacidade : int
+  +Visibilidade : VisibilidadeEvento
+  +PublicoPermitido : PublicoPermitido
+  +ResponsavelEventoId : int
+  +InstituicaoId : int?
+}
+
+class Participacao {
+  +Id : int
+  +AlunoId : int
+  +EventoId : int
+  +StatusInscricao : StatusInscricao
+  +PresencaConfirmada : bool
+  +CodigoIngresso : string
+  +CertificadoEmitido : bool
+  +StatusEnvioCertificado : StatusEnvioCertificado
+  +ConfirmarPresenca()
+  +ConfirmarPresencaPorCodigo(operadorId)
+  +ConfirmarPresenca(distancia, precisao, operadorId)
+  +CancelarInscricao()
+  +EmitirCertificado(codigo)
+  +RegistrarEnvioCertificadoEmail()
+  +RegistrarFalhaEnvioCertificadoEmail(erro)
+}
+
+class Certificado {
+  +DataCertifcado : DateTime
+  +Texto : string
+  +EventoId : int
+}
+
+class PreferenciaNotificacao {
+  +AlunoId : int
+  +LembretesEventos : bool
+  +AlertasCertificados : bool
+  +Recomendacoes : bool
+  +UsarLocalizacao : bool
+  +Categorias : string?
+  +RaioKm : int
+}
+
+class NotificacaoEvento {
+  +AlunoId : int
+  +EventoId : int
+  +Tipo : string
+  +Assunto : string
+  +Mensagem : string
+  +Enviada : bool
+  +Erro : string?
+}
+
+class EmailModel <<não persistida>> {
+  +Titulo : string
+  +Mensagem : string
+  +Destinatario : string
+}
+
+enum Role {
+  Admin
+  Secretaria
+  Aluno
+  OperadorCheckIn
+}
+enum TipoParticipante {
+  Interno
+  Externo
+}
+enum Categoria {
+  Palestra
+  Workshop
+  Feira
+  Evento
+  Festa
+}
+enum VisibilidadeEvento {
+  Publico
+  Privado
+}
+enum PublicoPermitido {
+  AlunosDaInstituicao
+  TodosAlunosFatec
+  PublicoGeral
+}
+enum StatusInscricao {
+  Ativa
+  Cancelada
+}
+enum StatusEnvioCertificado {
+  Pendente
+  Preparando
+  Enviando
+  Enviado
+  FalhaTemporaria
+  FalhaPermanente
+  EnvioIncerto
+}
+enum StatusUsuarioSecretaria {
+  Pendente
+  Ativo
+  Recusado
+  Bloqueado
+}
+
+EntidadeBase <|-- Instituicao
+EntidadeBase <|-- Aluno
+EntidadeBase <|-- UsuarioSecretaria
+EntidadeBase <|-- UsuarioUnievent
+EntidadeBase <|-- ResponsavelEvento
+EntidadeBase <|-- Evento
+EntidadeBase <|-- Certificado
+EntidadeBase <|-- PreferenciaNotificacao
+EntidadeBase <|-- NotificacaoEvento
+
+Instituicao "0..1" <-- "0..*" Aluno
+Instituicao "0..1" <-- "0..*" UsuarioSecretaria
+Instituicao "0..1" <-- "0..*" ResponsavelEvento
+Instituicao "0..1" <-- "0..*" Evento
+ResponsavelEvento "1" <-- "0..*" Evento
+Aluno "1" <-- "0..*" Participacao
+Evento "1" <-- "0..*" Participacao
+Evento "1" <-- "0..*" Certificado
+Aluno "1" <-- "0..1" PreferenciaNotificacao
+Aluno "1" <-- "0..*" NotificacaoEvento
+Evento "1" <-- "0..*" NotificacaoEvento
+
+Aluno --> Role
+Aluno --> TipoParticipante
+UsuarioSecretaria --> Role
+UsuarioSecretaria --> StatusUsuarioSecretaria
+UsuarioUnievent --> Role
+Evento --> Categoria
+Evento --> VisibilidadeEvento
+Evento --> PublicoPermitido
+Participacao --> StatusInscricao
+Participacao --> StatusEnvioCertificado
+@enduml
+

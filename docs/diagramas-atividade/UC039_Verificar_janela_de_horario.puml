@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC039 - Verificar período permitido para check-in
+|Gestão de presença|
+start
+:Identifica o evento relacionado ao ingresso;
+if (Evento existe?) then (Sim)
+  :Considera o horário do evento e a tolerância definida;
+  if (Momento atual está dentro do período permitido?) then (Sim)
+    :Autoriza a continuidade do check-in;
+  else (Não - exceção)
+    :Bloqueia a confirmação fora do período;
+    |Operador de check-in|
+    :Informa o participante sobre a restrição de horário;
+  endif
+else (Não - exceção)
+  :Interrompe a validação por evento inexistente;
+endif
+stop
+@enduml
+

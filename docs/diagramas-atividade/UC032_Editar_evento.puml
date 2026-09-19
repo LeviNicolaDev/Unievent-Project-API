@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC032 - Editar evento
+|Secretaria ou Admin|
+start
+:Seleciona evento e propõe alterações;
+|Gestão de eventos|
+if (Evento existe e pertence ao âmbito do responsável?) then (Sim)
+  if (Alterações preservam as regras do evento?) then (Sim)
+    :Atualiza os dados do evento;
+    |Secretaria ou Admin|
+    :Recebe confirmação da atualização;
+  else (Não - exceção)
+    :Mantém os dados anteriores e informa inconsistências;
+  endif
+else (Não - exceção)
+  :Informa evento inexistente ou fora do âmbito permitido;
+endif
+stop
+@enduml
+

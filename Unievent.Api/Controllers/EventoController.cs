@@ -85,7 +85,7 @@ namespace Unievent.Api.Controllers
             if (administrativo && !User.IsGlobalAdmin())
                 eventos = eventos.Where(e => User.CanAccessInstituicao(e.InstituicaoId));
 
-            return Ok(eventos);
+            return Ok(await AdicionarVagasAsync(eventos));
         }
 
         [HttpGet("{id}")]
@@ -97,7 +97,7 @@ namespace Unievent.Api.Controllers
                 return NotFound(response.Errors);
             }
             if (!PodeVisualizarEventoResponse(response.Value!)) return Forbid();
-            return Ok(response.Value);
+            return Ok(await AdicionarVagasAsync(response.Value!));
         }
 
         [HttpDelete("{id}")]
@@ -140,7 +140,7 @@ namespace Unievent.Api.Controllers
             if (!User.IsGlobalAdmin())
                 eventos = eventos.Where(e => User.CanAccessInstituicao(e.InstituicaoId)).ToList();
 
-            return Ok(eventos);
+            return Ok(await AdicionarVagasAsync(eventos));
         }
 
         [HttpPost("{id}/inscrever-se")]
@@ -157,25 +157,79 @@ namespace Unievent.Api.Controllers
             return Ok(result.Value);
         }
 
+        [HttpGet("{id}/minha-inscricao")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<ActionResult> ObterMinhaInscricao([FromRoute] int id)
+        {
+            var aluno = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(aluno, out var alunoId)) return BadRequest("Aluno não autenticado");
+
+            var participacao = await db.Participacao
+                .AsNoTracking()
+                .Include(p => p.Aluno)
+                .FirstOrDefaultAsync(p => p.AlunoId == alunoId && p.EventoId == id);
+            if (participacao is null) return NotFound("Inscrição não encontrada");
+
+            return Ok(new Application.Dtos.Participacao.ParticipacaoResponse
+            {
+                Id = participacao.Id,
+                AlunoId = participacao.AlunoId,
+                NomeAluno = participacao.Aluno.Nome,
+                EventoId = participacao.EventoId,
+                PresencaGarantida = participacao.PresencaConfirmada,
+                StatusInscricao = participacao.StatusInscricao,
+                CertificadoEmitido = participacao.CertificadoEmitido,
+                CertificadoEnviadoPorEmail = participacao.CertificadoEnviadoPorEmail,
+                ErroEnvioCertificadoEmail = participacao.ErroEnvioCertificadoEmail,
+                StatusEnvioCertificado = participacao.StatusEnvioCertificado,
+                CertificadoPdfDisponivel = participacao.CertificadoPdf != null,
+                DataConfirmacao = participacao.DataConfirmacao
+            });
+        }
+
         [HttpGet("{id}/ingresso")]
         [Authorize(Roles = "Aluno")]
         public async Task<ActionResult> ObterIngresso([FromRoute] int id)
         {
-            var aluno = int.Parse(
-        User.FindFirst(ClaimTypes.NameIdentifier)!.Value
-    );
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var aluno))
+                return Unauthorized();
             var result = await participacaoService.ObterIngressoAsync(aluno, id);
             if (result.IsFailure)
             {
-                return BadRequest(result.Errors);
+                return NotFound(result.Errors);
             }
             return Ok(result.Value);
+        }
+
+        [HttpGet("meus-ingressos")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<ActionResult> ListarMeusIngressos()
+        {
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var alunoId))
+                return Unauthorized();
+
+            var result = await participacaoService.ListarIngressosAsync(alunoId);
+            return result.IsFailure ? BadRequest(result.Errors) : Ok(result.Value);
         }
 
         [HttpPost("check-in")]
         [Authorize(Roles = "Admin,Secretaria,OperadorCheckIn")]
         public async Task<ActionResult> ValidarCheckIn([FromBody] Application.Dtos.Participacao.CheckInRequest request)
         {
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var operador))
+                return Unauthorized();
+            if (string.IsNullOrWhiteSpace(request.CodigoIngresso))
+                return BadRequest("Código do ingresso é obrigatório");
+            if (request.CodigoIngresso.Trim().Length > 64)
+                return BadRequest("Código do ingresso inválido");
+            if (!User.IsGlobalAdmin())
+            {
+                var instituicao = User.GetInstituicaoId();
+                var ativo = await db.UsuarioSecretaria.AnyAsync(s => s.Id == operador &&
+                    s.InstituicaoId == instituicao && s.Status == StatusUsuarioSecretaria.Ativo && s.EmailConfirmado &&
+                    (s.RoleUsuario == Role.Secretaria || s.RoleUsuario == Role.OperadorCheckIn));
+                if (!ativo) return Forbid();
+            }
             if (!User.IsGlobalAdmin())
             {
                 if (string.IsNullOrWhiteSpace(request.CodigoIngresso))
@@ -183,7 +237,7 @@ namespace Unievent.Api.Controllers
 
                 var ingresso = await db.Participacao
                     .AsNoTracking()
-                    .Where(p => p.CodigoIngresso == request.CodigoIngresso)
+                    .Where(p => p.CodigoIngresso == request.CodigoIngresso.Trim())
                     .Select(p => new
                     {
                         p.EventoId,
@@ -197,7 +251,6 @@ namespace Unievent.Api.Controllers
                 if (!User.CanAccessInstituicao(ingresso.InstituicaoId)) return Forbid();
             }
 
-            var operador = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
             var result = await participacaoService.ValidarCheckInAsync(operador, request);
             return result.IsFailure ? BadRequest(result.Errors) : Ok(result.Value);
         }
@@ -298,7 +351,8 @@ namespace Unievent.Api.Controllers
 
             return new PagedResponse<EventoResponse>
             {
-                Items = eventos.Select(MapEvento).ToList(),
+                Items = eventos.Select(e => MapEvento(e, db.Participacao.Count(p =>
+                    p.EventoId == e.Id && p.StatusInscricao == StatusInscricao.Ativa))).ToList(),
                 Page = page,
                 PageSize = pageSize,
                 TotalItems = total,
@@ -306,7 +360,42 @@ namespace Unievent.Api.Controllers
             };
         }
 
-        private static EventoResponse MapEvento(Evento e)
+        private async Task<IReadOnlyCollection<EventoResponse>> AdicionarVagasAsync(IEnumerable<EventoResponse> eventos)
+        {
+            var lista = eventos.ToList();
+            if (lista.Count == 0) return lista;
+
+            var ids = lista.Select(e => e.Id).ToList();
+            var inscricoes = await db.Participacao
+                .AsNoTracking()
+                .Where(p => ids.Contains(p.EventoId) && p.StatusInscricao == StatusInscricao.Ativa)
+                .GroupBy(p => p.EventoId)
+                .Select(g => new { EventoId = g.Key, Total = g.Count() })
+                .ToDictionaryAsync(i => i.EventoId, i => i.Total);
+
+            return lista.Select(e =>
+            {
+                var totalInscricoes = inscricoes.TryGetValue(e.Id, out var total) ? total : 0;
+                return e with
+                {
+                    VagasDisponiveis = Math.Max(e.Capacidade - totalInscricoes, 0)
+                };
+            }).ToList();
+        }
+
+        private async Task<EventoResponse> AdicionarVagasAsync(EventoResponse evento)
+        {
+            var totalInscricoes = await db.Participacao
+                .AsNoTracking()
+                .CountAsync(p => p.EventoId == evento.Id && p.StatusInscricao == StatusInscricao.Ativa);
+
+            return evento with
+            {
+                VagasDisponiveis = Math.Max(evento.Capacidade - totalInscricoes, 0)
+            };
+        }
+
+        private static EventoResponse MapEvento(Evento e, int totalInscricoes)
         {
             return new EventoResponse
             {
@@ -317,7 +406,7 @@ namespace Unievent.Api.Controllers
                 Categoria = e.Categoria,
                 DataEvento = e.DataEvento,
                 Capacidade = e.Capacidade,
-                VagasDisponiveis = null,
+                VagasDisponiveis = Math.Max(e.Capacidade - totalInscricoes, 0),
                 Thumbnail = e.Thumbnail.ToList(),
                 IdResponsavelEvento = e.ResponsavelEventoId,
                 Responsavel = e.ResponsavelEvento?.Nome ?? string.Empty,

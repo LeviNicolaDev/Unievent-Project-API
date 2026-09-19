@@ -6,6 +6,7 @@ using Unievent.Application.Interfaces.Services;
 using Unievent.Application.Rules;
 using Unievent.Application.Templates;
 using Unievent.Domain.Entities;
+using Unievent.Domain.Enuns;
 using Unievent.Infra.Data;
 
 namespace Unievent.Infra.Services;
@@ -57,12 +58,15 @@ public class AutomacaoEventosService : IAutomacaoEventosService
         var participacaoIds = await _db.Participacao
             .AsNoTracking()
             .Where(p => p.PresencaConfirmada &&
-                        p.Evento.DataEvento < agora &&
-                        (!p.CertificadoEmitido ||
-                         p.CertificadoEmitido &&
-                         !p.CertificadoEnviadoPorEmail &&
-                         p.ErroEnvioCertificadoEmail != null))
-            .OrderBy(p => p.DataConfirmacao)
+                        (p.CertificadoPdf != null || _db.Certificado.Any(c => c.EventoId == p.EventoId)) &&
+                        (!p.CertificadoEnviadoPorEmail || p.CertificadoPdf == null) &&
+                        (p.ProximaTentativaCertificadoUtc == null || p.ProximaTentativaCertificadoUtc <= agora) &&
+                        (p.StatusEnvioCertificado == StatusEnvioCertificado.Pendente ||
+                         p.StatusEnvioCertificado == StatusEnvioCertificado.FalhaTemporaria ||
+                         p.StatusEnvioCertificado == StatusEnvioCertificado.Enviado && p.CertificadoPdf == null ||
+                         (p.StatusEnvioCertificado == StatusEnvioCertificado.Preparando ||
+                          p.StatusEnvioCertificado == StatusEnvioCertificado.Enviando) && p.ProcessamentoCertificadoAteUtc <= agora))
+            .OrderBy(p => p.ProximaTentativaCertificadoUtc).ThenBy(p => p.DataConfirmacao)
             .Select(p => p.Id)
             .Take(200)
             .ToListAsync(cancellationToken);
@@ -76,6 +80,7 @@ public class AutomacaoEventosService : IAutomacaoEventosService
         {
             var result = await _certificadoAutomaticoService.ProcessarAposCheckInAsync(participacaoId, cancellationToken);
             if (result.IsFailure) falhas++;
+            else if (result.Value?.ErroEmail is not null) falhas++;
             else if (result.Value?.CertificadoConfigurado == true) processados++;
         }
 

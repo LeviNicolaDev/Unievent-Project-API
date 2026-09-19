@@ -1,5 +1,23 @@
 import { request } from './apiClient.js';
 
+export async function downloadMyCertificate(eventId) {
+  const response = await request(`/Certificado/eventos/${eventId}/pdf`, { responseType: 'response' });
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  const disposition = response.headers.get('content-disposition') || '';
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  const plain = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+  link.download = encoded
+    ? decodeURIComponent(encoded)
+    : plain || `certificado-evento-${eventId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 function unwrapResponse(response) {
   return response?.data || response;
 }

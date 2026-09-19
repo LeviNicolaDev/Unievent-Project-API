@@ -1,0 +1,21 @@
+@startuml
+!include _tema.puml
+title UC022 - Editar instituição
+|Admin UniEvent|
+start
+:Seleciona uma instituição e propõe alterações;
+|Gestão institucional|
+if (Instituição existe?) then (Sim)
+  if (Alterações são válidas e não geram duplicidade?) then (Sim)
+    :Atualiza os dados institucionais;
+    |Admin UniEvent|
+    :Recebe confirmação da atualização;
+  else (Não - exceção)
+    :Mantém os dados anteriores e informa inconsistências;
+  endif
+else (Não - exceção)
+  :Informa que a instituição não foi encontrada;
+endif
+stop
+@enduml
+

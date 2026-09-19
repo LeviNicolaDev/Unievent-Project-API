@@ -1,9 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Alert,
   Image,
   ScrollView,
+  RefreshControl,
   Text,
   TouchableOpacity,
   View,
@@ -19,25 +21,16 @@ import { generateCertificatePdf } from "../utils/certificatePdf";
 
 export default function MyEventsScreen({ theme, navigation }) {
   const isLight = theme.mode === "light";
-  const { student } = useAuth();
-  const { attendedEvents, hasIssuedCertificate, issueCertificate } = useEvents();
+  const { token } = useAuth();
+  const { attendedEvents, hasIssuedCertificate, refreshEvents, eventsLoading, eventsError } = useEvents();
+  useFocusEffect(useCallback(() => { refreshEvents(); }, [refreshEvents]));
   const [generatingCertificateId, setGeneratingCertificateId] = useState(null);
 
   async function handleCertificatePress(event) {
     setGeneratingCertificateId(event.id);
 
     try {
-      const certificate = event.certificate;
-
-      await generateCertificatePdf({
-        certificate,
-        event,
-        student,
-      });
-
-      issueCertificate(event.id);
-
-      Alert.alert("Certificado gerado", "O PDF do certificado foi gerado.");
+      await generateCertificatePdf({ event, token });
     } catch (error) {
       Alert.alert("Certificado indisponível", error.message);
     } finally {
@@ -49,6 +42,7 @@ export default function MyEventsScreen({ theme, navigation }) {
     <Screen theme={theme} bg={isLight ? LIGHT_BG : BLACK}>
       <ScrollView
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={eventsLoading} onRefresh={refreshEvents} />}
         contentContainerStyle={styles.myEventsScroll}
       >
         <View style={styles.myEventsHeader}>
@@ -74,6 +68,7 @@ export default function MyEventsScreen({ theme, navigation }) {
           <View style={styles.settingsBackButton} />
         </View>
 
+        {eventsError ? <Text accessibilityRole="alert">{eventsError}</Text> : null}
         {attendedEvents.length === 0 ? (
           <View
             style={[
@@ -86,8 +81,7 @@ export default function MyEventsScreen({ theme, navigation }) {
               Nenhum evento validado
             </Text>
             <Text style={[styles.myEventsEmptyText, { color: theme.soft }]}>
-              Os eventos aparecem aqui somente depois que o QR Code do ingresso
-              for verificado.
+              Os eventos aparecem aqui depois que a Secretaria confirmar sua presença.
             </Text>
           </View>
         ) : (
@@ -138,11 +132,11 @@ export default function MyEventsScreen({ theme, navigation }) {
                     {event.hasCertificate && event.certificate ? (
                       <TouchableOpacity
                         activeOpacity={0.85}
-                        disabled={generating}
+                        disabled={generating || !issued}
                         onPress={() => handleCertificatePress(event)}
                         style={[
                           styles.myEventCertificateButton,
-                          generating && styles.certificateButtonDisabled,
+                          (generating || !issued) && styles.certificateButtonDisabled,
                         ]}
                       >
                         <Ionicons
@@ -154,10 +148,10 @@ export default function MyEventsScreen({ theme, navigation }) {
                         />
                         <Text style={styles.myEventCertificateText}>
                           {generating
-                            ? "Gerando PDF..."
+                            ? "Baixando PDF..."
                             : issued
                             ? "Abrir certificado"
-                            : "Emitir certificado"}
+                            : "Certificado em preparação"}
                         </Text>
                       </TouchableOpacity>
                     ) : (

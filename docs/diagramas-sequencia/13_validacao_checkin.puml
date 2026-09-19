@@ -1,0 +1,45 @@
+@startuml
+!include _tema.puml
+title UC037-UC039 - Leitura e validação do check-in
+
+actor "Participante" as Participante
+actor "Operador / Secretaria / Admin" as Operador
+participant "Web de check-in" as Web
+participant "EventoController" as Api
+participant "ParticipacaoService" as Service
+participant "CertificadoAutomaticoService" as Certificacao
+database "SQL Server" as DB
+
+Participante -> Operador : Apresenta QR Code do ingresso
+Operador -> Web : Lê QR Code ou digita o código
+Web -> Web : Valida preenchimento e normaliza código
+Web -> Api : POST /api/Evento/check-in\n{ codigoIngresso }
+Api -> Api : Valida JWT e tamanho do código
+Api -> DB : Confere operador ativo e instituição
+alt Operador sem acesso ao evento
+  Api --> Web : 403
+  Web --> Operador : Informa acesso negado
+else Operador autorizado
+  Api -> Service : ValidarCheckInAsync(operador, código, escopo)
+  Service -> DB : Busca participação, evento e inscrição
+  Service -> Service : Valida código, status e janela de horário
+  alt Código/evento/status/horário inválido
+    Service --> Api : Falha com motivo
+    Api --> Web : 400
+    Web --> Operador : Exibe motivo sem alterar presença
+  else Presença já confirmada
+    Service --> Api : Resultado idempotente
+    Api --> Web : 200 já confirmado
+    Web --> Operador : Confirma estado existente
+  else Primeira confirmação
+    Service -> DB : Confirma presença atomicamente
+    DB --> Service : Participação confirmada
+    Service -> Certificacao : ProcessarAposCheckInAsync(participacaoId)
+    Certificacao --> Service : Estado da certificação
+    Service --> Api : Check-in confirmado
+    Api --> Web : 200 resultado
+    Web --> Operador : Exibe sucesso
+  end
+end
+@enduml
+

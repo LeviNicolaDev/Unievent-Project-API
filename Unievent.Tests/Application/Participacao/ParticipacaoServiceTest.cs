@@ -24,6 +24,7 @@ public class ParticipacaoServiceTest
 
     public ParticipacaoServiceTest()
     {
+        _participacoes.Setup(r => r.TryConfirmarPresencaAsync(It.IsAny<Domain.Entities.Participacao>())).ReturnsAsync(true);
         _certificadosAutomaticos
             .Setup(s => s.ProcessarAposCheckInAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Result<CertificadoAutomaticoResult>.Success(
@@ -105,7 +106,7 @@ public class ParticipacaoServiceTest
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.PresencaGarantida.Should().BeTrue();
-        _participacoes.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _participacoes.Verify(r => r.TryConfirmarPresencaAsync(It.IsAny<Domain.Entities.Participacao>()), Times.Once);
         _certificadosAutomaticos.Verify(
             s => s.ProcessarAposCheckInAsync(7, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -143,7 +144,7 @@ public class ParticipacaoServiceTest
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.PresencaGarantida.Should().BeTrue();
-        _participacoes.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _participacoes.Verify(r => r.TryConfirmarPresencaAsync(It.IsAny<Domain.Entities.Participacao>()), Times.Once);
         _certificadosAutomaticos.Verify(
             s => s.ProcessarAposCheckInAsync(8, It.IsAny<CancellationToken>()),
             Times.Once);
@@ -215,7 +216,7 @@ public class ParticipacaoServiceTest
 
         result.IsSuccess.Should().BeTrue();
         result.Value!.PresencaGarantida.Should().BeTrue();
-        _participacoes.Verify(r => r.SaveChangesAsync(), Times.Once);
+        _participacoes.Verify(r => r.TryConfirmarPresencaAsync(It.IsAny<Domain.Entities.Participacao>()), Times.Once);
     }
 
     [Fact]
@@ -329,5 +330,83 @@ public class ParticipacaoServiceTest
 
         result.IsSuccess.Should().BeTrue();
         _participacoes.Verify(r => r.TryAddWithinCapacityAsync(It.IsAny<Domain.Entities.Participacao>(), 10), Times.Once);
+    }
+
+    [Fact]
+    public async Task Publico_Geral_Consegue_Se_Inscrever_Em_Evento_Publico()
+    {
+        _alunos.Setup(r => r.ListarAlunoById(1)).ReturnsAsync(new AlunoEntity
+        {
+            Id = 1, Nome = "Visitante", Email = "visitante@example.com", Senha = "hash",
+            FotoPerfil = string.Empty, IsAtivo = true, DataNascimento = new DateTime(2000, 1, 1),
+            TipoParticipante = TipoParticipante.Externo
+        });
+        _eventos.Setup(r => r.ListarEventoById(2)).ReturnsAsync(new Domain.Entities.Evento
+        {
+            Id = 2, Nome = "Feira aberta", Descricao = "Teste", Categoria = Categoria.Feira,
+            DataEvento = DateTime.UtcNow.AddDays(1), ResponsavelEventoId = 1, Capacidade = 2,
+            Thumbnail = new List<string>(), PublicoPermitido = PublicoPermitido.PublicoGeral,
+            Visibilidade = VisibilidadeEvento.Publico
+        });
+        _participacoes.Setup(r => r.CountByEventoIdAsync(2)).ReturnsAsync(1);
+        _participacoes.Setup(r => r.ExistsAsync(1, 2)).ReturnsAsync(false);
+        _participacoes.Setup(r => r.TryAddWithinCapacityAsync(It.IsAny<Domain.Entities.Participacao>(), 2))
+            .ReturnsAsync(true);
+
+        var result = await _service.InscreverAsync(1, 2);
+
+        result.IsSuccess.Should().BeTrue();
+        _participacoes.Verify(r => r.TryAddWithinCapacityAsync(It.IsAny<Domain.Entities.Participacao>(), 2), Times.Once);
+    }
+
+    [Fact]
+    public async Task Evento_Lotado_Bloqueia_Novas_Inscricoes()
+    {
+        _alunos.Setup(r => r.ListarAlunoById(1)).ReturnsAsync(new AlunoEntity
+        {
+            Id = 1, Nome = "Visitante", Email = "visitante@example.com", Senha = "hash",
+            FotoPerfil = string.Empty, IsAtivo = true, DataNascimento = new DateTime(2000, 1, 1),
+            TipoParticipante = TipoParticipante.Externo
+        });
+        _eventos.Setup(r => r.ListarEventoById(2)).ReturnsAsync(new Domain.Entities.Evento
+        {
+            Id = 2, Nome = "Feira lotada", Descricao = "Teste", Categoria = Categoria.Feira,
+            DataEvento = DateTime.UtcNow.AddDays(1), ResponsavelEventoId = 1, Capacidade = 1,
+            Thumbnail = new List<string>(), PublicoPermitido = PublicoPermitido.PublicoGeral,
+            Visibilidade = VisibilidadeEvento.Publico
+        });
+        _participacoes.Setup(r => r.CountByEventoIdAsync(2)).ReturnsAsync(1);
+
+        var result = await _service.InscreverAsync(1, 2);
+
+        result.IsFailure.Should().BeTrue();
+        result.Errors.Should().Contain("Evento lotado");
+        _participacoes.Verify(r => r.TryAddWithinCapacityAsync(It.IsAny<Domain.Entities.Participacao>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Inscricao_Duplicada_E_Bloqueada()
+    {
+        _alunos.Setup(r => r.ListarAlunoById(1)).ReturnsAsync(new AlunoEntity
+        {
+            Id = 1, Nome = "Visitante", Email = "visitante@example.com", Senha = "hash",
+            FotoPerfil = string.Empty, IsAtivo = true, DataNascimento = new DateTime(2000, 1, 1),
+            TipoParticipante = TipoParticipante.Externo
+        });
+        _eventos.Setup(r => r.ListarEventoById(2)).ReturnsAsync(new Domain.Entities.Evento
+        {
+            Id = 2, Nome = "Feira aberta", Descricao = "Teste", Categoria = Categoria.Feira,
+            DataEvento = DateTime.UtcNow.AddDays(1), ResponsavelEventoId = 1, Capacidade = 10,
+            Thumbnail = new List<string>(), PublicoPermitido = PublicoPermitido.PublicoGeral,
+            Visibilidade = VisibilidadeEvento.Publico
+        });
+        _participacoes.Setup(r => r.CountByEventoIdAsync(2)).ReturnsAsync(1);
+        _participacoes.Setup(r => r.ExistsAsync(1, 2)).ReturnsAsync(true);
+
+        var result = await _service.InscreverAsync(1, 2);
+
+        result.IsFailure.Should().BeTrue();
+        result.Errors.Should().Contain("Aluno já inscrito nesse evento");
+        _participacoes.Verify(r => r.TryAddWithinCapacityAsync(It.IsAny<Domain.Entities.Participacao>(), It.IsAny<int>()), Times.Never);
     }
 }

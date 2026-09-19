@@ -1,0 +1,20 @@
+@startuml
+!include _tema.puml
+title UC003 - Filtrar eventos por instituição
+|Visitante|
+start
+:Solicita eventos de uma instituição;
+|UniEvent|
+if (Instituição está disponível para consulta?) then (Sim)
+  :Seleciona os eventos vinculados à instituição;
+  if (Há eventos correspondentes?) then (Sim)
+    :Apresenta os eventos encontrados;
+  else (Não - exceção)
+    :Informa que a instituição não possui eventos disponíveis;
+  endif
+else (Não - exceção)
+  :Informa que a instituição não está disponível;
+endif
+stop
+@enduml
+

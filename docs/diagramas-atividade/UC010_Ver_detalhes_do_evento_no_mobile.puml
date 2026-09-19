@@ -1,0 +1,18 @@
+@startuml
+!include _tema.puml
+title UC010 - Consultar detalhes do evento como aluno
+|Aluno Fatec|
+start
+:Seleciona um evento disponível;
+|Gestão de eventos|
+if (Evento continua disponível para o perfil?) then (Sim)
+  :Apresenta informações completas, vagas
+  e condições de participação;
+  |Aluno Fatec|
+  :Decide se deseja se inscrever ou favoritar;
+else (Não - exceção)
+  :Informa alteração ou indisponibilidade do evento;
+endif
+stop
+@enduml
+
