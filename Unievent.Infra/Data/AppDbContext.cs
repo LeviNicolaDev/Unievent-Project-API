@@ -54,7 +54,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Aluno>(a =>
         {
             a.HasIndex(a => a.Email).IsUnique();
-            a.HasIndex(a => a.ChaveConfirmacaoEmail).IsUnique().HasFilter("[ChaveConfirmacaoEmail] IS NOT NULL");
+            a.HasIndex(a => a.ChaveConfirmacaoEmail).IsUnique().HasFilter("\"ChaveConfirmacaoEmail\" IS NOT NULL");
             a.Property(a => a.ChaveConfirmacaoEmail).HasMaxLength(300);
             a.HasQueryFilter(a => a.IsAtivo);
             a.Property(a => a.TipoParticipante).HasConversion<string>();
@@ -63,7 +63,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Instituicao>(i =>
         {
             i.HasIndex(i => i.Cnpj).IsUnique();
-            i.HasIndex(i => i.Codigo).IsUnique().HasFilter("[Codigo] IS NOT NULL");
+            i.HasIndex(i => i.Codigo).IsUnique().HasFilter("\"Codigo\" IS NOT NULL");
             i.Property(i => i.Cnpj).HasMaxLength(18);
             i.Property(i => i.Nome).HasMaxLength(160);
             i.Property(i => i.NomeAbreviado).HasMaxLength(40);

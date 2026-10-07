@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -313,7 +313,7 @@ namespace Unievent.Infra.Migrations
                 table: "Aluno",
                 column: "ChaveConfirmacaoEmail",
                 unique: true,
-                filter: "[ChaveConfirmacaoEmail] IS NOT NULL");
+                filter: "\"ChaveConfirmacaoEmail\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Aluno_Email",
@@ -362,7 +362,7 @@ namespace Unievent.Infra.Migrations
                 table: "Instituicao",
                 column: "Codigo",
                 unique: true,
-                filter: "[Codigo] IS NOT NULL");
+                filter: "\"Codigo\" IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_NotificacaoEvento_AlunoId_EventoId_Tipo",
