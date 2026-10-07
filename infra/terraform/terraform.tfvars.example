@@ -1,0 +1,6 @@
+subscription_id = "00000000-0000-0000-0000-000000000000"
+container_image = "ghcr.io/levinicoladev/unievent-project-api:latest"
+
+# Optional: configure these together to enable email delivery.
+email_smtp_address  = ""
+email_smtp_password = ""

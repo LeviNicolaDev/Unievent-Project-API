@@ -131,7 +131,7 @@ Falhas temporárias recebem nova tentativa pelo `AutomacaoEventosService`, com e
 
 ### Idempotência
 
-Cada `Participacao` mantém o PDF, código, destinatário, datas, contador de tentativas, estado do envio e uma reserva de processamento. A reserva é adquirida por atualização condicional atômica no SQL Server. Chamadas repetidas ou concorrentes não conseguem reservar a mesma participação ao mesmo tempo, e participações marcadas como enviadas não entram novamente no fluxo automático.
+Cada `Participacao` mantém o PDF, código, destinatário, datas, contador de tentativas, estado do envio e uma reserva de processamento. A reserva é adquirida por atualização condicional atômica no PostgreSQL. Chamadas repetidas ou concorrentes não conseguem reservar a mesma participação ao mesmo tempo, e participações marcadas como enviadas não entram novamente no fluxo automático.
 
 Os estados são `Pendente`, `Preparando`, `Enviando`, `Enviado`, `FalhaTemporaria`, `FalhaPermanente` e `EnvioIncerto`. Um reenvio futuro deve ser uma ação administrativa explícita; o fluxo automático não reenvia estados finais.
 
@@ -179,6 +179,10 @@ Serviços principais:
 
 Variáveis relevantes estão em `docker-compose.yml`, incluindo `PASSWORD_DB`, `Jwt__Key`, `Jwt__Issuer`, `Jwt__Audience` e configurações de e-mail.
 
+## Hospedagem Azure
+
+A infraestrutura econômica para API, portal web e PostgreSQL está em [infra/terraform](infra/terraform/README.md). O mobile usa a URL pública da API e não requer um serviço de hospedagem Azure.
+
 ## Testes
 
 ```bash
@@ -188,9 +192,9 @@ npm run test:e2e --prefix Unievent-Project-Web-Frontend
 (cd Unievent-Project-Mobile/biased-orange-donut && npx expo export --platform all --output-dir /tmp/unievent-mobile-export)
 ```
 
-Os testes de integração usam SQLite por padrão. O teste real de migration SQL Server é executado quando `UNIEVENT_TEST_SQLSERVER` contém uma connection string para uma instância descartável; ele cria e remove um banco temporário, sem alterar o banco `Unievent`.
+Os testes de integração usam SQLite por padrão. O teste real da migration PostgreSQL é executado quando `UNIEVENT_TEST_POSTGRESQL` contém uma connection string para uma instância descartável; ele cria e remove um banco temporário, sem alterar o banco `Unievent`.
 
-O projeto utiliza EF Core migrations versionadas em `Unievent.Infra/Migrations`. A migration `AddCertificadoPdfDelivery` adiciona o estado de entrega e os dados do PDF preservando participações e certificados existentes. Emissões legadas já marcadas como enviadas são migradas para `Enviado`; emissões antigas sem confirmação de envio ficam como `EnvioIncerto`, evitando reenvio automático indevido.
+O projeto utiliza EF Core migrations PostgreSQL versionadas em `Unievent.Infra/Migrations`. `InitialPostgreSQL` cria o schema atual em um banco vazio; ela não migra dados existentes de SQL Server. O estado de envio de certificados e os dados do PDF fazem parte desse schema.
 
 O desenho técnico, o modelo de dados e o diagrama de sequência estão em [Certificação automática](docs/CERTIFICACAO_AUTOMATICA.md).
 

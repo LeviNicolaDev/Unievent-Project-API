@@ -1,16 +1,17 @@
 services:
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: postgres:16-alpine
     container_name: unievent-db
     volumes:
-      - sql_data:/var/opt/mssql
+      - postgres_data:/var/lib/postgresql/data
     environment:
-      - ACCEPT_EULA=Y
-      - MSSQL_SA_PASSWORD=${PASSWORD_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-unievent}
+      POSTGRES_DB: ${POSTGRES_DB:-Unievent}
+      POSTGRES_PASSWORD: ${PASSWORD_DB:?Defina PASSWORD_DB no .env}
     ports:
-      - "${SQLSERVER_HOST_PORT:-1433}:1433"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     healthcheck:
-      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1"
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 12
@@ -27,7 +28,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - ConnectionStrings__DefaultConnection=Server=db,1433;Database=Unievent;User Id=sa;Password=${PASSWORD_DB};TrustServerCertificate=True;
+      - ConnectionStrings__DefaultConnection=Host=db;Port=5432;Database=${POSTGRES_DB:-Unievent};Username=${POSTGRES_USER:-unievent};Password=${PASSWORD_DB};Include Error Detail=true
       - EmailSettings__Host=${EmailSettings__Host:-smtp.gmail.com}
       - EmailSettings__Port=${EmailSettings__Port:-587}
       - EmailSettings__Email=${EmailSettings__Email}
@@ -80,4 +81,4 @@ services:
       - "${EXPO_TUNNEL_HOST_PORT:-19002}:19002"
 
 volumes:
-  sql_data:
+  postgres_data:

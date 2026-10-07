@@ -41,13 +41,18 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
+    var configuredOrigins = builder.Configuration
+        .GetSection("Cors:AllowedOrigins")
+        .Get<string[]>() ?? [];
+    var allowedOrigins = configuredOrigins
+        .Concat(new[] { "http://localhost:5173", "http://localhost:8081" })
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray();
+
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-            .WithOrigins(
-                "http://localhost:5173" // Vite
-                , "http://localhost:8081"
-            )
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });

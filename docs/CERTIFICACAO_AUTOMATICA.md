@@ -48,7 +48,7 @@ Os dois tipos usam a mesma `Participacao`, que liga `Aluno` e `Evento`. `Certifi
 | --- | --- |
 | `CertificadoEmitido` | Compatibilidade e indicação de que houve emissão. |
 | `CodigoValidacao` | Código estável impresso no PDF e usado no identificador da mensagem. |
-| `CertificadoPdf` | Bytes do arquivo oficial em `varbinary(max)`. |
+| `CertificadoPdf` | Bytes do arquivo oficial em `bytea` (PostgreSQL). |
 | `NomeArquivoCertificado` | Nome sanitizado do anexo/download. |
 | `DataGeracaoCertificado` | Instante UTC em que o PDF foi gerado. |
 | `DestinatarioCertificadoEmail` | Endereço usado na entrega, preservado para auditoria. |
@@ -139,7 +139,7 @@ actor Secretaria
 participant "Frontend Web" as Web
 participant "API / EventoController" as API
 participant "ParticipacaoService" as CheckIn
-database "SQL Server" as DB
+database "PostgreSQL" as DB
 participant "CertificadoAutomaticoService" as Cert
 participant "PDF Generator" as PDF
 participant "EmailService / SMTP" as Email
@@ -176,10 +176,4 @@ Web --> Secretaria : confirmação do check-in
 
 ## Migration e compatibilidade
 
-`20260910163741_AddCertificadoPdfDelivery` adiciona os campos e o índice sem remover tabelas ou migrations antigas. Dados legados são classificados assim:
-
-- `CertificadoEnviadoPorEmail = true` → `Enviado`;
-- `CertificadoEmitido = true` sem confirmação de envio → `EnvioIncerto`;
-- demais participações → `Pendente`.
-
-Essa conversão preserva presença, códigos e datas existentes e evita que uma implantação reenvie certificados antigos sem saber se já foram entregues.
+`InitialPostgreSQL` cria o schema atual, incluindo os campos e índices de entrega de certificados, em um banco vazio. Ela não converte nem preserva dados de um banco SQL Server existente; uma migração desses dados precisa ser planejada separadamente.
