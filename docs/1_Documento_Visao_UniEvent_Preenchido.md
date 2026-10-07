@@ -51,7 +51,7 @@ O UniEvent será composto por módulos integrados de backend, web e mobile.
 | Módulo                    | Descrição                                                                                                                    |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | Backend/API               | API em ASP.NET Core responsável por autenticação, regras de negócio, integrações, endpoints REST, validações e persistência. |
-| Banco de dados            | Banco SQL Server com migrations do Entity Framework Core.                                                                    |
+| Banco de dados            | Banco PostgreSQL com migrations do Entity Framework Core.                                                                    |
 | Portal web público        | Páginas para landing page, descoberta de eventos públicos, filtro por instituição e detalhes do evento.                      |
 | Portal web administrativo | Área autenticada para Admin UniEvent e Usuário Secretaria.                                                                   |
 | Administração global      | Cadastro do Admin UniEvent, gestão de instituições, gestão de usuários secretaria, dashboard global e automações.            |
@@ -94,8 +94,8 @@ O repositório não contém uma lista formal de todos os integrantes. A tabela a
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | Arquitetura backend         | API em ASP.NET Core organizada em camadas: `Unievent.Api`, `Unievent.Application`, `Unievent.Domain` e `Unievent.Infra`. |
 | Linguagem backend           | C# com .NET 10.                                                                                                          |
-| Persistência                | Entity Framework Core com SQL Server.                                                                                    |
-| Banco de dados              | Microsoft SQL Server 2022 em ambiente local/Docker.                                                                      |
+| Persistência                | Entity Framework Core com PostgreSQL.                                                                                    |
+| Banco de dados              | PostgreSQL em ambiente local/Docker e Azure Database for PostgreSQL em hospedagem.                                       |
 | Autenticação                | JWT Bearer com perfis Admin, Secretaria e Aluno.                                                                         |
 | Segurança por perfil        | Admin global sem instituição; Secretaria vinculada a uma instituição; Aluno com tipo de participante e instituição.      |
 | Validações                  | FluentValidation, validações de domínio e regras nos serviços de aplicação.                                              |
@@ -109,7 +109,7 @@ O repositório não contém uma lista formal de todos os integrantes. A tabela a
 | E-mail                      | SMTP configurável para confirmação de conta e envio de certificados PDF anexados.                                      |
 | Containerização             | Docker e Docker Compose para banco, API, web e mobile.                                                                   |
 | Testes                      | xUnit, Moq, FluentAssertions e Bogus.                                                                                    |
-| Ambiente de desenvolvimento | API em porta configurável, web em Vite, mobile em Expo e SQL Server via Docker.                                          |
+| Ambiente de desenvolvimento | API em porta configurável, web em Vite, mobile em Expo e PostgreSQL via Docker.                                          |
 
 ### 6.1. Principais entidades
 
@@ -144,7 +144,7 @@ O repositório não contém uma lista formal de todos os integrantes. A tabela a
 
 | ID  | Risco                                                                                    | Probabilidade | Impacto | Plano de mitigação/contingência                                                                    |
 | --- | ---------------------------------------------------------------------------------------- | ------------- | ------- | -------------------------------------------------------------------------------------------------- |
-| R01 | Indisponibilidade do banco SQL Server no ambiente local ou Docker.                       | Média         | Alto    | Usar Docker Compose, healthcheck do banco, documentação de portas e variáveis de ambiente.         |
+| R01 | Indisponibilidade do PostgreSQL no ambiente local ou Docker.                              | Média         | Alto    | Usar Docker Compose, healthcheck do banco, documentação de portas e variáveis de ambiente.         |
 | R02 | Falha no envio de e-mails por credenciais SMTP, bloqueio do provedor ou limite de envio. | Média         | Alto    | Persistir presença e PDF antes do SMTP; classificar falha, aplicar retry limitado e exigir análise quando o resultado for incerto. |
 | R03 | Usuário secretaria acessar dados de outra instituição.                                   | Baixa/Média   | Alto    | Validar `instituicao_id` no JWT e aplicar filtros de acesso no backend.                            |
 | R04 | Aluno tentar se cadastrar sem vínculo institucional válido.                              | Média         | Médio   | Exigir e-mail institucional Fatec, instituição ativa e confirmação de e-mail.                      |
@@ -153,7 +153,7 @@ O repositório não contém uma lista formal de todos os integrantes. A tabela a
 | R07 | Divergência entre frontend e backend em contratos de API.                                | Média         | Médio   | Centralizar serviços de API no frontend e validar com testes/builds.                               |
 | R08 | Crescimento do escopo durante o desenvolvimento.                                         | Alta          | Médio   | Separar MVP de evoluções futuras e manter itens fora do escopo documentados.                       |
 | R09 | Dependência de versões recentes de frameworks.                                           | Média         | Médio   | Fixar versões em arquivos de projeto e package-lock, além de validar builds.                       |
-| R10 | Perda de dados em ambiente local de desenvolvimento.                                     | Baixa/Média   | Alto    | Usar volumes Docker para SQL Server e migrations versionadas.                                      |
+| R10 | Perda de dados em ambiente local de desenvolvimento.                                     | Baixa/Média   | Alto    | Usar volumes Docker para PostgreSQL e migrations versionadas.                                       |
 | R11 | Duplo clique, retry ou múltiplas instâncias enviarem o mesmo certificado.                 | Média         | Alto    | Reservar a participação com atualização condicional atômica e tornar estados finais inelegíveis ao processamento automático. |
 
 ## 8. Cronograma de Marcos Resumido
@@ -184,7 +184,7 @@ Os valores abaixo são estimativos para documentação acadêmica. Em um projeto
 | --------------------------- | -------------: | ----------------------------------------------------------------- |
 | Hardware de desenvolvimento |        R$ 0,00 | Uso de equipamento próprio/acadêmico.                             |
 | Licenças de software        |        R$ 0,00 | Tecnologias principais possuem uso gratuito para desenvolvimento. |
-| Banco de dados local        |        R$ 0,00 | SQL Server em ambiente local/Docker.                              |
+| Banco de dados local        |        R$ 0,00 | PostgreSQL em ambiente local/Docker.                               |
 | Treinamentos                |        R$ 0,00 | Considerado estudo da equipe durante o projeto acadêmico.         |
 | Hospedagem inicial          |        R$ 0,00 | Ambiente local durante desenvolvimento.                           |
 

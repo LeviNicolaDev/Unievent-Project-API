@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Unievent.Domain.Entities;
 using Unievent.Domain.Enuns;
 using Unievent.Infra.Data;
@@ -12,12 +12,12 @@ public sealed class CertificacaoDatabase : IDbContextFactory<AppDbContext>, IAsy
     public DbContextOptions<AppDbContext> Options { get; }
     public CertificacaoDatabase()
     {
-        var sqlServer = Environment.GetEnvironmentVariable("UNIEVENT_TEST_SQLSERVER");
-        Options = string.IsNullOrEmpty(sqlServer)
+        var postgres = Environment.GetEnvironmentVariable("UNIEVENT_TEST_POSTGRESQL");
+        Options = string.IsNullOrEmpty(postgres)
             ? new DbContextOptionsBuilder<AppDbContext>().UseSqlite($"Data Source={path}").Options
-            : new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(new SqlConnectionStringBuilder(sqlServer)
+            : new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(new NpgsqlConnectionStringBuilder(postgres)
             {
-                InitialCatalog = $"UnieventCertificacaoTest_{Guid.NewGuid():N}"
+                Database = $"UnieventCertificacaoTest_{Guid.NewGuid():N}"
             }.ConnectionString).Options;
     }
     public AppDbContext CreateDbContext() => new(Options);

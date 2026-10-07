@@ -1,25 +1,38 @@
-name: CD - Unievent
+name: Publish API image
 on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do código
+      - name: Checkout do codigo
         uses: actions/checkout@v4
 
-      - name: Login no Azure Container Registry (ACR)
+      - name: Preparar nome da imagem
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
         with:
-          registry: ${{ secrets.AZURE_ACR_NAME }}.azurecr.io
-          username: ${{ secrets.AZURE_ACR_USERNAME }}
-          password: ${{ secrets.AZURE_ACR_PASSWORD }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Docker image
-        run: docker image build -t ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/api-unievent:latest .
+        run: |
+          docker image build \
+            --tag "$IMAGE_NAME:$GITHUB_SHA" \
+            --tag "$IMAGE_NAME:latest" \
+            .
 
-      - name: Push Docker Image
-        run: docker push ${{ secrets.AZURE_ACR_NAME }}.azurecr.io/api-unievent:latest
+      - name: Publish Docker image
+        run: |
+          docker push "$IMAGE_NAME:$GITHUB_SHA"
+          docker push "$IMAGE_NAME:latest"

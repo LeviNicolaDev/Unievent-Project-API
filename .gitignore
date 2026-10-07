@@ -371,3 +371,11 @@ FodyWeavers.xsd
 
 #ENV
 .env
+
+# Terraform local state and provider cache
+infra/terraform/.terraform/
+infra/terraform/terraform.tfvars
+infra/terraform/*.auto.tfvars
+infra/terraform/*.tfstate
+infra/terraform/*.tfstate.*
+infra/terraform/tfplan
