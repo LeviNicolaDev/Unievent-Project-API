@@ -120,3 +120,39 @@ em processo durante a inatividade. O padrão 1 mantém essas automações ativas
 O state contém senha do banco, JWT e SMTP. Preserve-o em local protegido e nunca
 o versione; o plano também pode conter secrets. PostgreSQL só é acessível na VNet.
 Para remover, faça backup dos dados e execute terraform destroy: isso exclui o banco.
+
+## Homologacao e nome da API
+
+Este ambiente usa ASPNETCORE_ENVIRONMENT=Staging (homologacao), e o resource group
+recebe a tag environment=homolog. O workflow continua sendo acionado por main.
+O subject OIDC permanece vinculado a main; nao foi criado um GitHub Environment.
+
+Nao altere project_name para renomear recursos existentes: isso pode substituir
+inclusive o banco. Os nomes existentes de RG, PostgreSQL, VNet e environment sao
+preservados. A API pode receber um nome independente, como unievent-api-homolog.
+Azure nao renomeia Container Apps existentes: Terraform substitui a API e sua URL
+muda, com possivel indisponibilidade durante a troca.
+
+Antes da troca, consulte a imagem atual e use-a como container_image (se houver
+terraform.tfvars, ajuste o valor nele, pois tem precedencia sobre TF_VAR):
+
+```powershell
+$rg = terraform output -raw resource_group_name
+$appName = terraform output -raw container_app_name
+$env:TF_VAR_container_image = az containerapp show --resource-group $rg --name $appName --query 'properties.template.containers[0].image' -o tsv
+.\scripts\Prepare-Homolog.ps1
+# Revise o plano, depois:
+terraform apply tfplan
+terraform output -raw container_app_name
+terraform output -raw api_url
+```
+
+O script apenas grava homolog.auto.tfvars e prepara o plano; nao aplica nem exclui
+recursos na Azure. Preserve esse arquivo local para as proximas execucoes.
+Pause pushes/deploys enquanto realiza a troca; depois atualize AZURE_CONTAINER_APP
+no GitHub, VITE_API_BASE_URL na Vercel (com novo deploy) e EXPO_PUBLIC_API_URL no mobile.
+
+A URL padrao ainda inclui o sufixo gerado pela Azure, por exemplo
+unievent-api-homolog.<sufixo>.canadacentral.azurecontainerapps.io. Para eliminar
+esse sufixo, use um dominio proprio com DNS e certificado TLS configurados no
+Container App: https://learn.microsoft.com/en-us/azure/container-apps/custom-domains-managed-certificates

@@ -130,9 +130,7 @@ if (builder.Configuration.GetValue("Database:MigrateOnStartup", false))
 }
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
+app.MapOpenApi();
     app.MapScalarApiReference(options =>
  {
      options.WithTitle("Unievent API")
@@ -143,7 +141,7 @@ if (app.Environment.IsDevelopment())
                 bearer.Token = "";
             });
  });
-}
+app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
 app.UseStaticFiles();
 app.UseHttpsRedirection();

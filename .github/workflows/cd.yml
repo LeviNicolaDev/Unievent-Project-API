@@ -1,4 +1,4 @@
-﻿name: CI/CD - Azure API
+name: CI/CD - Azure API Homolog
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
         default: false
 
 concurrency:
-  group: azure-api-production
+  group: azure-api-homolog
   cancel-in-progress: false
 
 permissions:

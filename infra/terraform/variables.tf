@@ -111,3 +111,14 @@ variable "email_smtp_password" {
   sensitive   = true
   default     = ""
 }
+
+variable "container_app_name" {
+  description = "Optional stable API name. Changing an existing name replaces the Container App and changes its URL."
+  type        = string
+  default     = null
+
+  validation {
+    condition     = var.container_app_name == null ? true : can(regex("^[a-z][a-z0-9-]{0,29}[a-z0-9]$", var.container_app_name))
+    error_message = "Use 2-31 lowercase letters, numbers or hyphens, starting with a letter and ending with a letter or number."
+  }
+}

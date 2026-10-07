@@ -6,7 +6,7 @@ resource "random_string" "suffix" {
 
 locals {
   name_prefix  = "${var.project_name}-${random_string.suffix.result}"
-  api_app_name = "${local.name_prefix}-api"
+  api_app_name = var.container_app_name != null ? var.container_app_name : "${local.name_prefix}-api"
   postgres_connection_string = join(";", [
     "Host=${azurerm_postgresql_flexible_server.postgres.fqdn}",
     "Port=5432",
@@ -35,6 +35,7 @@ resource "random_password" "jwt" {
 resource "azurerm_resource_group" "unievent" {
   name     = "${local.name_prefix}-rg"
   location = var.location
+  tags     = { environment = "homolog" }
 }
 
 resource "azurerm_virtual_network" "unievent" {
@@ -263,7 +264,7 @@ resource "azurerm_container_app" "api" {
 
       env {
         name  = "ASPNETCORE_ENVIRONMENT"
-        value = "Production"
+        value = "Staging"
       }
 
       env {
