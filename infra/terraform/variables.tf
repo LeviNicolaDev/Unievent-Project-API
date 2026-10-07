@@ -6,13 +6,17 @@ variable "subscription_id" {
 variable "location" {
   description = "Azure region for the API and PostgreSQL. Change it if unavailable in the student subscription."
   type        = string
-  default     = "eastus"
+  default     = "canadacentral"
 }
 
-variable "static_web_app_location" {
-  description = "Control-plane region supported by Azure Static Web Apps."
+variable "web_url" {
+  description = "Production HTTPS origin of the frontend hosted on Vercel, without a path or trailing slash."
   type        = string
-  default     = "eastus2"
+
+  validation {
+    condition     = can(regex("^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$", var.web_url))
+    error_message = "web_url must be an HTTPS origin, for example https://unievent.vercel.app, without a path or trailing slash."
+  }
 }
 
 variable "project_name" {
