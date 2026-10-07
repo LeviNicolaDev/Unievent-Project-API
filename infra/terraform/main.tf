@@ -18,7 +18,7 @@ locals {
     "Timeout=30",
     "Command Timeout=60"
   ])
-  web_origin = "https://${azurerm_static_web_app.web.default_host_name}"
+  web_origin = var.web_url
 }
 
 resource "random_password" "postgres" {
@@ -135,6 +135,11 @@ resource "azurerm_container_app" "api" {
   container_app_environment_id = azurerm_container_app_environment.unievent.id
   resource_group_name          = azurerm_resource_group.unievent.name
   revision_mode                = "Single"
+
+  # GitHub Actions owns image updates after the initial provisioning.
+  lifecycle {
+    ignore_changes = [template[0].container[0].image]
+  }
 
   secret {
     name  = "postgres-connection"
@@ -277,12 +282,4 @@ resource "azurerm_container_app" "api" {
   }
 
   depends_on = [azurerm_postgresql_flexible_server_database.unievent]
-}
-
-resource "azurerm_static_web_app" "web" {
-  name                = "${local.name_prefix}-web"
-  resource_group_name = azurerm_resource_group.unievent.name
-  location            = var.static_web_app_location
-  sku_tier            = "Free"
-  sku_size            = "Free"
 }

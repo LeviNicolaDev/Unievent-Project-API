@@ -1,59 +1,122 @@
-# UniEvent na Azure
+﻿# UniEvent: Azure API e frontend Vercel
 
-Esta configuração provisiona os serviços Azure necessários para a API, o portal web e o cliente mobile:
+O Terraform cria Container Apps (0,25 vCPU / 0,5 GiB), PostgreSQL 16 privado
+(B_Standard_B1ms, 32 GiB), VNet, DNS privado e Log Analytics. A região padrão
+é canadacentral. O frontend é publicado separadamente pela integração Git da Vercel.
+Não há Static Web App na Azure.
 
-- **API:** Azure Container Apps no plano Consumption, com container de 0,25 vCPU / 0,5 GiB.
-- **Web:** Azure Static Web Apps no plano Free.
-- **Banco:** Azure Database for PostgreSQL Flexible Server, menor SKU burstable como padrão, 32 GiB, backup de 7 dias, sem redundância entre zonas e rede privada.
-- **Logs:** Log Analytics com limite de ingestão de 0,1 GiB por dia.
-- **Mobile:** não precisa de servidor. O app Expo usa a URL da API como variável de build.
+## Primeira publicação
 
-A API e o PostgreSQL compartilham uma rede virtual; o banco não tem endpoint público. A senha do banco e a chave JWT, geradas pelo Terraform, são armazenadas como secrets do Container App. O state do Terraform contém esses valores e o token de deploy do Static Web Apps: não versione, compartilhe ou armazene esse state em um backend desprotegido.
-
-## Antes de aplicar
-
-1. Instale Terraform 1.8+ e Azure CLI. Entre na conta e selecione a assinatura estudantil:
-
-   ```powershell
-   az login
-   az account set --subscription "<subscription-id>"
-   az account show --query id -o tsv
-   ```
-
-2. Faça o push da API para `main`; o workflow publica a imagem no GitHub Container Registry (GHCR). Na primeira publicação, altere a visibilidade do pacote para **pública** em GitHub Packages. Assim não é necessário pagar pelo Azure Container Registry.
-3. Copie `terraform.tfvars.example` para `terraform.tfvars` e informe a assinatura e a imagem. Mantenha o arquivo privado.
-4. Confirme que a região escolhida oferece PostgreSQL Flexible Server `B_Standard_B1ms` e é permitida pela assinatura estudantil. O padrão usa `eastus` para compute/banco e `eastus2` para Static Web Apps; ajuste `location` se necessário.
-
-## Criar os recursos
-
-Execute neste diretório:
+1. Envie o workflow para main. Em Actions, execute CI/CD - Azure API manualmente
+   em main com publish_only marcado para publicar a imagem inicial sem deploy.
+   No GitHub Packages, torne o pacote público. O Container App não tem credenciais GHCR.
+   Um push sem as variáveis Azure ainda publica a imagem, mas o job de deploy falha
+   explicitamente até concluir a configuração abaixo.
+2. Na Vercel, obtenha o domínio de produção do frontend.
+3. No PowerShell, a partir de infra/terraform:
 
 ```powershell
+az login
+$env:TF_VAR_subscription_id = az account show --query id -o tsv
+$env:TF_VAR_container_image = 'ghcr.io/levinicoladev/unievent-project-api:latest'
+$env:TF_VAR_web_url = Read-Host 'Cole a origem HTTPS de producao da Vercel, sem barra final'
+$env:TF_VAR_location = 'canadacentral'
 terraform init
+terraform validate
 terraform plan -out=tfplan
+# Revise o plano antes de criar os recursos.
 terraform apply tfplan
+terraform output -raw api_url
 ```
 
-Revise o plano antes de aplicar. O Azure for Students tem créditos limitados; PostgreSQL e uma réplica da API sempre ativa podem gerar custos mesmo com pouco tráfego. O menor servidor burstable e o site Free reduzem o custo, mas **nem todos os recursos são necessariamente gratuitos**. Confira os preços e limites atuais no portal Azure. Para reduzir o uso do Container Apps, defina `container_min_replicas = 0`; a API poderá escalar a zero, mas as automações executadas em processo não funcionarão enquanto não houver réplica. O Flexible Server continua gerando custos até ser destruído.
+Alternativamente, copie terraform.tfvars.example para terraform.tfvars e preencha
+os valores. tfvars tem precedência sobre TF_VAR; evite manter valores conflitantes.
+A configuração não lê .env. SMTP é opcional: informe email_smtp_address e
+email_smtp_password juntos. Banco e chave JWT são gerados automaticamente.
 
-O servidor PostgreSQL é privado e a API está conectada à VNet. Nenhuma regra de firewall público é criada. Os backups duram 7 dias e a redundância geográfica fica desativada para reduzir custos. O limite de ingestão controla o consumo de logs; ao atingi-lo, novos logs deixam de ser ingeridos até o próximo período.
+Se já existir um plano anterior, gere-o novamente. Se um Static Web App já estiver
+no state, sua remoção será apresentada no plano. A mudança de região de recursos
+existentes pode exigir substituição: revise o plano e faça backup do banco antes.
 
-## Conectar os clientes
+## Credencial GitHub/Azure sem senha (OIDC)
 
-Após aplicar:
+Execute uma vez após criar a infraestrutura, no diretório infra/terraform.
+É necessário ter permissão para registrar aplicações no tenant e atribuir papéis
+no resource group; o tenant institucional pode exigir ajuda do administrador.
 
 ```powershell
-terraform output -raw api_url
-terraform output -raw web_url
-terraform output -raw web_deployment_token
+$subscriptionId = az account show --query id -o tsv
+$tenantId = az account show --query tenantId -o tsv
+$resourceGroup = terraform output -raw resource_group_name
+$containerApp = terraform output -raw container_app_name
+$repository = Read-Host 'Repositorio GitHub no formato proprietario/repositorio'
+$clientId = az ad app create --display-name 'unievent-github-deploy' --query appId -o tsv
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar aplicacao Entra.' }
+$principalId = az ad sp create --id $clientId --query id -o tsv
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar service principal.' }
+$scope = "/subscriptions/$subscriptionId/resourceGroups/$resourceGroup"
+az role assignment create --assignee-object-id $principalId --assignee-principal-type ServicePrincipal --role Contributor --scope $scope --output none
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao atribuir papel.' }
+$federation = @{
+    name = 'github-main'
+    issuer = 'https://token.actions.githubusercontent.com'
+    subject = "repo:${repository}:ref:refs/heads/main"
+    audiences = @('api://AzureADTokenExchange')
+} | ConvertTo-Json
+$federationFile = Join-Path ([System.IO.Path]::GetTempPath()) 'unievent-github-federation.json'
+[System.IO.File]::WriteAllText($federationFile, $federation)
+az ad app federated-credential create --id $clientId --parameters "@$federationFile" --output none
+if ($LASTEXITCODE -ne 0) { throw 'Falha ao criar federacao OIDC.' }
+[pscustomobject]@{
+    AZURE_CLIENT_ID = $clientId
+    AZURE_TENANT_ID = $tenantId
+    AZURE_SUBSCRIPTION_ID = $subscriptionId
+    AZURE_RESOURCE_GROUP = $resourceGroup
+    AZURE_CONTAINER_APP = $containerApp
+} | Format-List
 ```
 
-- Gere o web com `VITE_API_BASE_URL` apontando para a API e publique a pasta `dist` no Static Web Apps usando o token de deploy protegido. Configure esse token como secret de CI no repositório web; não o versione.
-- Defina `EXPO_PUBLIC_API_URL` com a URL da API ao gerar/executar o Expo. Não há hospedagem Azure para o mobile; distribua o app pelo fluxo existente do Expo/EAS.
-- SMTP é opcional. Defina `email_smtp_address` e `email_smtp_password` juntos para habilitar e-mails de conta/certificado. A senha é sensível, mas permanece no state do Terraform.
+Cadastre os cinco valores exibidos em GitHub → Settings → Secrets and variables →
+Actions → Variables (variáveis do repositório). Não há senha/client secret Azure.
+A federação autoriza somente a branch main desse repositório. Não configure um
+GitHub Environment sem adaptar o subject da federação.
 
-`terraform output -raw web_deployment_token` exibe uma credencial de deploy no terminal; use somente em uma sessão confiável. Se o token vazar, revogue-o no Azure.
+Referência: https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-azure
 
-## Atualizar e remover
+## CI/CD
 
-Após cada publicação, atualize `container_image` com a tag do commit publicado e rode `terraform apply` para criar uma nova revisão. Para remover a infraestrutura, faça backup dos dados necessários e rode `terraform destroy` neste diretório. Isso também exclui o banco.
+PRs para main continuam executando ci.yml. Cada push em main executa cd.yml:
+restore → build → testes → build/push GHCR → login OIDC → atualização do Container
+App com tag do commit. Se testes ou publicação falharem, não há deploy. Deploys
+são serializados; a opção publish_only existe apenas para o bootstrap manual.
+O workflow atualiza uma infraestrutura já criada: ele não executa Terraform.
+
+Terraform gerencia infraestrutura, configuração, CORS e secrets. Após a criação,
+a imagem é gerenciada pelo CD (ignore_changes no campo image), impedindo que um
+terraform apply reverta a versão implantada. Alterar container_image no Terraform
+não atualiza uma aplicação existente; para rollback, execute:
+
+```powershell
+$resourceGroup = terraform output -raw resource_group_name
+$containerApp = terraform output -raw container_app_name
+$image = Read-Host 'Imagem GHCR com a tag de um commit anterior'
+az containerapp update --resource-group $resourceGroup --name $containerApp --image $image --output none
+```
+
+## Vercel e mobile
+
+Na Vercel, defina VITE_API_BASE_URL com terraform output -raw api_url e faça novo
+build/deploy do frontend. Configure EXPO_PUBLIC_API_URL com a mesma URL no mobile.
+web_url deve ser o domínio estável de produção; URLs de preview não são autorizadas
+pelo CORS. Ao mudar o domínio, atualize web_url e gere/aplique um novo plano.
+
+## Custos e state
+
+A assinatura estudantil usa créditos limitados. PostgreSQL, rede, logs e a API
+ativa podem consumir créditos; esta infraestrutura não tem custo zero garantido.
+container_min_replicas = 0 permite escalar a API a zero, mas pausa as automações
+em processo durante a inatividade. O padrão 1 mantém essas automações ativas.
+
+O state contém senha do banco, JWT e SMTP. Preserve-o em local protegido e nunca
+o versione; o plano também pode conter secrets. PostgreSQL só é acessível na VNet.
+Para remover, faça backup dos dados e execute terraform destroy: isso exclui o banco.

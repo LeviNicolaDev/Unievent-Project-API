@@ -4,14 +4,8 @@ output "api_url" {
 }
 
 output "web_url" {
-  description = "Azure Static Web Apps URL."
-  value       = "https://${azurerm_static_web_app.web.default_host_name}"
-}
-
-output "web_deployment_token" {
-  description = "Deployment token for the static web app. Add it as a protected CI secret."
-  value       = azurerm_static_web_app.web.api_key
-  sensitive   = true
+  description = "Production frontend URL hosted on Vercel."
+  value       = var.web_url
 }
 
 output "postgres_server_fqdn" {

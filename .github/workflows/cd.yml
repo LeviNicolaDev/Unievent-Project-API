@@ -1,38 +1,99 @@
-name: Publish API image
+﻿name: CI/CD - Azure API
+
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      publish_only:
+        description: Publish the initial image without deploying (bootstrap)
+        type: boolean
+        default: false
+
+concurrency:
+  group: azure-api-production
+  cancel-in-progress: false
 
 permissions:
   contents: read
-  packages: write
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
     steps:
-      - name: Checkout do codigo
-        uses: actions/checkout@v4
-
-      - name: Preparar nome da imagem
-        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
-
-      - name: Login no GitHub Container Registry
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Image name
+        id: image
+        run: |
+          echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - name: Login GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build Docker image
+      - name: Build and publish
         run: |
-          docker image build \
-            --tag "$IMAGE_NAME:$GITHUB_SHA" \
-            --tag "$IMAGE_NAME:latest" \
-            .
-
-      - name: Publish Docker image
-        run: |
+          docker build --tag "$IMAGE_NAME:$GITHUB_SHA" --tag "$IMAGE_NAME:latest" .
           docker push "$IMAGE_NAME:$GITHUB_SHA"
           docker push "$IMAGE_NAME:latest"
+
+  deploy:
+    needs: build-and-publish
+    if: ${{ github.ref == 'refs/heads/main' && !inputs.publish_only }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+      AZURE_CONTAINER_APP: ${{ vars.AZURE_CONTAINER_APP }}
+      API_IMAGE: ${{ needs.build-and-publish.outputs.image }}
+    steps:
+      - name: Validate deployment settings
+        shell: bash
+        run: |
+          for name in AZURE_CLIENT_ID AZURE_TENANT_ID AZURE_SUBSCRIPTION_ID AZURE_RESOURCE_GROUP AZURE_CONTAINER_APP; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Configure repository variable $name before deploying."
+              exit 1
+            fi
+          done
+      - name: Login Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy commit image
+        shell: bash
+        run: |
+          az extension add --name containerapp --upgrade --yes
+          az containerapp update \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_CONTAINER_APP" \
+            --image "$API_IMAGE" \
+            --output none
+          state=$(az containerapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_CONTAINER_APP" --query properties.provisioningState --output tsv)
+          if [ "$state" != "Succeeded" ]; then
+            echo "::error::Container App provisioning state: $state"
+            exit 1
+          fi
