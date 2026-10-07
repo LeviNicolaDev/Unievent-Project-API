@@ -49,6 +49,15 @@ resource "azurerm_subnet" "container_apps" {
   resource_group_name  = azurerm_resource_group.unievent.name
   virtual_network_name = azurerm_virtual_network.unievent.name
   address_prefixes     = ["10.42.0.0/23"]
+
+  delegation {
+    name = "container-apps-environment"
+
+    service_delegation {
+      name    = "Microsoft.App/environments"
+      actions = ["Microsoft.Network/virtualNetworks/subnets/join/action"]
+    }
+  }
 }
 
 resource "azurerm_subnet" "postgres" {

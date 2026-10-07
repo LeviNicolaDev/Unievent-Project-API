@@ -119,3 +119,7 @@ k8s/secrets/
 # =========================
 README.md
 docs/
+# Exclude build artifacts in every project
+**/bin/
+**/obj/
+infra/terraform/
