@@ -181,7 +181,7 @@ Variáveis relevantes estão em `docker-compose.yml`, incluindo `PASSWORD_DB`, `
 
 ## Hospedagem Azure
 
-A infraestrutura econômica para API, portal web e PostgreSQL está em [infra/terraform](infra/terraform/README.md). O mobile usa a URL pública da API e não requer um serviço de hospedagem Azure.
+O deploy da API é realizado exclusivamente pela pipeline GitHub Actions em [.github/workflows/cd.yml](.github/workflows/cd.yml). Consulte [Deploy pela pipeline](docs/DEPLOY_PIPELINE.md). Os recursos Azure existentes são preservados; o front continua na Vercel e o mobile utiliza a URL pública da API.
 
 ## Testes
 
@@ -199,3 +199,11 @@ O projeto utiliza EF Core migrations PostgreSQL versionadas em `Unievent.Infra/M
 O desenho técnico, o modelo de dados e o diagrama de sequência estão em [Certificação automática](docs/CERTIFICACAO_AUTOMATICA.md).
 
 O fluxo completo do ingresso Web está em [Fluxos Público Geral e Secretaria](docs/fluxos-publico-secretaria-capacidade.md), e a sequência entre Web, API, banco e Secretaria está em [Diagrama de sequência do ingresso Web](docs/DIAGRAMA_SEQUENCIA_INGRESSO_WEB.puml).
+
+## Confirmação de e-mail dos quatro perfis
+
+Administrador global e Público Geral também exigem confirmação antes de emitir JWT. Consulte [o fluxo, endpoints e implantação](docs/CONFIRMACAO_EMAIL.md). Aplique a migration `ConfirmacaoEmailAdminPublico` antes de iniciar esta versão.
+
+## Recuperação de senha
+
+Consulte [Recuperação de senha](docs/RECUPERACAO_SENHA.md) para endpoints, SMTP, migration `AddPasswordRecovery` e revogação de sessões.

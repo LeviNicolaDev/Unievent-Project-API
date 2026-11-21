@@ -23,7 +23,9 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.Login(request);
         if (!result.IsSuccess)
-            return Unauthorized(result.Errors);
+            return result.ErrorCode is null
+                ? Unauthorized(result.Errors)
+                : Unauthorized(new { code = result.ErrorCode, mensagem = result.Errors[0] });
 
         return Ok(result.Value);
     }
@@ -33,7 +35,9 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.LoginAluno(request);
         if (!result.IsSuccess)
-            return Unauthorized(result.Errors);
+            return result.ErrorCode is null
+                ? Unauthorized(result.Errors)
+                : Unauthorized(new { code = result.ErrorCode, mensagem = result.Errors[0] });
 
         return Ok(result.Value);
     }
@@ -53,7 +57,9 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.LoginPublicoGeral(request);
         if (!result.IsSuccess)
-            return Unauthorized(result.Errors);
+            return result.ErrorCode is null
+                ? Unauthorized(result.Errors)
+                : Unauthorized(new { code = result.ErrorCode, mensagem = result.Errors[0] });
 
         return Ok(result.Value);
     }

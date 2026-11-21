@@ -7,6 +7,7 @@ public class UsuarioUnievent : EntidadeBase
     public required string NomeUsuario { get; set; }
     public required string EmailUsuario { get; set; }
     public required string Senha { get; set; }
+    public bool EmailConfirmado { get; set; }
     public string Chave { get; set; } = string.Empty;
     public Role RoleUsuario { get; set; } = Role.Admin;
     public int TentativasLogin { get; set; } = default;

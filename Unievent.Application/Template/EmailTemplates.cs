@@ -4,15 +4,19 @@ namespace Unievent.Application.Templates
     {
         public static string ConfirmacaoConta(string nome, string chave, string baseUrl, string confirmationBaseUrl = "")
         {
-            var origemConfirmacao = string.IsNullOrWhiteSpace(confirmationBaseUrl)
-                ? baseUrl
-                : confirmationBaseUrl;
-            var apiBaseUrl = origemConfirmacao.TrimEnd('/');
-            if (!apiBaseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+            string link;
+            if (string.IsNullOrWhiteSpace(confirmationBaseUrl))
             {
-                apiBaseUrl = $"{apiBaseUrl}/api";
+                // BaseUrl é a origem da web, cuja página confirma pela API configurada no front.
+                link = $"{baseUrl.TrimEnd('/')}/confirmar-email?chave={Uri.EscapeDataString(chave)}";
             }
-            var link = $"{apiBaseUrl}/Email/confirmar-conta?chave={Uri.EscapeDataString(chave)}";
+            else
+            {
+                var apiBaseUrl = confirmationBaseUrl.TrimEnd('/');
+                if (!apiBaseUrl.EndsWith("/api", StringComparison.OrdinalIgnoreCase))
+                    apiBaseUrl = $"{apiBaseUrl}/api";
+                link = $"{apiBaseUrl}/Email/confirmar-conta?chave={Uri.EscapeDataString(chave)}";
+            }
 
             return $@"
             <html>

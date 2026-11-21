@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.RateLimiting;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +27,16 @@ builder.Services.AddControllers();
 
 builder.Services.AddRepositories();
 builder.Services.AddServices();
+builder.Services.AddScoped<Unievent.Infra.Services.PasswordRecoveryService>();
+builder.Services.AddRateLimiter(options => {
+    options.RejectionStatusCode = 429;
+    options.AddPolicy("password-recovery", context =>
+        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
+            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions {
+                PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+            }));
+});
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
@@ -69,6 +80,20 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.Events = new JwtBearerEvents {
+            OnTokenValidated = async context => {
+                var principal = context.Principal!;
+                var tipo = principal.FindFirst("tipo_usuario")?.Value switch {
+                    "UsuarioUnievent" => "Admin", "UsuarioSecretaria" => "Secretaria", "Aluno" => "Aluno", _ => null
+                };
+                if (tipo is null || !int.TryParse(principal.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out var id)) {
+                    context.Fail("Sessão inválida."); return;
+                }
+                long? emitido = long.TryParse(principal.FindFirst("emitido_em_utc")?.Value, out var ticks) ? ticks : null;
+                var recovery = context.HttpContext.RequestServices.GetRequiredService<Unievent.Infra.Services.PasswordRecoveryService>();
+                if (!await recovery.SessaoValidaAsync(id, tipo, emitido)) context.Fail("Senha alterada. Faça login novamente.");
+            }
+        };
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -146,6 +171,8 @@ app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 
+app.UseRouting();
+app.UseRateLimiter();
 app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();

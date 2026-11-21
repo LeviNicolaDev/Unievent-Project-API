@@ -12,6 +12,7 @@ public class AppDbContext : DbContext
     {
 
     }
+    public DbSet<RecuperacaoSenha> RecuperacaoSenha { get; set; }
     public DbSet<Aluno> Aluno { get; set; }
     public DbSet<UsuarioUnievent> UsuarioUnievent { get; set; }
     public DbSet<UsuarioSecretaria> UsuarioSecretaria { get; set; }
@@ -25,6 +26,14 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<RecuperacaoSenha>(r => {
+            r.HasKey(x => x.Id);
+            r.Property(x => x.TokenHash).HasMaxLength(64);
+            r.Property(x => x.SenhaFingerprint).HasMaxLength(64);
+            r.Property(x => x.TipoConta).HasMaxLength(20);
+            r.HasIndex(x => x.TokenHash).IsUnique();
+            r.HasIndex(x => new { x.TipoConta, x.UsuarioId, x.CriadoEmUtc });
+        });
         // 'HasDefaultValue' aparentemente não funciona mais com o EF CORE, então a inicialização de 'TentativasLogin' deve ser feita no construtor da entidade 'Usuario
         //modelBuilder.Entity<UsuarioSecretaria>()
         //    .Property(s => s.TentativasLogin)

@@ -7,6 +7,7 @@ using Unievent.Application.Configurations.Email;
 using Unievent.Application.Dtos.Email;
 using Unievent.Application.Interfaces.Services;
 using Unievent.Infra.Data;
+using Unievent.Domain.Enuns;
 
 namespace Unievent.Api.Controllers
 {
@@ -36,6 +37,34 @@ namespace Unievent.Api.Controllers
             return Ok(response.Value);
         }
 
+        // Somente o e-mail é aceito; nome e chave são sempre obtidos/gerados no servidor.
+        [HttpPost("reenviar-confirmacao")]
+        public async Task<IActionResult> ReenviarConfirmacao([FromBody] ReenvioConfirmacaoRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Email)) return BadRequest("Informe o e-mail.");
+            var email = request.Email.Trim();
+            var admin = await _db.UsuarioUnievent.FirstOrDefaultAsync(u => u.EmailUsuario == email);
+            var publico = await _db.Aluno.FirstOrDefaultAsync(a => a.Email == email && a.TipoParticipante == TipoParticipante.Externo);
+            var chave = Guid.NewGuid().ToString("N");
+            if (admin is { EmailConfirmado: false })
+            {
+                var envio = await _service.EnviarEmailConfirmacaoConta(admin.EmailUsuario, admin.NomeUsuario, chave);
+                if (envio.IsFailure) return BadRequest(envio.Errors);
+                admin.Chave = chave;
+                await _db.SaveChangesAsync();
+            }
+            else if (publico is { EmailConfirmado: false })
+            {
+                var envio = await _service.EnviarEmailConfirmacaoConta(publico.Email, publico.Nome, chave);
+                if (envio.IsFailure) return BadRequest(envio.Errors);
+                publico.ChaveConfirmacaoEmail = chave;
+                await _db.SaveChangesAsync();
+            }
+            return Ok(new { mensagem = "Se houver uma conta pendente, enviaremos a confirmação por e-mail." });
+        }
+
+        public record ReenvioConfirmacaoRequest(string Email);
+
         [HttpPost("confirmar-conta")]
         public async Task<IActionResult> ConfirmarContaAsync([FromBody] ConfirmarContaRequest request)
         {
@@ -59,7 +88,7 @@ namespace Unievent.Api.Controllers
                 return Content(CriarPaginaRedirecionamentoMobile(resultado.Mensagem), "text/html");
             }
 
-            return Redirect(ObterWebLoginUrl());
+            return Redirect(resultado.Destino);
         }
 
         private async Task<ConfirmacaoEmailResultado?> ConfirmarContaPorChave(string chave)
@@ -78,7 +107,9 @@ namespace Unievent.Api.Controllers
                     await _db.SaveChangesAsync();
                 }
 
-                return new ConfirmacaoEmailResultado("E-mail confirmado com sucesso.", "Aluno", ObterMobileLoginDeepLink());
+                return aluno.TipoParticipante == TipoParticipante.Externo
+                    ? new ConfirmacaoEmailResultado("E-mail confirmado com sucesso.", "Publico", ObterPublicLoginUrl())
+                    : new ConfirmacaoEmailResultado("E-mail confirmado com sucesso.", "Aluno", ObterMobileLoginDeepLink());
             }
 
             var usuarioSecretaria = await _db.UsuarioSecretaria.FirstOrDefaultAsync(u => u.Chave == chave);
@@ -96,11 +127,16 @@ namespace Unievent.Api.Controllers
             var usuarioUnievent = await _db.UsuarioUnievent.FirstOrDefaultAsync(u => u.Chave == chave);
             if (usuarioUnievent is not null)
             {
+                usuarioUnievent.EmailConfirmado = true;
+                await _db.SaveChangesAsync();
                 return new ConfirmacaoEmailResultado("E-mail confirmado com sucesso.", "Admin", ObterWebLoginUrl());
             }
 
             return null;
         }
+
+        private string ObterPublicLoginUrl() => string.IsNullOrWhiteSpace(_emailSettings.PublicLoginUrl)
+            ? $"{_emailSettings.BaseUrl.TrimEnd('/')}/entrar" : _emailSettings.PublicLoginUrl;
 
         private string ObterWebLoginUrl()
         {
