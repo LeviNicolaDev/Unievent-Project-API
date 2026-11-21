@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_only:
-        description: Publish the initial image without deploying (bootstrap)
+        description: Publicar imagem sem atualizar a API
         type: boolean
         default: false
 
@@ -67,6 +67,7 @@ jobs:
       AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
       AZURE_CONTAINER_APP: ${{ vars.AZURE_CONTAINER_APP }}
       API_IMAGE: ${{ needs.build-and-publish.outputs.image }}
+      WEB_URL: ${{ vars.WEB_URL || 'https://unievent-web.vercel.app' }}
     steps:
       - name: Validate deployment settings
         shell: bash
@@ -87,10 +88,26 @@ jobs:
         shell: bash
         run: |
           az extension add --name containerapp --upgrade --yes
+          web_url="${WEB_URL%/}"
+          if [[ ! "$web_url" =~ ^https://[A-Za-z0-9.-]+$ ]]; then
+            echo "::error::WEB_URL deve ser uma origem HTTPS sem caminho."
+            exit 1
+          fi
+          api_fqdn=$(az containerapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_CONTAINER_APP" --query properties.configuration.ingress.fqdn --output tsv)
+          if [ -z "$api_fqdn" ]; then
+            echo "::error::O Container App existente precisa de ingress HTTPS público configurado."
+            exit 1
+          fi
           az containerapp update \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --name "$AZURE_CONTAINER_APP" \
             --image "$API_IMAGE" \
+            --set-env-vars \
+              "EmailSettings__BaseUrl=$web_url" \
+              "EmailSettings__ConfirmationBaseUrl=https://$api_fqdn" \
+              "EmailSettings__WebLoginUrl=$web_url/login" \
+              "EmailSettings__PublicLoginUrl=$web_url/entrar" \
+              "Cors__AllowedOrigins__0=$web_url" \
             --output none
           state=$(az containerapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_CONTAINER_APP" --query properties.provisioningState --output tsv)
           if [ "$state" != "Succeeded" ]; then

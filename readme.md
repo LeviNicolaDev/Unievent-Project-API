@@ -181,7 +181,7 @@ Variáveis relevantes estão em `docker-compose.yml`, incluindo `PASSWORD_DB`, `
 
 ## Hospedagem Azure
 
-A infraestrutura econômica para API, portal web e PostgreSQL está em [infra/terraform](infra/terraform/README.md). O mobile usa a URL pública da API e não requer um serviço de hospedagem Azure.
+O deploy da API é realizado exclusivamente pela pipeline GitHub Actions em [.github/workflows/cd.yml](.github/workflows/cd.yml). Consulte [Deploy pela pipeline](docs/DEPLOY_PIPELINE.md). Os recursos Azure existentes são preservados; o front continua na Vercel e o mobile utiliza a URL pública da API.
 
 ## Testes
 
