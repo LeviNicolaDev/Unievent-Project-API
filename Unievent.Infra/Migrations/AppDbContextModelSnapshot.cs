@@ -473,6 +473,49 @@ namespace Unievent.Infra.Migrations
                     b.ToTable("PreferenciaNotificacao");
                 });
 
+            modelBuilder.Entity("Unievent.Domain.Entities.RecuperacaoSenha", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CriadoEmUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiraEmUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SenhaFingerprint")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TipoConta")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("UsadoEmUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("TipoConta", "UsuarioId", "CriadoEmUtc");
+
+                    b.ToTable("RecuperacaoSenha");
+                });
+
             modelBuilder.Entity("Unievent.Domain.Entities.ResponsavelEvento", b =>
                 {
                     b.Property<int>("Id")

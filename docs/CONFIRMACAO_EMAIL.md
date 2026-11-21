@@ -50,3 +50,7 @@ Validar cadastro pendente, bloqueio de JWT, reenvio, chave inválida, ativação
 Os perfis de projeto da API escutam em http://localhost:5227 (o perfil https também escuta em https://localhost:7128). IIS Express usa outras portas. No desenvolvimento, BaseUrl deve ser http://localhost:5173 e ConfirmationBaseUrl http://localhost:5227. O link explícito será http://localhost:5227/api/Email/confirmar-conta?chave=... . Reinicie a API após ajustar User Secrets ou variáveis de ambiente.
 
 Inicie a API com `dotnet run --project Unievent.Api --launch-profile https` e o front com `npm run dev -- --port 5173`. Links em e-mails antigos não são corrigidos retroativamente: tente login novamente para receber um novo e-mail. Localhost exige que os serviços estejam rodando no mesmo computador em que o link é aberto; para celular ou outro computador, configure URLs acessíveis pela rede.
+
+## Produção: Vercel
+
+A origem do front é https://unievent-web.vercel.app. Configure EmailSettings__BaseUrl com essa origem, WebLoginUrl com /login e PublicLoginUrl com /entrar. No Terraform, use web_url = "https://unievent-web.vercel.app"; essa variável também alimenta CORS. ConfirmationBaseUrl deve ser a origem HTTPS da API Azure. Sem esse valor, o e-mail usa https://unievent-web.vercel.app/confirmar-email?chave=... . Não use localhost em configurações de produção. Mudanças locais não atualizam automaticamente as variáveis do recurso Azure.

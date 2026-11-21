@@ -220,6 +220,11 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
+        name  = "EmailSettings__PublicLoginUrl"
+        value = "${local.web_origin}/entrar"
+      }
+
+      env {
         name  = "EmailSettings__MobileLoginDeepLink"
         value = "unievent://login"
       }

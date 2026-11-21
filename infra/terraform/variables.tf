@@ -15,7 +15,7 @@ variable "web_url" {
 
   validation {
     condition     = can(regex("^https://[A-Za-z0-9]([A-Za-z0-9.-]*[A-Za-z0-9])?$", var.web_url))
-    error_message = "web_url must be an HTTPS origin, for example https://unievent.vercel.app, without a path or trailing slash."
+    error_message = "web_url must be an HTTPS origin, for example https://unievent-web.vercel.app, without a path or trailing slash."
   }
 }
 

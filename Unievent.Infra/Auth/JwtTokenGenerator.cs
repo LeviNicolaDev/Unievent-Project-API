@@ -37,6 +37,7 @@ public class JwtTokenGenerator : IJwtTokenGenerator
         var claims = new List<Claim>
         {
             new Claim (ClaimTypes.NameIdentifier, id.ToString()),
+            new Claim("emitido_em_utc", DateTime.UtcNow.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             new Claim(ClaimTypes.Email, email),
             new Claim(ClaimTypes.Role, role.ToString()),
             new Claim("tipo_usuario", ObterTipoUsuario(role, tipoParticipante, instituicaoId))

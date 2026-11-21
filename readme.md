@@ -203,3 +203,7 @@ O fluxo completo do ingresso Web está em [Fluxos Público Geral e Secretaria](d
 ## Confirmação de e-mail dos quatro perfis
 
 Administrador global e Público Geral também exigem confirmação antes de emitir JWT. Consulte [o fluxo, endpoints e implantação](docs/CONFIRMACAO_EMAIL.md). Aplique a migration `ConfirmacaoEmailAdminPublico` antes de iniciar esta versão.
+
+## Recuperação de senha
+
+Consulte [Recuperação de senha](docs/RECUPERACAO_SENHA.md) para endpoints, SMTP, migration `AddPasswordRecovery` e revogação de sessões.
