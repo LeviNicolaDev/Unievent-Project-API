@@ -22,7 +22,7 @@ Perfis: `publico` (Aluno Externo), `administrativo` (administrador global ou sec
 { "token": "TOKEN_RECEBIDO_NO_EMAIL", "senha": "novaSenha123", "confirmacaoSenha": "novaSenha123" }
 ```
 
-Senhas devem ser iguais, ter pelo menos 8 caracteres e no máximo 72 bytes UTF-8 (limite do BCrypt). Token ausente, inválido, expirado ou consumido retorna 400. Sucesso retorna mensagem, tipoUsuario e destino de login; não emite JWT nem autentica automaticamente.
+Senhas devem ser iguais, ter pelo menos 6 caracteres e no máximo 72 bytes UTF-8 (limite do BCrypt). Token ausente, inválido, expirado ou consumido retorna 400. Sucesso retorna mensagem, tipoUsuario e destino de login; não emite JWT nem autentica automaticamente.
 
 A transação atualiza a senha condicionalmente e consome o token, evitando reutilização concorrente. Alteração da senha fora deste fluxo invalida o fingerprint dos links antigos. Confirmar e-mail, ativar conta e aprovação da secretaria continuam independentes e não são alterados.
 

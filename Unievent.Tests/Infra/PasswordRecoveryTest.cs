@@ -61,7 +61,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
         token.Should().HaveLength(64);
         var record = await db.RecuperacaoSenha.AsNoTracking().SingleAsync();
         record.TokenHash.Should().NotBe(token);
-        var result = await service.RedefinirAsync(token, "novaSenha123", "novaSenha123");
+        var result = await service.RedefinirAsync(token, "abc123", "abc123");
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().Be(esperado);
         (await service.SessaoValidaAsync(1, record.TipoConta, null)).Should().BeFalse();
@@ -69,7 +69,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
         var senha = tipo == "admin" ? (await db.UsuarioUnievent.AsNoTracking().SingleAsync()).Senha
             : tipo == "secretaria" ? (await db.UsuarioSecretaria.AsNoTracking().SingleAsync()).Senha
             : (await db.Aluno.AsNoTracking().SingleAsync()).Senha;
-        BCrypt.Net.BCrypt.Verify("novaSenha123", senha).Should().BeTrue();
+        BCrypt.Net.BCrypt.Verify("abc123", senha).Should().BeTrue();
         BCrypt.Net.BCrypt.Verify("antiga123", senha).Should().BeFalse();
         var confirmado = tipo == "admin" ? (await db.UsuarioUnievent.AsNoTracking().SingleAsync()).EmailConfirmado
             : tipo == "secretaria" ? (await db.UsuarioSecretaria.AsNoTracking().SingleAsync()).EmailConfirmado
@@ -91,7 +91,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
         await Seed("publico");
         await service.SolicitarAsync("pessoa@example.com", "publico");
         await db.RecuperacaoSenha.ExecuteUpdateAsync(s => s.SetProperty(r => r.ExpiraEmUtc, DateTime.UtcNow.AddMinutes(-1)));
-        (await service.RedefinirAsync(Token(), "novaSenha123", "novaSenha123")).IsFailure.Should().BeTrue();
+        (await service.RedefinirAsync(Token(), "abc123", "abc123")).IsFailure.Should().BeTrue();
         BCrypt.Net.BCrypt.Verify("antiga123", (await db.Aluno.AsNoTracking().SingleAsync()).Senha).Should().BeTrue();
     }
     [Fact]
@@ -104,7 +104,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
     }
     [Theory]
     [InlineData("curta", "curta")]
-    [InlineData("novaSenha123", "diferente123")]
+    [InlineData("abc123", "diferente123")]
     public async Task Senha_Invalida_Nao_Consome_Token(string senha, string confirmacao)
     {
         await Seed("publico");
@@ -127,7 +127,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
         await service.SolicitarAsync("pessoa@example.com", "publico");
         var hash = BCrypt.Net.BCrypt.HashPassword("outraSenha123");
         await db.Aluno.ExecuteUpdateAsync(s => s.SetProperty(a => a.Senha, hash));
-        (await service.RedefinirAsync(Token(), "novaSenha123", "novaSenha123")).IsFailure.Should().BeTrue();
+        (await service.RedefinirAsync(Token(), "abc123", "abc123")).IsFailure.Should().BeTrue();
     }
     [Fact]
     public async Task Redefinir_Invalida_Outros_Links_Da_Mesma_Conta()
@@ -138,7 +138,7 @@ public class PasswordRecoveryTest : IAsyncLifetime
         await db.RecuperacaoSenha.ExecuteUpdateAsync(s => s.SetProperty(r => r.CriadoEmUtc, DateTime.UtcNow.AddMinutes(-2)));
         await service.SolicitarAsync("pessoa@example.com", "publico");
         var segundo = Token();
-        (await service.RedefinirAsync(primeiro, "novaSenha123", "novaSenha123")).IsSuccess.Should().BeTrue();
+        (await service.RedefinirAsync(primeiro, "abc123", "abc123")).IsSuccess.Should().BeTrue();
         (await service.RedefinirAsync(segundo, "outraSenha123", "outraSenha123")).IsFailure.Should().BeTrue();
     }
 }

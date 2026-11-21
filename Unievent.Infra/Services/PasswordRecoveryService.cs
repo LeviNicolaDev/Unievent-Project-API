@@ -81,8 +81,8 @@ public class PasswordRecoveryService(AppDbContext db, IEmailService emailService
 
     public async Task<Result<string>> RedefinirAsync(string token, string senha, string confirmacao)
     {
-        if (senha.Length < 8 || Encoding.UTF8.GetByteCount(senha) > 72 || senha != confirmacao)
-            return Result<string>.Failure("Informe senhas iguais, com no mínimo 8 caracteres e no máximo 72 bytes.");
+        if (senha.Length < 6 || Encoding.UTF8.GetByteCount(senha) > 72 || senha != confirmacao)
+            return Result<string>.Failure("Informe senhas iguais, com no mínimo 6 caracteres e no máximo 72 bytes.");
         if (token.Length != 64 || !token.All(Uri.IsHexDigit)) return Result<string>.Failure(TokenInvalido);
         var hash = Hash(token);
         var registro = await db.RecuperacaoSenha.AsNoTracking().SingleOrDefaultAsync(r => r.TokenHash == hash);

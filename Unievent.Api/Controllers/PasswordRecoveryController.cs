@@ -14,7 +14,7 @@ public class PasswordRecoveryController(PasswordRecoveryService service, IOption
     public record SolicitarRequest([Required, EmailAddress, StringLength(254)] string Email,
         [Required, RegularExpression("^(administrativo|publico|mobile)$")] string Perfil = "publico");
     public record RedefinirRequest([Required, StringLength(64, MinimumLength = 64)] string Token,
-        [Required, StringLength(72, MinimumLength = 8)] string Senha, [Required] string ConfirmacaoSenha);
+        [Required, StringLength(72, MinimumLength = 6)] string Senha, [Required] string ConfirmacaoSenha);
 
     [HttpPost("solicitar-recuperacao-senha")]
     public async Task<IActionResult> Solicitar(SolicitarRequest request)
