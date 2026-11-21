@@ -4,6 +4,7 @@ using Unievent.Api.Security;
 using Unievent.Application.Dtos.UsuarioUnievent;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
+using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Enuns;
 
 namespace Unievent.Api.Controllers;
@@ -13,13 +14,15 @@ namespace Unievent.Api.Controllers;
 public class UsuarioUnieventController : ControllerBase
 {
     private readonly IUsuarioUnieventRepository _usuarioUnieventRepository;
+    private readonly IEmailService _emailService;
     private readonly IUsuarioSecretariaRepository _usuarioSecretariaRepository;
 
     public UsuarioUnieventController(
         IUsuarioUnieventRepository usuarioUnieventRepository,
-        IUsuarioSecretariaRepository usuarioSecretariaRepository)
+        IUsuarioSecretariaRepository usuarioSecretariaRepository, IEmailService emailService)
     {
         _usuarioUnieventRepository = usuarioUnieventRepository;
+        _emailService = emailService;
         _usuarioSecretariaRepository = usuarioSecretariaRepository;
     }
 
@@ -37,6 +40,8 @@ public class UsuarioUnieventController : ControllerBase
             return BadRequest("Email já cadastrado");
 
         var usuarioUnievent = CriarEntidade(request);
+        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
+        if (envio.IsFailure) return BadRequest(envio.Errors);
         await _usuarioUnieventRepository.CriarUsuarioUnievent(usuarioUnievent);
         await _usuarioUnieventRepository.SaveChangesAsync();
 
@@ -56,6 +61,8 @@ public class UsuarioUnieventController : ControllerBase
             return BadRequest("Email já cadastrado");
 
         var usuarioUnievent = CriarEntidade(request);
+        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
+        if (envio.IsFailure) return BadRequest(envio.Errors);
         await _usuarioUnieventRepository.CriarUsuarioUnievent(usuarioUnievent);
         await _usuarioUnieventRepository.SaveChangesAsync();
 
@@ -84,7 +91,8 @@ public class UsuarioUnieventController : ControllerBase
             NomeUsuario = request.NomeUsuario,
             EmailUsuario = request.EmailUsuario,
             Senha = BCrypt.Net.BCrypt.HashPassword(request.Senha),
-            Chave = request.Chave ?? string.Empty,
+            Chave = Guid.NewGuid().ToString("N"),
+            EmailConfirmado = false,
             RoleUsuario = Role.Admin,
             IsAtivo = true
         };
@@ -98,7 +106,8 @@ public class UsuarioUnieventController : ControllerBase
             NomeUsuario = usuarioUnievent.NomeUsuario,
             EmailUsuario = usuarioUnievent.EmailUsuario,
             RoleUsuario = usuarioUnievent.RoleUsuario.ToString(),
-            IsAtivo = usuarioUnievent.IsAtivo
+            IsAtivo = usuarioUnievent.IsAtivo,
+            EmailConfirmado = usuarioUnievent.EmailConfirmado
         };
     }
 }

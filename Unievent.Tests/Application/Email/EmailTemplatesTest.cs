@@ -31,4 +31,12 @@ public class EmailTemplatesTest
         html.Should().Contain("http://localhost:5227/api/Email/confirmar-conta");
         html.Should().NotContain("http://localhost:5227/api/api/Email");
     }
+
+    [Fact]
+    public void Sem_Origem_Api_Usa_Pagina_Web_De_Confirmacao()
+    {
+        var html = EmailTemplates.ConfirmacaoConta("Pessoa", "chave com espaco", "http://localhost:5173/");
+        html.Should().Contain("http://localhost:5173/confirmar-email?chave=chave%20com%20espaco");
+        html.Should().NotContain("localhost:5173/api/Email");
+    }
 }

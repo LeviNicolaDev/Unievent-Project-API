@@ -2,10 +2,15 @@
 
 ## Fluxo Público Geral
 
+O login exige confirmação de e-mail. Para envio automático no login, migração de contas antigas e configuração dos destinos, consulte [Confirmação de e-mail](CONFIRMACAO_EMAIL.md).
+
 ```plantuml
 @startuml
 start
 :Cadastro na web pública;
+:API envia e-mail de confirmação;
+:Participante abre o link e ativa a conta;
+:Retorno ao login público (/entrar);
 :Login como Público Geral;
 :Visualização dos eventos;
 :Detalhes do evento;

@@ -199,3 +199,7 @@ O projeto utiliza EF Core migrations PostgreSQL versionadas em `Unievent.Infra/M
 O desenho técnico, o modelo de dados e o diagrama de sequência estão em [Certificação automática](docs/CERTIFICACAO_AUTOMATICA.md).
 
 O fluxo completo do ingresso Web está em [Fluxos Público Geral e Secretaria](docs/fluxos-publico-secretaria-capacidade.md), e a sequência entre Web, API, banco e Secretaria está em [Diagrama de sequência do ingresso Web](docs/DIAGRAMA_SEQUENCIA_INGRESSO_WEB.puml).
+
+## Confirmação de e-mail dos quatro perfis
+
+Administrador global e Público Geral também exigem confirmação antes de emitir JWT. Consulte [o fluxo, endpoints e implantação](docs/CONFIRMACAO_EMAIL.md). Aplique a migration `ConfirmacaoEmailAdminPublico` antes de iniciar esta versão.

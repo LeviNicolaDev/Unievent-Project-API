@@ -6,5 +6,6 @@ public class UsuarioUnieventResponse
     public string NomeUsuario { get; set; } = string.Empty;
     public string EmailUsuario { get; set; } = string.Empty;
     public string RoleUsuario { get; set; } = string.Empty;
+    public bool EmailConfirmado { get; set; }
     public bool IsAtivo { get; set; }
 }

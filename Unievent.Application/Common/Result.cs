@@ -9,6 +9,7 @@ public class Result<T>
     public bool IsFailure => !IsSuccess;
 
     public T? Value { get; private set; }
+    public string? ErrorCode { get; private set; }
     public List<string> Errors { get; private set; } = new();
 
     private Result() { }
@@ -23,12 +24,13 @@ public class Result<T>
     }
 
 
-    public static Result<T> Failure(string error)
+    public static Result<T> Failure(string error, string? errorCode = null)
     {
         return new Result<T>
         {
             IsSuccess = false,
-            Errors = new List<string> { error }
+            Errors = new List<string> { error },
+            ErrorCode = errorCode
         };
     }
 

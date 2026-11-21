@@ -8,6 +8,7 @@ using Unievent.Application.Dtos.UsuarioSecretaria;
 using Unievent.Application.Interfaces.Auth;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Domain.Entities;
+using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Enuns;
 
 namespace Unievent.Application.Services;
@@ -21,6 +22,7 @@ public class AuthService
     private readonly IJwtTokenGenerator _jwtTokenGenerator;
     private readonly ILogger<AuthService> _logger;
     private readonly IValidator<PublicoGeralCadastroRequest> _publicoGeralValidator;
+    private readonly IEmailService _emailService;
 
     public AuthService(
         IUsuarioUnieventRepository repositoryUsuarioUnievent,
@@ -28,7 +30,8 @@ public class AuthService
         IJwtTokenGenerator jwtTokenGenerator,
         IAlunoRepository repositoryAluno,
         ILogger<AuthService> logger,
-        IValidator<PublicoGeralCadastroRequest> publicoGeralValidator)
+        IValidator<PublicoGeralCadastroRequest> publicoGeralValidator,
+        IEmailService emailService)
     {
         _repositoryUsuarioUnievent = repositoryUsuarioUnievent;
         _repository = repository;
@@ -36,6 +39,7 @@ public class AuthService
         _repositoryAluno = repositoryAluno;
         _logger = logger;
         _publicoGeralValidator = publicoGeralValidator;
+        _emailService = emailService;
     }
 
     public async Task<Result<string>> Login(UsuarioSecretariaLoginRequest request)
@@ -50,6 +54,18 @@ public class AuthService
                     _logger.LogWarning("Tentativa de login inválida para {Email}", request.Email);
                     return Result<string>.Failure("Email ou senha inválidos");
                 }
+
+                if (!usuarioUnievent.EmailConfirmado)
+                {
+                    var chave = string.IsNullOrWhiteSpace(usuarioUnievent.Chave) ? Guid.NewGuid().ToString("N") : usuarioUnievent.Chave;
+                    var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, chave);
+                    if (envio.IsFailure) return Result<string>.Failure("Não foi possível enviar a confirmação de e-mail. Tente novamente.");
+                    usuarioUnievent.Chave = chave;
+                    await _repositoryUsuarioUnievent.SaveChangesAsync();
+                    return Result<string>.Failure("Enviamos um e-mail de confirmação para seu e-mail. Abra o link recebido para ativar sua conta.", "EMAIL_CONFIRMATION_SENT");
+                }
+                if (!usuarioUnievent.IsAtivo)
+                    return Result<string>.Failure("Cadastro inativo.");
 
                 var tokenAdmin = _jwtTokenGenerator.GerarToken(usuarioUnievent.Id, usuarioUnievent.EmailUsuario, usuarioUnievent.RoleUsuario);
 
@@ -145,8 +161,8 @@ public class AuthService
             {
                 Nome = request.Nome.Trim(),
                 Email = emailNormalizado,
-                EmailConfirmado = true,
-                ChaveConfirmacaoEmail = null,
+                EmailConfirmado = false,
+                ChaveConfirmacaoEmail = Guid.NewGuid().ToString("N"),
                 FotoPerfil = string.Empty,
                 DataNascimento = DateTime.UtcNow.Date.AddYears(-18),
                 IsAtivo = true,
@@ -155,6 +171,9 @@ public class AuthService
                 TipoParticipante = TipoParticipante.Externo,
                 InstituicaoId = null
             };
+
+            var envio = await _emailService.EnviarEmailConfirmacaoConta(aluno.Email, aluno.Nome, aluno.ChaveConfirmacaoEmail!);
+            if (envio.IsFailure) return Result<AlunoResponse>.Failure(envio.Errors);
 
             await _repositoryAluno.CriarAluno(aluno);
             await _repositoryAluno.SaveChangesAsync();
@@ -194,7 +213,12 @@ public class AuthService
 
             if (!usuario.EmailConfirmado)
             {
-                return Result<string>.Failure("Confirme seu e-mail antes de acessar.");
+                var chave = string.IsNullOrWhiteSpace(usuario.ChaveConfirmacaoEmail) ? Guid.NewGuid().ToString("N") : usuario.ChaveConfirmacaoEmail;
+                var envio = await _emailService.EnviarEmailConfirmacaoConta(usuario.Email, usuario.Nome, chave);
+                if (envio.IsFailure) return Result<string>.Failure("Não foi possível enviar a confirmação de e-mail. Tente novamente.");
+                usuario.ChaveConfirmacaoEmail = chave;
+                await _repositoryAluno.SaveChangesAsync();
+                return Result<string>.Failure("Enviamos um e-mail de confirmação para seu e-mail. Abra o link recebido para ativar sua conta.", "EMAIL_CONFIRMATION_SENT");
             }
 
             var token = _jwtTokenGenerator.GerarToken(usuario.Id, usuario.Email, usuario.Role, usuario.TipoParticipante, usuario.InstituicaoId);

@@ -9,6 +9,7 @@ using Unievent.Application.Dtos.Auth;
 using Unievent.Application.Interfaces.Auth;
 using Unievent.Application.Interfaces.Repository;
 using Unievent.Application.Services;
+using Unievent.Application.Interfaces.Services;
 using Unievent.Domain.Enuns;
 using Xunit;
 
@@ -21,6 +22,7 @@ public class AuthServiceTest
     private readonly Mock<IAlunoRepository> _alunos = new();
     private readonly Mock<IJwtTokenGenerator> _tokens = new();
     private readonly Mock<IValidator<PublicoGeralCadastroRequest>> _validator = new();
+    private readonly Mock<IEmailService> _email = new();
     private readonly AuthService _service;
 
     public AuthServiceTest()
@@ -29,13 +31,15 @@ public class AuthServiceTest
             .Setup(v => v.ValidateAsync(It.IsAny<PublicoGeralCadastroRequest>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ValidationResult());
 
+        _email.Setup(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(Result<bool>.Success(true));
         _service = new AuthService(
             _admins.Object,
             _secretarias.Object,
             _tokens.Object,
             _alunos.Object,
             Mock.Of<ILogger<AuthService>>(),
-            _validator.Object);
+            _validator.Object, _email.Object);
     }
 
     [Fact]
@@ -61,7 +65,9 @@ public class AuthServiceTest
         alunoCriado.Should().NotBeNull();
         alunoCriado!.TipoParticipante.Should().Be(TipoParticipante.Externo);
         alunoCriado.InstituicaoId.Should().BeNull();
-        alunoCriado.EmailConfirmado.Should().BeTrue();
+        alunoCriado.EmailConfirmado.Should().BeFalse();
+        alunoCriado.ChaveConfirmacaoEmail.Should().NotBeNullOrWhiteSpace();
+        _email.Verify(e => e.EnviarEmailConfirmacaoConta(alunoCriado.Email, alunoCriado.Nome, alunoCriado.ChaveConfirmacaoEmail!), Times.Once);
         _alunos.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 
@@ -127,5 +133,90 @@ public class AuthServiceTest
             It.IsAny<Role>(),
             It.IsAny<TipoParticipante>(),
             It.IsAny<int?>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task Admin_Exige_Email_Confirmado(bool confirmado, bool sucesso)
+    {
+        _admins.Setup(r => r.ListarUsuarioUnieventByEmail("admin@example.com"))
+            .ReturnsAsync(new Domain.Entities.UsuarioUnievent {
+                Id = 1, NomeUsuario = "Admin", EmailUsuario = "admin@example.com",
+                Senha = BCrypt.Net.BCrypt.HashPassword("senha123"), EmailConfirmado = confirmado,
+                IsAtivo = true, RoleUsuario = Role.Admin
+            });
+        _tokens.Setup(t => t.GerarToken(1, "admin@example.com", Role.Admin)).Returns("jwt-admin");
+        var result = await _service.Login(new Unievent.Application.Dtos.UsuarioSecretaria.UsuarioSecretariaLoginRequest {
+            Email = "admin@example.com", Senha = "senha123"
+        });
+        result.IsSuccess.Should().Be(sucesso);
+        if (!confirmado) result.ErrorCode.Should().Be("EMAIL_CONFIRMATION_SENT");
+        _email.Verify(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), confirmado ? Times.Never() : Times.Once());
+        _tokens.Verify(t => t.GerarToken(1, "admin@example.com", Role.Admin), confirmado ? Times.Once() : Times.Never());
+    }
+
+    [Fact]
+    public async Task Publico_Pendente_Nao_Recebe_Jwt()
+    {
+        _alunos.Setup(r => r.ListarAlunoByEmail("publico@example.com"))
+            .ReturnsAsync(new Domain.Entities.Aluno {
+                Nome = "Publico", Email = "publico@example.com", FotoPerfil = "",
+                Senha = BCrypt.Net.BCrypt.HashPassword("senha123"),
+                EmailConfirmado = false, DataNascimento = new DateTime(2000, 1, 1), TipoParticipante = TipoParticipante.Externo
+            });
+        var result = await _service.LoginPublicoGeral(new LoginRequest { Email = "publico@example.com", Senha = "senha123" });
+        result.IsFailure.Should().BeTrue();
+        _tokens.Verify(t => t.GerarToken(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<Role>(), It.IsAny<TipoParticipante>(), It.IsAny<int?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Falha_De_Email_Nao_Persiste_Cadastro_Publico()
+    {
+        _email.Setup(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(Result<bool>.Failure("SMTP indisponível"));
+        var result = await _service.CadastrarPublicoGeral(new PublicoGeralCadastroRequest {
+            Nome = "Publico", Email = "publico@example.com", Senha = "senha123", ConfirmacaoSenha = "senha123"
+        });
+        result.IsFailure.Should().BeTrue();
+        _alunos.Verify(r => r.CriarAluno(It.IsAny<Domain.Entities.Aluno>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Credencial_Incorreta_Nao_Reenvia_Confirmacao(bool admin)
+    {
+        if (admin)
+            _admins.Setup(r => r.ListarUsuarioUnieventByEmail("pessoa@example.com")).ReturnsAsync(new Domain.Entities.UsuarioUnievent {
+                NomeUsuario = "Pessoa", EmailUsuario = "pessoa@example.com", Senha = BCrypt.Net.BCrypt.HashPassword("correta"), EmailConfirmado = false
+            });
+        else
+            _alunos.Setup(r => r.ListarAlunoByEmail("pessoa@example.com")).ReturnsAsync(new Domain.Entities.Aluno {
+                Nome = "Pessoa", Email = "pessoa@example.com", FotoPerfil = "", DataNascimento = new DateTime(2000, 1, 1),
+                Senha = BCrypt.Net.BCrypt.HashPassword("correta"), EmailConfirmado = false, TipoParticipante = TipoParticipante.Externo
+            });
+        var result = admin
+            ? await _service.Login(new Unievent.Application.Dtos.UsuarioSecretaria.UsuarioSecretariaLoginRequest { Email = "pessoa@example.com", Senha = "errada" })
+            : await _service.LoginPublicoGeral(new LoginRequest { Email = "pessoa@example.com", Senha = "errada" });
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().BeNull();
+        _email.Verify(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Login_Pendente_Com_Falha_Smtp_Nao_Afirma_Envio()
+    {
+        _alunos.Setup(r => r.ListarAlunoByEmail("pessoa@example.com")).ReturnsAsync(new Domain.Entities.Aluno {
+            Nome = "Pessoa", Email = "pessoa@example.com", FotoPerfil = "", DataNascimento = new DateTime(2000, 1, 1),
+            Senha = BCrypt.Net.BCrypt.HashPassword("correta"), EmailConfirmado = false, TipoParticipante = TipoParticipante.Externo
+        });
+        _email.Setup(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(Result<bool>.Failure("SMTP indisponível"));
+        var result = await _service.LoginPublicoGeral(new LoginRequest { Email = "pessoa@example.com", Senha = "correta" });
+        result.IsFailure.Should().BeTrue();
+        result.ErrorCode.Should().BeNull();
+        result.Errors.Should().Contain("Não foi possível enviar a confirmação de e-mail. Tente novamente.");
+        _alunos.Verify(r => r.SaveChangesAsync(), Times.Never);
     }
 }
