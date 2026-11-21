@@ -64,3 +64,7 @@ Após o deploy, teste a API, a busca pública, login, confirmação, recuperaç�
 ## Reverter
 
 Reimplante uma imagem de commit anterior ou ajuste a revisão ativa pelo processo operacional adotado. Alterações de schema exigem plano próprio; não remova tabelas ou dados automaticamente para reverter uma imagem.
+
+## Carga demonstrativa
+
+A pipeline habilita DemoSeed__Enabled=true para executar a carga uma única vez por banco. Consulte [Carga demonstrativa](CARGA_DEMONSTRATIVA.md).

@@ -103,6 +103,7 @@ jobs:
             --name "$AZURE_CONTAINER_APP" \
             --image "$API_IMAGE" \
             --set-env-vars \
+              "DemoSeed__Enabled=true" \
               "EmailSettings__BaseUrl=$web_url" \
               "EmailSettings__ConfirmationBaseUrl=https://$api_fqdn" \
               "EmailSettings__WebLoginUrl=$web_url/login" \

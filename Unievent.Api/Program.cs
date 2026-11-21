@@ -154,6 +154,12 @@ if (builder.Configuration.GetValue("Database:MigrateOnStartup", false))
     await dbContext.Database.MigrateAsync();
 }
 
+if (builder.Configuration.GetValue("DemoSeed:Enabled", false))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await Unievent.Api.Deployment.DemoDataSeed.RunAsync(dbContext, app.Logger);
+}
 // Configure the HTTP request pipeline.
 app.MapOpenApi();
     app.MapScalarApiReference(options =>
