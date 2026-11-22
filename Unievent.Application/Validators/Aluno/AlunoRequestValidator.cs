@@ -10,8 +10,10 @@ public class AlunoRequestValidator : AbstractValidator<AlunoRequest>
         RuleFor(a => a.Email)
      .NotEmpty().WithMessage("O email deve ser preenchido")
      .EmailAddress().WithMessage("O email deve ser válido")
-     .Must(email => email.EndsWith("@fatec.sp.gov.br", StringComparison.OrdinalIgnoreCase))
-     .WithMessage("Participantes internos devem usar o e-mail institucional")
+     .Must(email => email is not null && System.Text.RegularExpressions.Regex.IsMatch(
+         email, @"^[^@\s]+@(fatec\.sp\.gov\.br|aluno\.cps\.sp\.gov\.br)$",
+         System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+     .WithMessage("Participantes internos devem usar @fatec.sp.gov.br ou @aluno.cps.sp.gov.br")
      .When(a => a.TipoParticipante == Unievent.Domain.Enuns.TipoParticipante.Interno);
 
         RuleFor(a => a.InstituicaoId)

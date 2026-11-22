@@ -7,6 +7,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using System.Text;
+using System.Net;
+using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unievent.Api.BackgroundServices;
@@ -63,7 +65,25 @@ builder.Services.AddCors(options =>
     options.AddPolicy("FrontendPolicy", policy =>
     {
         policy
-            .WithOrigins(allowedOrigins)
+            .SetIsOriginAllowed(origin =>
+            {
+                if (allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase)) return true;
+
+                // Expo Web on the local network is allowed only in Development.
+                if (!builder.Environment.IsDevelopment() ||
+                    !Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
+                    (uri.Scheme != "http" && uri.Scheme != "https") ||
+                    (uri.Port != 8081 && uri.Port != 19006)) return false;
+
+                if (uri.IsLoopback) return true;
+                if (!IPAddress.TryParse(uri.Host, out var address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork) return false;
+
+                var bytes = address.GetAddressBytes();
+                return bytes[0] == 10 ||
+                    (bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31) ||
+                    (bytes[0] == 192 && bytes[1] == 168);
+            })
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -174,12 +194,11 @@ app.MapOpenApi();
  });
 app.MapGet("/swagger", () => Results.Redirect("/scalar/v1"));
 
+app.UseRouting();
+app.UseCors("FrontendPolicy");
 app.UseStaticFiles();
 app.UseHttpsRedirection();
-
-app.UseRouting();
 app.UseRateLimiter();
-app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

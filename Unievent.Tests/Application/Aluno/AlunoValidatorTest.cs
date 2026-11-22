@@ -17,6 +17,30 @@ public class AlunoValidatorTest
         _validatorUpdate = new AlunoUpdateValidator();
     }
 
+    [Theory]
+    [InlineData("aluno@fatec.sp.gov.br", true)]
+    [InlineData("aluno@aluno.cps.sp.gov.br", true)]
+    [InlineData("ALUNO@ALUNO.CPS.SP.GOV.BR", true)]
+    [InlineData("aluno@gmail.com", false)]
+    [InlineData("aluno@fatec.sp.gov.br.evil.com", false)]
+    [InlineData("aluno@sub.aluno.cps.sp.gov.br", false)]
+    [InlineData("a@b@aluno.cps.sp.gov.br", false)]
+    [InlineData("@aluno.cps.sp.gov.br", false)]
+    [InlineData("", false)]
+    [InlineData(null, false)]
+    public async Task Cadastro_Interno_Valida_Dominios_Institucionais(string? email, bool valido)
+    {
+        var request = new AlunoRequest
+        {
+            Nome = "Aluno", Email = email!,
+            DataNascimento = new DateTime(2000, 1, 1), Senha = "senha123",
+            TipoParticipante = TipoParticipante.Interno, InstituicaoId = 1,
+            FotoPerfil = new FormFile(null, 0, 0, null, "foto.jpg")
+        };
+        var result = await _validatorRequest.ValidateAsync(request);
+        Assert.Equal(valido, result.IsValid);
+    }
+
     [Fact]
     public async Task Deve_Falhar_Quando_Email_For_Invalido_No_Request()
     {
