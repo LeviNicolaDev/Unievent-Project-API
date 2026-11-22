@@ -144,6 +144,8 @@ public class AlunoService : IAlunoService
                 TipoParticipante = request.TipoParticipante,
                 InstituicaoId = request.TipoParticipante == Domain.Enuns.TipoParticipante.Interno ? request.InstituicaoId : null
             };
+            await _repository.CriarAluno(aluno);
+            await _repository.SaveChangesAsync();
             var emailConfirmacao = await EnviarEmailConfirmacaoConta(
                 aluno.Email,
                 aluno.Nome,
@@ -152,8 +154,6 @@ public class AlunoService : IAlunoService
             {
                 return Result<AlunoResponse>.Failure(emailConfirmacao.Errors);
             }
-            await _repository.CriarAluno(aluno);
-            await _repository.SaveChangesAsync();
             _logger.LogInformation("Aluno criado com sucesso com ID {AlunoId}", aluno.Id);
             return Result<AlunoResponse>.Success(new AlunoResponse
             {

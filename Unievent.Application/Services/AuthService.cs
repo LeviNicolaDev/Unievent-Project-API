@@ -172,11 +172,10 @@ public class AuthService
                 InstituicaoId = null
             };
 
-            var envio = await _emailService.EnviarEmailConfirmacaoConta(aluno.Email, aluno.Nome, aluno.ChaveConfirmacaoEmail!);
-            if (envio.IsFailure) return Result<AlunoResponse>.Failure(envio.Errors);
-
             await _repositoryAluno.CriarAluno(aluno);
             await _repositoryAluno.SaveChangesAsync();
+            var envio = await _emailService.EnviarEmailConfirmacaoConta(aluno.Email, aluno.Nome, aluno.ChaveConfirmacaoEmail!);
+            if (envio.IsFailure) return Result<AlunoResponse>.Failure(envio.Errors);
 
             return Result<AlunoResponse>.Success(new AlunoResponse
             {

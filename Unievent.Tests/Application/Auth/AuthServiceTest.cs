@@ -171,7 +171,7 @@ public class AuthServiceTest
     }
 
     [Fact]
-    public async Task Falha_De_Email_Nao_Persiste_Cadastro_Publico()
+    public async Task Falha_De_Email_Mantem_Cadastro_Publico_Salvo()
     {
         _email.Setup(e => e.EnviarEmailConfirmacaoConta(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(Result<bool>.Failure("SMTP indisponível"));
@@ -179,7 +179,8 @@ public class AuthServiceTest
             Nome = "Publico", Email = "publico@example.com", Senha = "senha123", ConfirmacaoSenha = "senha123"
         });
         result.IsFailure.Should().BeTrue();
-        _alunos.Verify(r => r.CriarAluno(It.IsAny<Domain.Entities.Aluno>()), Times.Never);
+        _alunos.Verify(r => r.CriarAluno(It.IsAny<Domain.Entities.Aluno>()), Times.Once);
+        _alunos.Verify(r => r.SaveChangesAsync(), Times.Once);
     }
 
     [Theory]

@@ -67,6 +67,9 @@ public class AppDbContext : DbContext
             a.Property(a => a.ChaveConfirmacaoEmail).HasMaxLength(300);
             a.HasQueryFilter(a => a.IsAtivo);
             a.Property(a => a.TipoParticipante).HasConversion<string>();
+            a.Property(a => a.DataNascimento).HasConversion(
+                value => DateTime.SpecifyKind(value.Date, DateTimeKind.Utc),
+                value => DateTime.SpecifyKind(value.Date, DateTimeKind.Unspecified));
             a.HasOne(a => a.Instituicao).WithMany().HasForeignKey(a => a.InstituicaoId).OnDelete(DeleteBehavior.Restrict);
         });
         modelBuilder.Entity<Instituicao>(i =>

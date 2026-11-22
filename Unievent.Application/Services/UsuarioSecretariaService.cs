@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
 using Unievent.Application.Dtos.UsuarioSecretaria;
@@ -123,6 +123,8 @@ namespace Unievent.Application.Services
                     Status = request.Status ?? StatusUsuarioSecretaria.Ativo,
                     InstituicaoId = request.InstituicaoId
                 };
+                await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
+                await _repository.SaveChangesAsync();
                 var emailConfirmacao = await EnviarEmailConfirmacaoConta(
                     usuarioSecretaria.EmailUsuario,
                     usuarioSecretaria.NomeUsuario,
@@ -131,8 +133,6 @@ namespace Unievent.Application.Services
                 {
                     return Result<UsuarioSecretariaResponse>.Failure(emailConfirmacao.Errors);
                 }
-                await _repository.CriarUsuarioSecretaria(usuarioSecretaria);
-                await _repository.SaveChangesAsync();
                 _logger.LogInformation("Usuário da secretaria com email {EmailUsuario} criado com sucesso", request.EmailUsuario);
                 return Result<UsuarioSecretariaResponse>.Success(MapearResponse(usuarioSecretaria));
             }
