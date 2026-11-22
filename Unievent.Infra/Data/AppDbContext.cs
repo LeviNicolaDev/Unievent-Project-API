@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Unievent.Domain.Entities;
 using Unievent.Domain.Enuns;
 
@@ -23,6 +24,38 @@ public class AppDbContext : DbContext
     public DbSet<Instituicao> Instituicao { get; set; }
     public DbSet<PreferenciaNotificacao> PreferenciaNotificacao { get; set; }
     public DbSet<NotificacaoEvento> NotificacaoEvento { get; set; }
+
+    // Requests without an offset follow the existing UTC persistence convention.
+    // Unlike birth dates, timestamps retain their full time component.
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<UtcDateTimeConverter>();
+    }
+
+    private sealed class UtcDateTimeConverter : ValueConverter<DateTime, DateTime>
+    {
+        public UtcDateTimeConverter() : base(
+            value => value.Kind == DateTimeKind.Local
+                ? value.ToUniversalTime()
+                : DateTime.SpecifyKind(value, DateTimeKind.Utc),
+            value => DateTime.SpecifyKind(value, DateTimeKind.Utc))
+        {
+        }
+    }
+
+    private sealed class EventDateTimeConverter : ValueConverter<DateTime, DateTime>
+    {
+        public EventDateTimeConverter() : base(
+            value => value.Kind == DateTimeKind.Unspecified
+                ? TimeZoneInfo.ConvertTimeToUtc(value,
+                    TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"))
+                : value.ToUniversalTime(),
+            value => DateTime.SpecifyKind(value, DateTimeKind.Utc))
+        {
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -97,6 +130,10 @@ public class AppDbContext : DbContext
         });
         modelBuilder.Entity<Evento>(e =>
         {
+            // Event forms submit civil time in Sao Paulo, as expected by check-in.
+            e.Property(x => x.DataEvento).HasConversion<EventDateTimeConverter>();
+            e.Property(x => x.InicioInscricoes).HasConversion<EventDateTimeConverter>();
+            e.Property(x => x.FimInscricoes).HasConversion<EventDateTimeConverter>();
             e.Property(x => x.Categoria).HasConversion<string>();
             e.Property(x => x.Local).HasMaxLength(200);
             e.Property(x => x.Visibilidade).HasConversion<string>();

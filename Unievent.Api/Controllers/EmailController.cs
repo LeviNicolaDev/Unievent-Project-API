@@ -37,7 +37,6 @@ namespace Unievent.Api.Controllers
             return Ok(response.Value);
         }
 
-        // Somente o e-mail é aceito; nome e chave são sempre obtidos/gerados no servidor.
         [HttpPost("reenviar-confirmacao")]
         public async Task<IActionResult> ReenviarConfirmacao([FromBody] ReenvioConfirmacaoRequest request)
         {
