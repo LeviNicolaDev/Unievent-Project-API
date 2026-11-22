@@ -30,9 +30,7 @@ public class UsuarioUnieventController : ControllerBase
     [AllowAnonymous]
     public async Task<IActionResult> CriarAdminInicial([FromBody] UsuarioUnieventRequest request)
     {
-        if (await _usuarioUnieventRepository.ExisteUsuarioUnievent())
-            return Conflict("O Admin UniEvent inicial já foi cadastrado");
-
+        request.EmailUsuario = request.EmailUsuario?.Trim() ?? string.Empty;
         var erro = ValidarRequest(request);
         if (erro is not null) return BadRequest(erro);
 
@@ -40,10 +38,10 @@ public class UsuarioUnieventController : ControllerBase
             return BadRequest("Email já cadastrado");
 
         var usuarioUnievent = CriarEntidade(request);
-        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
-        if (envio.IsFailure) return BadRequest(envio.Errors);
         await _usuarioUnieventRepository.CriarUsuarioUnievent(usuarioUnievent);
         await _usuarioUnieventRepository.SaveChangesAsync();
+        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
+        if (envio.IsFailure) return BadRequest(envio.Errors);
 
         return Ok(MapearResponse(usuarioUnievent));
     }
@@ -54,6 +52,7 @@ public class UsuarioUnieventController : ControllerBase
     {
         if (!User.IsGlobalAdmin()) return Forbid();
 
+        request.EmailUsuario = request.EmailUsuario?.Trim() ?? string.Empty;
         var erro = ValidarRequest(request);
         if (erro is not null) return BadRequest(erro);
 
@@ -61,10 +60,10 @@ public class UsuarioUnieventController : ControllerBase
             return BadRequest("Email já cadastrado");
 
         var usuarioUnievent = CriarEntidade(request);
-        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
-        if (envio.IsFailure) return BadRequest(envio.Errors);
         await _usuarioUnieventRepository.CriarUsuarioUnievent(usuarioUnievent);
         await _usuarioUnieventRepository.SaveChangesAsync();
+        var envio = await _emailService.EnviarEmailConfirmacaoConta(usuarioUnievent.EmailUsuario, usuarioUnievent.NomeUsuario, usuarioUnievent.Chave);
+        if (envio.IsFailure) return BadRequest(envio.Errors);
 
         return Ok(MapearResponse(usuarioUnievent));
     }
@@ -79,6 +78,10 @@ public class UsuarioUnieventController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.NomeUsuario)) return "O nome deve ser preenchido";
         if (string.IsNullOrWhiteSpace(request.EmailUsuario)) return "O email deve ser preenchido";
+        if (!System.Text.RegularExpressions.Regex.IsMatch(request.EmailUsuario,
+            @"^[^@\s]+@(fatec\.sp\.gov\.br|aluno\.cps\.sp\.gov\.br)$",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase))
+            return "Use um e-mail institucional @fatec.sp.gov.br ou @aluno.cps.sp.gov.br";
         if (string.IsNullOrWhiteSpace(request.Senha) || request.Senha.Length < 6) return "A senha deve conter no mínimo 6 caracteres";
 
         return null;
