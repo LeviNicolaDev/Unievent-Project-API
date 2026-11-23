@@ -101,6 +101,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.Events = new JwtBearerEvents {
+            OnChallenge = context => {
+                if (builder.Environment.IsDevelopment())
+                {
+                    var authorization = context.Request.Headers.Authorization.ToString();
+                    var bearerInformado = authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrWhiteSpace(authorization["Bearer ".Length..]);
+                    var logger = context.HttpContext.RequestServices
+                        .GetRequiredService<ILoggerFactory>().CreateLogger("Unievent.Authentication");
+                    // Log only presence and failure type, never the token or request credentials.
+                    logger.LogWarning(
+                        "401 em {Path}. AuthorizationPresente={AuthorizationPresente}; BearerInformado={BearerInformado}; Falha={Falha}",
+                        context.Request.Path, !string.IsNullOrWhiteSpace(authorization), bearerInformado,
+                        context.AuthenticateFailure?.GetType().Name ?? "SemTokenValidado");
+                }
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context => {
                 var principal = context.Principal!;
                 var tipo = principal.FindFirst("tipo_usuario")?.Value switch {
