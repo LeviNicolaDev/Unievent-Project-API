@@ -119,9 +119,7 @@ public class AutomacaoEventosService : IAutomacaoEventosService
 
         foreach (var aluno in alunos)
         {
-            if (!preferencias.TryGetValue(aluno.Id, out var preferencia) ||
-                !preferencia.LembretesEventos ||
-                !preferencia.Recomendacoes)
+            if (!preferencias.TryGetValue(aluno.Id, out var preferencia) || !preferencia.Recomendacoes)
             {
                 continue;
             }
