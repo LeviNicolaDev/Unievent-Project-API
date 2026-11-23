@@ -88,6 +88,16 @@ public class AdminLoginHttpTest
     }
 
     [Fact]
+    public async Task PublicCategoryCatalog_IncludesAllSupportedTypes()
+    {
+        await using var database = new CertificacaoDatabase();
+        await using var app = new App(database, "Testing");
+        using var client = app.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
+        var categories = await client.GetFromJsonAsync<string[]>("/api/Evento/categorias");
+        Assert.Equal(new[] { "Palestra", "Workshop", "Feira", "Evento", "Festa", "Curso", "Musica", "Hackathon" }, categories);
+    }
+
+    [Fact]
     public async Task MissingIssuer_CanReturnLoginSuccess_ButDashboardRejectsToken()
     {
         await using var database = new CertificacaoDatabase();

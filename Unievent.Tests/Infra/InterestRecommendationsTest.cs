@@ -17,17 +17,20 @@ namespace Unievent.Tests.Infra;
 public class InterestRecommendationsTest
 {
     [Theory]
-    [InlineData(true, true, true)]
-    [InlineData(false, true, false)]
-    [InlineData(true, false, false)]
+    [InlineData(true, true, true, Categoria.Palestra)]
+    [InlineData(true, true, true, Categoria.Curso)]
+    [InlineData(true, true, true, Categoria.Musica)]
+    [InlineData(true, true, true, Categoria.Hackathon)]
+    [InlineData(false, true, false, Categoria.Palestra)]
+    [InlineData(true, false, false, Categoria.Palestra)]
     public async Task SavedInterests_ControlRecommendations_AndDoNotSendDuplicates(
-        bool reminders, bool recommendations, bool expectedSend)
+        bool reminders, bool recommendations, bool expectedSend, Categoria category)
     {
         await using var database = new CertificacaoDatabase();
         await database.SeedAsync(certificado: false, presente: false);
         await using var db = database.CreateDbContext();
         var evento = await db.Evento.SingleAsync();
-        evento.Categoria = Categoria.Palestra;
+        evento.Categoria = category;
         evento.DataEvento = DateTime.UtcNow.AddDays(9);
         await db.SaveChangesAsync();
         var controller = new PreferenciasController(db)
@@ -53,8 +56,8 @@ public class InterestRecommendationsTest
         email.Verify(service => service.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
 
         Assert.IsType<OkObjectResult>(await controller.Atualizar(new PreferenciaRequest(
-            reminders, true, recommendations, false, ["Palestra"], null, null)));
-        Assert.Equal("Palestra", (await db.PreferenciaNotificacao.AsNoTracking().SingleAsync()).Categorias);
+            reminders, true, recommendations, false, [category.ToString()], null, null)));
+        Assert.Equal(category.ToString(), (await db.PreferenciaNotificacao.AsNoTracking().SingleAsync()).Categorias);
         var sent = await automation.ProcessarAsync();
         Assert.True(sent.IsSuccess);
         Assert.Equal(expectedSend ? 1 : 0, sent.Value.AlertasProcessados);
