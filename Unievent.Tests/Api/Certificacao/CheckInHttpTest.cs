@@ -32,7 +32,8 @@ public class CheckInHttpTest
             {
                 ["Jwt:Key"] = "chave-local-exclusiva-testes-certificado-2026",
                 ["Jwt:Issuer"] = "UnieventTests", ["Jwt:Audience"] = "UnieventTests", ["Jwt:ExpirationMinutes"] = "10",
-                ["Database:MigrateOnStartup"] = "false", ["Automacoes:Ativas"] = "false"
+                ["Database:MigrateOnStartup"] = "false", ["Automacoes:Ativas"] = "false",
+                ["DemoSeed:Enabled"] = "false"
             }));
             builder.ConfigureServices(services =>
             {

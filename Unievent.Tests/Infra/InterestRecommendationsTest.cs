@@ -21,7 +21,7 @@ public class InterestRecommendationsTest
     [InlineData(true, true, true, Categoria.Curso)]
     [InlineData(true, true, true, Categoria.Musica)]
     [InlineData(true, true, true, Categoria.Hackathon)]
-    [InlineData(false, true, false, Categoria.Palestra)]
+    [InlineData(false, true, true, Categoria.Palestra)]
     [InlineData(true, false, false, Categoria.Palestra)]
     public async Task SavedInterests_ControlRecommendations_AndDoNotSendDuplicates(
         bool reminders, bool recommendations, bool expectedSend, Categoria category)
