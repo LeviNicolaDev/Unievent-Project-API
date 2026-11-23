@@ -6,6 +6,7 @@ namespace Unievent.Application.Interfaces.Services;
 
 public interface IParticipacaoService
 {
+    Task<Result<ParticipacaoResponse>> CancelarInscricaoAsync(int alunoId, int eventoId);
     Task<Result<ParticipacaoResponse>> InscreverAsync(int alunoId, int eventoId);
     Task<Result<ParticipacaoResponse>> EmitirCertificadoAsync(int alunoId, int eventoId);
     Task<Result<IngressoResponse>> ObterIngressoAsync(int alunoId, int eventoId);

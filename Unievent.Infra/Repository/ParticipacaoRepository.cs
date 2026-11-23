@@ -15,6 +15,18 @@ public class ParticipacaoRepository : IParticipacaoRepository
         _context = context;
     }
 
+    public async Task<bool> TryCancelarInscricaoAsync(int alunoId, int eventoId)
+    {
+        // Atomic with check-in: neither operation can overwrite the other's outcome.
+        var updated = await _context.Participacao
+            .Where(p => p.AlunoId == alunoId && p.EventoId == eventoId
+                && p.StatusInscricao == StatusInscricao.Ativa && !p.PresencaConfirmada)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.StatusInscricao, StatusInscricao.Cancelada)
+                .SetProperty(p => p.DataCancelamento, DateTime.UtcNow));
+        return updated == 1;
+    }
+
     public async Task<bool> TryConfirmarPresencaAsync(Participacao participacao)
     {
         // Somente a primeira validação grava operador/data; nenhum campo de certificado é sobrescrito.

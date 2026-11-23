@@ -65,7 +65,7 @@ public static class CertificadoPdfTemplate
         detailsRow.TopPadding = detailsRow.BottomPadding = Unit.FromPoint(11);
         detailsRow.VerticalAlignment = VerticalAlignment.Center;
         AddField(detailsRow[0], "INSTITUIÇÃO ORGANIZADORA", dados.Instituicao);
-        AddField(detailsRow[1], "DATA DO EVENTO", dados.DataEvento.ToString("dd/MM/yyyy"));
+        AddField(detailsRow[1], "DATA DO EVENTO", Unievent.Application.Rules.EventoRules.HorarioCivil(dados.DataEvento).ToString("dd/MM/yyyy"));
         Spacer(section, 14);
 
         // O conteúdo permanece em fluxo para acomodar nomes e textos sem recortes.

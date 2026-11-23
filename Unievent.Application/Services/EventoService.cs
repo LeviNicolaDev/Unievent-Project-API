@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Unievent.Application.Common;
@@ -69,7 +69,7 @@ namespace Unievent.Application.Services
 
                     if (responsavelJaTemEvento != null &&
                         responsavelJaTemEvento.Id != id &&
-                        responsavelJaTemEvento.DataEvento.Date == update.DataEvento.Value.Date)
+                        Unievent.Application.Rules.EventoRules.HorarioCivil(responsavelJaTemEvento.DataEvento).Date == Unievent.Application.Rules.EventoRules.HorarioCivil(update.DataEvento.Value).Date)
                     {
                         _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", responsavelIdFinal);
                         return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");
@@ -172,7 +172,7 @@ namespace Unievent.Application.Services
 
                 var responsavelJaTemEvento = await _repository.ListarEventoByResponsavel(request.ResponsavelEventoId);
 
-                if (responsavelJaTemEvento != null && responsavelJaTemEvento.DataEvento.Date == request.DataEvento.Date)
+                if (responsavelJaTemEvento != null && Unievent.Application.Rules.EventoRules.HorarioCivil(responsavelJaTemEvento.DataEvento).Date == Unievent.Application.Rules.EventoRules.HorarioCivil(request.DataEvento).Date)
                 {
                     _logger.LogWarning("O responsável com ID {ResponsavelId} já possui um evento cadastrado para esta data.", request.ResponsavelEventoId);
                     return Result<EventoResponse>.Failure("O responsável já possui um evento cadastrado para esta data.");

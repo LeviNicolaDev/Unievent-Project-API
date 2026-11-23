@@ -1,4 +1,5 @@
 using FluentValidation;
+using Unievent.Application.Rules;
 using Unievent.Application.Dtos.Evento;
 
 namespace Unievent.Application.Validators.Evento;
@@ -18,7 +19,7 @@ public class EventoUpdateValidator : AbstractValidator<EventoUpdate>
             .When(e => e.Local != null);
         RuleFor(e => e.DataEvento)
             .NotEmpty().WithMessage("O campo 'Data' é obrigatório.")
-            .GreaterThan(DateTime.Now).WithMessage("A data do evento deve ser futura.").When(e => e.DataEvento.HasValue);
+            .Must(value => !value.HasValue || EventoRules.DataNaoAnteriorHoje(value.Value)).WithMessage("A data do evento deve ser hoje ou uma data futura.").When(e => e.DataEvento.HasValue);
         RuleFor(e => e.Categoria)
             .IsInEnum().WithMessage("O campo 'Categoria' deve ser um dos valores permitidos.").When(e => e.Categoria.HasValue);
         RuleFor(e => e.ResponsavelEventoId)

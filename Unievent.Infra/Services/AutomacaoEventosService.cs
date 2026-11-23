@@ -139,7 +139,7 @@ public class AutomacaoEventosService : IAutomacaoEventosService
                 var mensagem = EmailTemplates.AlertaEvento(
                     aluno.Nome,
                     evento.Nome,
-                    evento.DataEvento.ToString("dd/MM/yyyy HH:mm"),
+                    EventoRules.HorarioCivil(evento.DataEvento).ToString("dd/MM/yyyy HH:mm"),
                     motivo);
 
                 var envio = await _emailService.SendAsync(aluno.Email, assunto, mensagem);

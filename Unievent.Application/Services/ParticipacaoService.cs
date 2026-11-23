@@ -32,6 +32,19 @@ public class ParticipacaoService : IParticipacaoService
         _certificadoAutomaticoService = certificadoAutomaticoService;
     }
 
+    async Task<Result<ParticipacaoResponse>> IParticipacaoService.CancelarInscricaoAsync(int alunoId, int eventoId)
+    {
+        await _repositoryParticipacao.TryCancelarInscricaoAsync(alunoId, eventoId);
+        var participacao = await _repositoryParticipacao.GetByAlunoIdAndEventoIdAsync(alunoId, eventoId);
+        if (participacao is null)
+            return Result<ParticipacaoResponse>.Failure("Inscrição não encontrada");
+        if (participacao.PresencaConfirmada)
+            return Result<ParticipacaoResponse>.Failure("Não é possível cancelar uma inscrição com check-in realizado.");
+        if (participacao.StatusInscricao != StatusInscricao.Cancelada)
+            return Result<ParticipacaoResponse>.Failure("Não foi possível cancelar a inscrição.");
+        return Result<ParticipacaoResponse>.Success(Map(participacao));
+    }
+
     async Task<Result<IngressoResponse>> IParticipacaoService.ObterIngressoAsync(int alunoId, int eventoId)
     {
         var participacao = await _repositoryParticipacao.GetByAlunoIdAndEventoIdAsync(alunoId, eventoId);

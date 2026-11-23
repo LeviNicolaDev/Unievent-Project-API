@@ -1,5 +1,6 @@
 using System.Data;
 using FluentValidation;
+using Unievent.Application.Rules;
 using Unievent.Application.Dtos.Evento;
 
 namespace Unievent.Application.Validators.Evento;
@@ -19,7 +20,7 @@ public class EventoRequestValidator : AbstractValidator<EventoRequest>
             .When(e => !string.IsNullOrWhiteSpace(e.Local));
         RuleFor(e => e.DataEvento)
             .NotEmpty().WithMessage("O campo 'Data' é obrigatório.")
-            .GreaterThan(DateTime.Now).WithMessage("A data do evento deve ser futura.");
+            .Must(EventoRules.DataNaoAnteriorHoje).WithMessage("A data do evento deve ser hoje ou uma data futura.");
         RuleFor(e => e.Categoria)
             .IsInEnum().WithMessage("O campo 'Categoria' deve ser um dos valores permitidos.");
         RuleFor(e => e.ResponsavelEventoId)

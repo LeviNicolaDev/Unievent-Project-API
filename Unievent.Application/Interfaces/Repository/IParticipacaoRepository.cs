@@ -4,6 +4,7 @@ namespace Unievent.Application.Interfaces.Repository;
 
 public interface IParticipacaoRepository
 {
+    Task<bool> TryCancelarInscricaoAsync(int alunoId, int eventoId);
     Task<bool> TryConfirmarPresencaAsync(Participacao participacao);
     Task<Participacao> AddAsync(Participacao participacao);
     Task<Participacao> Update(Participacao participacao);

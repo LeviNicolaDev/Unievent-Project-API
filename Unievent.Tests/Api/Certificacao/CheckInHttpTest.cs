@@ -61,6 +61,69 @@ public class CheckInHttpTest
         }
     }
 
+    [Theory]
+    [InlineData(TipoParticipante.Interno)]
+    [InlineData(TipoParticipante.Externo)]
+    public async Task CancelarInscricao_LiberaVaga_AtualizaDashboards_EPreservaHistorico(TipoParticipante tipo)
+    {
+        await using var db = new CertificacaoDatabase();
+        await db.SeedAsync(presente: false, tipo: tipo);
+        await using var app = new App(db, Email().Object);
+        using var aluno = app.Client(Role.Aluno, instituicao: null);
+        using var admin = app.Client(Role.Admin, instituicao: null);
+        using var secretaria = app.Client(Role.Secretaria);
+
+        var before = await admin.GetFromJsonAsync<JsonElement>("/api/Evento/1/dashboard");
+        before.GetProperty("totalInscricoes").GetInt32().Should().Be(1);
+
+        (await aluno.DeleteAsync("/api/Evento/1/inscricao")).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await aluno.DeleteAsync("/api/Evento/1/inscricao")).StatusCode.Should().Be(HttpStatusCode.OK);
+        var saved = await db.ParticipacaoAsync();
+        saved.StatusInscricao.Should().Be(StatusInscricao.Cancelada);
+        saved.DataCancelamento.Should().NotBeNull();
+
+        var after = await admin.GetFromJsonAsync<JsonElement>("/api/Evento/1/dashboard");
+        after.GetProperty("totalInscricoes").GetInt32().Should().Be(0);
+        after.GetProperty("vagasRestantes").GetInt32().Should()
+            .Be(before.GetProperty("vagasRestantes").GetInt32() + 1);
+        var global = await admin.GetFromJsonAsync<JsonElement>("/api/admin/dashboard");
+        global.GetProperty("totalInscricoes").GetInt32().Should().Be(0);
+        var institutional = await secretaria.GetFromJsonAsync<JsonElement>("/api/instituicao/dashboard");
+        institutional.GetProperty("totalInscricoes").GetInt32().Should().Be(0);
+        var ticket = await aluno.GetFromJsonAsync<JsonElement>("/api/Evento/1/ingresso");
+        ticket.GetProperty("statusInscricao").GetString().Should().Be("cancelada");
+        ticket.GetProperty("podeRealizarCheckIn").GetBoolean().Should().BeFalse();
+        var checkIn = await secretaria.PostAsJsonAsync("/api/Evento/check-in", new { codigoIngresso = saved.CodigoIngresso });
+        checkIn.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CancelarInscricao_NaoCancelaOutroAluno_NemPresencaConfirmada()
+    {
+        await using var db = new CertificacaoDatabase();
+        await db.SeedAsync(presente: true);
+        await using var app = new App(db, Email().Object);
+        using var outro = app.Client(Role.Aluno, id: 2, instituicao: null);
+        (await outro.DeleteAsync("/api/Evento/1/inscricao")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var aluno = app.Client(Role.Aluno, instituicao: null);
+        (await aluno.DeleteAsync("/api/Evento/1/inscricao")).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await db.ParticipacaoAsync()).StatusInscricao.Should().Be(StatusInscricao.Ativa);
+    }
+
+    [Theory]
+    [InlineData(null, 401)]
+    [InlineData(Role.Secretaria, 403)]
+    [InlineData(Role.Admin, 403)]
+    public async Task CancelarInscricao_ExigeParticipanteAutenticado(Role? role, int expected)
+    {
+        await using var db = new CertificacaoDatabase();
+        await db.SeedAsync(presente: false);
+        await using var app = new App(db, Email().Object);
+        using var client = app.Client(role);
+        ((int)(await client.DeleteAsync("/api/Evento/1/inscricao")).StatusCode).Should().Be(expected);
+        (await db.ParticipacaoAsync()).StatusInscricao.Should().Be(StatusInscricao.Ativa);
+    }
+
     private static Mock<IEmailService> Email(bool falha = false)
     {
         var email = new Mock<IEmailService>();

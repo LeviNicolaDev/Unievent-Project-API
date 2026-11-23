@@ -6,6 +6,21 @@ namespace Unievent.Application.Rules;
 
 public static class EventoRules
 {
+    public static DateTime HorarioCivil(DateTime value)
+    {
+        return value.Kind == DateTimeKind.Unspecified ? value
+            : TimeZoneInfo.ConvertTimeFromUtc(value.ToUniversalTime(),
+                TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo"));
+    }
+
+    public static bool DataNaoAnteriorHoje(DateTime value)
+    {
+        var zone = TimeZoneInfo.FindSystemTimeZoneById("America/Sao_Paulo");
+        var date = HorarioCivil(value).Date;
+        var today = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, zone).Date;
+        return date >= today;
+    }
+
     public static bool PodeVisualizar(Evento evento, TipoParticipante? tipoParticipante)
     {
         return PodeVisualizarNoCatalogo(evento, tipoParticipante, null);

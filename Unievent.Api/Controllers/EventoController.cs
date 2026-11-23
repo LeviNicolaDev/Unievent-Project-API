@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -155,6 +155,16 @@ namespace Unievent.Api.Controllers
                 return BadRequest(result.Errors);
             }
             return Ok(result.Value);
+        }
+
+        [HttpDelete("{id}/inscricao")]
+        [Authorize(Roles = "Aluno")]
+        public async Task<ActionResult> CancelarMinhaInscricao([FromRoute] int id)
+        {
+            if (!int.TryParse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var alunoId))
+                return Unauthorized();
+            var result = await participacaoService.CancelarInscricaoAsync(alunoId, id);
+            return result.IsFailure ? BadRequest(result.Errors) : Ok(result.Value);
         }
 
         [HttpGet("{id}/minha-inscricao")]
